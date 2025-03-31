@@ -1,15 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Typography,
-  CircularProgress,
-  Box
-} from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Route } from '../types/metra';
 import { MetraService } from '../services/metraService';
 
@@ -22,6 +12,7 @@ const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const loadRoutes = async () => {
@@ -42,61 +33,87 @@ const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
     loadRoutes();
   }, []);
 
+  const filteredRoutes = routes.filter(route =>
+    route.route_long_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    route.route_short_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        </CardContent>
-      </Card>
+      <div className="card">
+        <div className="flex justify-center items-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent>
-          <Typography color="error">{error}</Typography>
-        </CardContent>
-      </Card>
+      <div className="card">
+        <div className="text-red-600 text-center">{error}</div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Metra Routes
-        </Typography>
-        <List>
-          {routes.map((route) => (
-            <ListItem key={route.route_id} disablePadding>
-              <ListItemButton
-                selected={selectedRoute?.route_id === route.route_id}
+    <div className="card">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Metra Routes</h2>
+      
+      {/* Search Input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search routes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="input"
+        />
+      </div>
+
+      {/* Routes List */}
+      <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+        <AnimatePresence>
+          {filteredRoutes.map((route) => (
+            <motion.div
+              key={route.route_id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <button
                 onClick={() => onRouteSelect(route)}
-                sx={{
-                  borderLeft: 4,
-                  borderColor: `#${route.route_color}`,
-                  '&.Mui-selected': {
-                    backgroundColor: `#${route.route_color}20`,
-                  },
-                }}
+                className={`w-full text-left p-4 rounded-lg transition-all duration-200 ${
+                  selectedRoute?.route_id === route.route_id
+                    ? 'bg-primary-50 border-l-4 border-primary-600'
+                    : 'hover:bg-gray-50 border-l-4 border-transparent'
+                }`}
               >
-                <ListItemText
-                  primary={route.route_long_name}
-                  secondary={route.route_short_name}
-                  primaryTypographyProps={{
-                    style: { color: `#${route.route_color}` },
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 
+                      className={`font-medium ${
+                        selectedRoute?.route_id === route.route_id
+                          ? 'text-primary-900'
+                          : 'text-gray-900'
+                      }`}
+                    >
+                      {route.route_long_name}
+                    </h3>
+                    <p className="text-sm text-gray-500">{route.route_short_name}</p>
+                  </div>
+                  <div 
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: `#${route.route_color}` }}
+                  />
+                </div>
+              </button>
+            </motion.div>
           ))}
-        </List>
-      </CardContent>
-    </Card>
+        </AnimatePresence>
+      </div>
+    </div>
   );
 };
 

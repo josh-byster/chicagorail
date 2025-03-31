@@ -195,8 +195,6 @@ export class MetraService {
   public async getTripsByRoute(routeId: string): Promise<TripWithStops[]> {
     try {
       const dateStr = this.selectedDate.toISOString().split('T')[0];
-      console.log('Fetching trips for date:', dateStr);
-      
       const response = await fetch(
         `${this.API_BASE_URL}/routes/${routeId}/trips?date=${dateStr}`
       );
@@ -205,9 +203,7 @@ export class MetraService {
         throw new Error('Failed to fetch trips from backend');
       }
       
-      const trips = await response.json();
-      console.log(`Received ${trips.length} trips`);
-      return trips;
+      return await response.json();
     } catch (error) {
       console.error('Error fetching trips:', error);
       throw error;

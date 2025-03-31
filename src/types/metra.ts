@@ -27,6 +27,8 @@ export interface StopTime {
 
 export interface StopTimeWithStop extends StopTime {
   stopName: string;
+  pickup_type: number;
+  drop_off_type: number;
 }
 
 export interface Trip {
