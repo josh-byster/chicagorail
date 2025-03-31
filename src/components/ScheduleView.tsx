@@ -1,11 +1,5 @@
-import { useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Card,
-  CardContent,
-  Typography,
-  Tabs,
-  Tab,
-  Box,
   Table,
   TableBody,
   TableCell,
@@ -13,249 +7,200 @@ import {
   TableHead,
   TableRow,
   Paper,
-  CircularProgress,
-  Collapse,
   IconButton,
-  Chip,
-  TextField,
+  Box,
+  Typography,
+  CircularProgress,
+  Tabs,
+  Tab
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { Route, Trip, StopTime, Stop } from '../types/metra';
+import { TripWithStops, StopTimeWithStop } from '../types/metra';
 import { MetraService } from '../services/metraService';
-import { format } from 'date-fns';
 
 interface ScheduleViewProps {
-  route: Route;
-}
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
+  selectedRoute: string;
+  selectedDate: Date;
 }
 
 interface TrainRowProps {
-  trip: Trip;
-  firstStop: StopTime & { stopName: string };
-  lastStop: StopTime & { stopName: string };
-  stopTimes: Array<StopTime & { stopName: string }>;
+  trip: TripWithStops;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`schedule-tabpanel-${index}`}
-      aria-labelledby={`schedule-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-const TrainRow = ({ trip, firstStop, lastStop, stopTimes }: TrainRowProps) => {
+const TrainRow: React.FC<TrainRowProps> = ({ trip }) => {
   const [open, setOpen] = useState(false);
 
-  const formatTime = (time: string) => {
+  const formatTime = (time: string): string => {
     const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
+    let hour = parseInt(hours);
+    
+    // Handle times past midnight (24:00+)
+    if (hour >= 24) {
+      hour = hour - 24;
+    }
+    
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const calculateDuration = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const [startHours, startMinutes] = firstStop.departure_time.split(':').map(Number);
+  const calculateDuration = (startTime: string, endTime: string): string => {
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+
+    // Handle times past midnight
+    let duration = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
     
-    let totalMinutes = (hours - startHours) * 60 + (minutes - startMinutes);
-    
-    // Handle case where time crosses midnight
-    if (totalMinutes < 0) {
-      totalMinutes += 24 * 60;
+    // Handle overnight trips
+    if (duration < 0) {
+      duration += 24 * 60;
     }
-    
-    return `${totalMinutes}m`;
+
+    const hours = Math.floor(duration / 60);
+    const minutes = duration % 60;
+    return `${hours}h ${minutes}m`;
   };
+
+  const firstStop = trip.stopTimes[0];
+  const lastStop = trip.stopTimes[trip.stopTimes.length - 1];
 
   return (
     <>
-      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+      <TableRow>
         <TableCell>
-          <IconButton
-            size="small"
-            onClick={() => setOpen(!open)}
-            sx={{ transform: open ? 'rotate(180deg)' : 'none' }}
-          >
-            <KeyboardArrowDownIcon />
+          <IconButton size="small" onClick={() => setOpen(!open)}>
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
-        <TableCell component="th" scope="row">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="subtitle1">
-              {formatTime(firstStop.departure_time)}
-            </Typography>
-            <Chip 
-              label={`${stopTimes.length} stops`}
-              size="small"
-              variant="outlined"
-            />
-          </Box>
-        </TableCell>
+        <TableCell>{formatTime(firstStop.departure_time)}</TableCell>
         <TableCell>
-          <Typography variant="body2" color="text.secondary">
-            {firstStop.stopName} → {lastStop.stopName}
+          {firstStop.stopName} → {lastStop.stopName}
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+            ({trip.stopTimes.length} stops)
           </Typography>
         </TableCell>
       </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
+      {open && (
+        <TableRow>
+          <TableCell colSpan={3}>
             <Box sx={{ margin: 1 }}>
               <Typography variant="h6" gutterBottom component="div">
-                All Stops
+                Stops
               </Typography>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Time</TableCell>
-                    <TableCell>Duration</TableCell>
                     <TableCell>Stop</TableCell>
+                    <TableCell>Departure</TableCell>
+                    <TableCell>Duration</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {stopTimes.map((stopTime, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{formatTime(stopTime.departure_time)}</TableCell>
+                  {trip.stopTimes.map((stop: StopTimeWithStop, index: number) => (
+                    <TableRow key={stop.stop_id}>
+                      <TableCell>{stop.stopName}</TableCell>
+                      <TableCell>{formatTime(stop.departure_time)}</TableCell>
                       <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {calculateDuration(stopTime.departure_time)}
-                        </Typography>
+                        {index > 0 ? calculateDuration(firstStop.departure_time, stop.departure_time) : '-'}
                       </TableCell>
-                      <TableCell>{stopTime.stopName}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
+          </TableCell>
+        </TableRow>
+      )}
     </>
   );
 };
 
-const ScheduleView = ({ route }: ScheduleViewProps) => {
-  const [tabValue, setTabValue] = useState(0);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selectedDate }) => {
+  const [trips, setTrips] = useState<TripWithStops[]>([]);
   const [loading, setLoading] = useState(false);
-  const metraService = MetraService.getInstance();
+  const [error, setError] = useState<string | null>(null);
+  const [tabValue, setTabValue] = useState(0);
+
+  useEffect(() => {
+    const loadTrips = async () => {
+      if (!selectedRoute) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const metraService = MetraService.getInstance();
+        metraService.setSelectedDate(selectedDate);
+        const trips = await metraService.getTripsByRoute(selectedRoute);
+        setTrips(trips);
+      } catch (error) {
+        console.error('Error loading trips:', error);
+        setError('Failed to load trips');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTrips();
+  }, [selectedRoute, selectedDate]);
+
+  if (!selectedRoute) {
+    return <Typography>Please select a route</Typography>;
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+
+  // Separate trips by direction
+  const inboundTrips = trips.filter(trip => trip.direction_id === 1);
+  const outboundTrips = trips.filter(trip => trip.direction_id === 0);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = new Date(event.target.value);
-    setSelectedDate(newDate);
-    setLoading(true);
-    metraService.setSelectedDate(newDate);
-    // Use setTimeout to ensure the UI updates before the data is processed
-    setTimeout(() => setLoading(false), 0);
-  };
+  return (
+    <Box>
+      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
+        <Tab label={`Outbound (${outboundTrips.length})`} />
+        <Tab label={`Inbound (${inboundTrips.length})`} />
+      </Tabs>
 
-  const trips = useMemo(() => {
-    return metraService.getTripsByRoute(route.route_id);
-  }, [route.route_id, selectedDate]);
-
-  const renderScheduleTable = (directionId: number) => {
-    const directionTrips = trips
-      .filter(trip => trip.direction_id === directionId)
-      .sort((a, b) => {
-        return a.stopTimes[0].departure_time.localeCompare(b.stopTimes[0].departure_time);
-      });
-
-    if (directionTrips.length === 0) {
-      return (
-        <Typography variant="body1" color="text.secondary" align="center">
-          No trains scheduled for this direction on {format(selectedDate, 'MMMM d, yyyy')}
-        </Typography>
-      );
-    }
-
-    return (
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell width={50} />
+              <TableCell width={50}></TableCell>
               <TableCell>Departure</TableCell>
               <TableCell>Route</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {directionTrips.map(trip => (
-              <TrainRow
-                key={trip.trip_id}
-                trip={trip}
-                firstStop={trip.stopTimes[0]}
-                lastStop={trip.stopTimes[trip.stopTimes.length - 1]}
-                stopTimes={trip.stopTimes}
-              />
-            ))}
+            {(tabValue === 0 ? outboundTrips : inboundTrips).length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} align="center">
+                  <Typography color="text.secondary">
+                    No {tabValue === 0 ? 'outbound' : 'inbound'} trains scheduled for this date
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              (tabValue === 0 ? outboundTrips : inboundTrips).map((trip: TripWithStops) => (
+                <TrainRow key={trip.trip_id} trip={trip} />
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-    );
-  };
-
-  return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5" sx={{ color: `#${route.route_color}` }}>
-            {route.route_long_name} Schedule
-          </Typography>
-          <TextField
-            type="date"
-            value={format(selectedDate, 'yyyy-MM-dd')}
-            onChange={handleDateChange}
-            InputLabelProps={{ shrink: true }}
-            sx={{ minWidth: 200 }}
-          />
-        </Box>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange}>
-            <Tab label="Outbound" />
-            <Tab label="Inbound" />
-          </Tabs>
-        </Box>
-        <TabPanel value={tabValue} index={0}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            renderScheduleTable(0)
-          )}
-        </TabPanel>
-        <TabPanel value={tabValue} index={1}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            renderScheduleTable(1)
-          )}
-        </TabPanel>
-      </CardContent>
-    </Card>
+    </Box>
   );
-};
-
-export default ScheduleView; 
+}; 

@@ -1,4 +1,15 @@
-import { Card, CardContent, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Typography,
+  CircularProgress,
+  Box
+} from '@mui/material';
 import { Route } from '../types/metra';
 import { MetraService } from '../services/metraService';
 
@@ -8,8 +19,50 @@ interface RouteListProps {
 }
 
 const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
-  const metraService = MetraService.getInstance();
-  const routes = metraService.getRoutes();
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadRoutes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const metraService = MetraService.getInstance();
+        const routes = await metraService.getRoutes();
+        setRoutes(routes);
+      } catch (error) {
+        console.error('Error loading routes:', error);
+        setError('Failed to load routes');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRoutes();
+  }, []);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent>
+          <Typography color="error">{error}</Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

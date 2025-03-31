@@ -1,4 +1,4 @@
-import { Route, Stop, Trip, StopTime } from '../types/metra';
+import { Route, Stop, Trip, StopTime, TripWithStops, ServicePeriod, StopTimeWithStop } from '../types/metra';
 
 interface ServicePeriod {
   service_id: string;
@@ -31,6 +31,7 @@ export class MetraService {
   private selectedDate: Date = new Date();
   private tripsWithStopsCache: Map<string, TripWithStops[]> = new Map();
   private lastLoadedDate: string | null = null;
+  private readonly API_BASE_URL = 'http://localhost:3000/api';
 
   private constructor() {}
 
@@ -41,7 +42,7 @@ export class MetraService {
     return MetraService.instance;
   }
 
-  public setSelectedDate(date: Date) {
+  public setSelectedDate(date: Date): void {
     this.selectedDate = date;
     // Clear cache when date changes
     this.tripsWithStopsCache.clear();
@@ -174,42 +175,43 @@ export class MetraService {
       .map(period => period.service_id);
   }
 
-  public getRoutes(): Route[] {
-    return this.routes;
+  public async getRoutes(): Promise<Route[]> {
+    try {
+      const response = await fetch(`${this.API_BASE_URL}/routes`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch routes from backend');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching routes:', error);
+      throw error;
+    }
   }
 
   public getStops(): Stop[] {
     return this.stops;
   }
 
-  public getTripsByRoute(routeId: string): TripWithStops[] {
-    // Check cache first
-    const cacheKey = `${routeId}-${this.selectedDate.toISOString().split('T')[0]}`;
-    if (this.tripsWithStopsCache.has(cacheKey)) {
-      return this.tripsWithStopsCache.get(cacheKey)!;
+  public async getTripsByRoute(routeId: string): Promise<TripWithStops[]> {
+    try {
+      const dateStr = this.selectedDate.toISOString().split('T')[0];
+      console.log('Fetching trips for date:', dateStr);
+      
+      const response = await fetch(
+        `${this.API_BASE_URL}/routes/${routeId}/trips?date=${dateStr}`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch trips from backend');
+      }
+      
+      const trips = await response.json();
+      console.log(`Received ${trips.length} trips`);
+      return trips;
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+      throw error;
     }
-
-    const activeServiceIds = this.getActiveServiceIds();
-    const trips = this.trips.filter(trip => 
-      trip.route_id === routeId && 
-      activeServiceIds.includes(trip.service_id)
-    );
-
-    // Pre-calculate stop times for all trips
-    const tripsWithStops = trips.map(trip => ({
-      ...trip,
-      stopTimes: this.stopTimes
-        .filter(stopTime => stopTime.trip_id === trip.trip_id)
-        .map(stopTime => ({
-          ...stopTime,
-          stopName: this.stopNameMap.get(stopTime.stop_id) || 'Unknown Stop',
-        }))
-        .sort((a, b) => a.stop_sequence - b.stop_sequence),
-    }));
-
-    // Cache the result
-    this.tripsWithStopsCache.set(cacheKey, tripsWithStops);
-    return tripsWithStops;
   }
 
   public getStopById(stopId: string): Stop | undefined {
