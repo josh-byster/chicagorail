@@ -11,7 +11,9 @@ export class MetraService {
   private tripsWithStopsCache: Map<string, TripWithStops[]> = new Map();
   private loadingCache: Map<string, Promise<TripWithStops[]>> = new Map();
   private lastLoadedDate: string | null = null;
-  private readonly API_BASE_URL = 'http://localhost:3000/api';
+  private readonly API_BASE_URL = import.meta.env.PROD 
+    ? 'https://metra-tracker.joshbyster.com/api'
+    : 'http://localhost:3000/api';
 
   private constructor() {}
 
