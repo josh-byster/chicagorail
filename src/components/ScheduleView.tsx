@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TripWithStops, StopTimeWithStop } from '../types/metra';
 import { MetraService } from '../services/metraService';
@@ -8,36 +8,128 @@ interface ScheduleViewProps {
   selectedDate: Date;
 }
 
+// Helper function to convert 24h time to 12h time
+const formatTime = (timeStr: string): string => {
+  const [hours, minutes] = timeStr.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+};
+
+// Helper function to calculate travel time
+const calculateTravelTime = (firstStop: StopTimeWithStop, lastStop: StopTimeWithStop): string => {
+  const [firstHours, firstMinutes] = firstStop.departure_time.split(':').map(Number);
+  const [lastHours, lastMinutes] = lastStop.arrival_time.split(':').map(Number);
+  
+  let totalMinutes = (lastHours * 60 + lastMinutes) - (firstHours * 60 + firstMinutes);
+  
+  // Handle overnight trips
+  if (totalMinutes < 0) {
+    totalMinutes += 24 * 60;
+  }
+  
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  if (hours === 0) {
+    return `${minutes} min`;
+  }
+  return `${hours}h ${minutes}m`;
+};
+
 export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selectedDate }) => {
   const [trips, setTrips] = useState<TripWithStops[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const isLoadingRef = useRef(false);
 
   // Memoize the date string to prevent unnecessary re-renders
-  const dateString = useMemo(() => selectedDate.toISOString(), [selectedDate]);
+  const dateString = useMemo(() => {
+    console.log('[ScheduleView] Date changed, memoizing new date string');
+    return selectedDate.toISOString();
+  }, [selectedDate]);
+
+  // Memoize the loadTrips function to prevent recreation on every render
+  const loadTrips = useCallback(async (isMounted: { current: boolean }, timeoutId: { current: number }) => {
+    console.log('[ScheduleView] loadTrips called with:', { selectedRoute, dateString });
+    
+    if (!selectedRoute || isLoadingRef.current) {
+      console.log('[ScheduleView] Skipping loadTrips:', { 
+        reason: !selectedRoute ? 'no route selected' : 'already loading' 
+      });
+      return;
+    }
+    
+    try {
+      console.log('[ScheduleView] Starting trip load');
+      isLoadingRef.current = true;
+      setIsTransitioning(true);
+      setLoading(true);
+      setError(null);
+      
+      const metraService = MetraService.getInstance();
+      metraService.setSelectedDate(selectedDate);
+      const trips = await metraService.getTripsByRoute(selectedRoute);
+      
+      if (isMounted.current) {
+        console.log('[ScheduleView] Trips loaded successfully, updating state');
+        setTrips(trips);
+        setLoading(false);
+        // Add a small delay before removing the transition state to ensure smooth animation
+        timeoutId.current = window.setTimeout(() => {
+          if (isMounted.current) {
+            console.log('[ScheduleView] Removing transition state');
+            setIsTransitioning(false);
+          }
+        }, 300);
+      } else {
+        console.log('[ScheduleView] Component unmounted, skipping state updates');
+      }
+    } catch (error) {
+      console.error('[ScheduleView] Error loading trips:', error);
+      if (isMounted.current) {
+        setError('Failed to load trips');
+        setLoading(false);
+        setIsTransitioning(false);
+      }
+    } finally {
+      if (isMounted.current) {
+        console.log('[ScheduleView] Resetting loading ref');
+        isLoadingRef.current = false;
+      }
+    }
+  }, [selectedRoute, selectedDate]);
 
   useEffect(() => {
-    const loadTrips = async () => {
-      if (!selectedRoute) return;
-      
-      try {
-        setLoading(true);
-        setError(null);
-        const metraService = MetraService.getInstance();
-        metraService.setSelectedDate(selectedDate);
-        const trips = await metraService.getTripsByRoute(selectedRoute);
-        setTrips(trips);
-      } catch (error) {
-        console.error('Error loading trips:', error);
-        setError('Failed to load trips');
-      } finally {
-        setLoading(false);
-      }
-    };
+    console.log('[ScheduleView] Effect triggered with:', { selectedRoute, dateString });
+    const isMounted = { current: true };
+    const timeoutId = { current: 0 };
 
-    loadTrips();
-  }, [selectedRoute, dateString]); // Only re-run when route or date string changes
+    loadTrips(isMounted, timeoutId);
+
+    return () => {
+      console.log('[ScheduleView] Effect cleanup');
+      isMounted.current = false;
+      if (timeoutId.current) {
+        window.clearTimeout(timeoutId.current);
+      }
+      setLoading(false);
+      setIsTransitioning(false);
+      isLoadingRef.current = false;
+    };
+  }, [loadTrips]);
+
+  // Log when component renders
+  console.log('[ScheduleView] Render:', { 
+    selectedRoute, 
+    dateString, 
+    loading, 
+    isTransitioning, 
+    tripsCount: trips.length 
+  });
 
   if (!selectedRoute) {
     return (
@@ -67,8 +159,25 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
   }
 
   // Separate trips by direction
-  const inboundTrips = trips.filter(trip => trip.direction_id === 1);
-  const outboundTrips = trips.filter(trip => trip.direction_id === 0);
+  const inboundTrips = trips.filter(trip => trip.direction_id === 1).sort((a, b) => {
+    const timeA = a.stopTimes[0]?.departure_time || '';
+    const timeB = b.stopTimes[0]?.departure_time || '';
+    return timeA.localeCompare(timeB);
+  });
+  
+  const outboundTrips = trips.filter(trip => trip.direction_id === 0).sort((a, b) => {
+    const timeA = a.stopTimes[0]?.departure_time || '';
+    const timeB = b.stopTimes[0]?.departure_time || '';
+    return timeA.localeCompare(timeB);
+  });
+
+  console.log('[ScheduleView] Filtered trips:', {
+    total: trips.length,
+    inbound: inboundTrips.length,
+    outbound: outboundTrips.length,
+    sampleInbound: inboundTrips[0]?.direction_id,
+    sampleOutbound: outboundTrips[0]?.direction_id
+  });
 
   const handleTabChange = (newValue: number) => {
     setTabValue(newValue);
@@ -78,12 +187,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     const [isExpanded, setIsExpanded] = useState(false);
     const firstStop = trip.stopTimes[0];
     const lastStop = trip.stopTimes[trip.stopTimes.length - 1];
+    const travelTime = firstStop && lastStop ? calculateTravelTime(firstStop, lastStop) : '';
 
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.2 }}
         className="card mb-4"
       >
         <div
@@ -92,10 +203,18 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
         >
           <div className="flex items-center space-x-4">
             <div className="text-lg font-semibold text-gray-900">
-              {firstStop?.departure_time}
+              {firstStop?.departure_time ? formatTime(firstStop.departure_time) : ''}
             </div>
             <div className="text-sm text-gray-500">
               {firstStop?.stopName} → {lastStop?.stopName}
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
+                {trip.stopTimes.length} stops
+              </span>
+              <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                {travelTime}
+              </span>
             </div>
           </div>
           <motion.div
@@ -130,7 +249,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
                   >
                     <div className="flex items-center space-x-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {stop.arrival_time}
+                        {formatTime(stop.arrival_time)}
                       </div>
                       <div className="text-sm text-gray-500">{stop.stopName}</div>
                     </div>
@@ -174,20 +293,25 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={tabValue}
+          key={`${tabValue}-${dateString}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.3 }}
+          className={isTransitioning ? 'opacity-50' : ''}
         >
           {tabValue === 0 ? (
-            outboundTrips.map((trip) => (
-              <TripCard key={trip.trip_id} trip={trip} />
-            ))
+            <AnimatePresence mode="wait">
+              {outboundTrips.map((trip) => (
+                <TripCard key={trip.trip_id} trip={trip} />
+              ))}
+            </AnimatePresence>
           ) : (
-            inboundTrips.map((trip) => (
-              <TripCard key={trip.trip_id} trip={trip} />
-            ))
+            <AnimatePresence mode="wait">
+              {inboundTrips.map((trip) => (
+                <TripCard key={trip.trip_id} trip={trip} />
+              ))}
+            </AnimatePresence>
           )}
         </motion.div>
       </AnimatePresence>

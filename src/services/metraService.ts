@@ -1,26 +1,5 @@
 import { Route, Stop, Trip, StopTime, TripWithStops, ServicePeriod, StopTimeWithStop } from '../types/metra';
 
-interface ServicePeriod {
-  service_id: string;
-  monday: number;
-  tuesday: number;
-  wednesday: number;
-  thursday: number;
-  friday: number;
-  saturday: number;
-  sunday: number;
-  start_date: string;
-  end_date: string;
-}
-
-interface StopTimeWithStop extends StopTime {
-  stopName: string;
-}
-
-interface TripWithStops extends Trip {
-  stopTimes: StopTimeWithStop[];
-}
-
 export class MetraService {
   private static instance: MetraService;
   private routes: Route[] = [];
@@ -30,6 +9,7 @@ export class MetraService {
   private servicePeriods: ServicePeriod[] = [];
   private selectedDate: Date = new Date();
   private tripsWithStopsCache: Map<string, TripWithStops[]> = new Map();
+  private loadingCache: Map<string, Promise<TripWithStops[]>> = new Map();
   private lastLoadedDate: string | null = null;
   private readonly API_BASE_URL = 'http://localhost:3000/api';
 
@@ -43,9 +23,17 @@ export class MetraService {
   }
 
   public setSelectedDate(date: Date): void {
+    const newDateStr = date.toISOString().split('T')[0];
+    const oldDateStr = this.selectedDate.toISOString().split('T')[0];
+    
+    // Only clear cache if the date actually changed
+    if (newDateStr !== oldDateStr) {
+      console.log('[MetraService] Date changed, clearing trips cache');
+      this.tripsWithStopsCache.clear();
+      this.loadingCache.clear();
+    }
+    
     this.selectedDate = date;
-    // Clear cache when date changes
-    this.tripsWithStopsCache.clear();
   }
 
   public getSelectedDate(): Date {
@@ -177,13 +165,23 @@ export class MetraService {
 
   public async getRoutes(): Promise<Route[]> {
     try {
+      // Check if we already have routes loaded
+      if (this.routes.length > 0) {
+        console.log('[MetraService] Routes cache hit, returning cached routes');
+        return this.routes;
+      }
+
+      console.log('[MetraService] Routes cache miss, fetching from API');
       const response = await fetch(`${this.API_BASE_URL}/routes`);
       if (!response.ok) {
         throw new Error('Failed to fetch routes from backend');
       }
-      return await response.json();
+      const data = await response.json();
+      this.routes = data;
+      console.log('[MetraService] Routes fetched and cached successfully');
+      return data;
     } catch (error) {
-      console.error('Error fetching routes:', error);
+      console.error('[MetraService] Error fetching routes:', error);
       throw error;
     }
   }
@@ -195,17 +193,50 @@ export class MetraService {
   public async getTripsByRoute(routeId: string): Promise<TripWithStops[]> {
     try {
       const dateStr = this.selectedDate.toISOString().split('T')[0];
-      const response = await fetch(
-        `${this.API_BASE_URL}/routes/${routeId}/trips?date=${dateStr}`
-      );
+      const cacheKey = `${routeId}-${dateStr}`;
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch trips from backend');
+      // Check if we have cached data
+      if (this.tripsWithStopsCache.has(cacheKey)) {
+        console.log(`[MetraService] Trips cache hit for ${cacheKey}`);
+        return this.tripsWithStopsCache.get(cacheKey)!;
       }
+
+      // Check if we have a loading promise
+      if (this.loadingCache.has(cacheKey)) {
+        console.log(`[MetraService] Using existing loading promise for ${cacheKey}`);
+        return this.loadingCache.get(cacheKey)!;
+      }
+
+      console.log(`[MetraService] Fetching trips for ${cacheKey}`);
+      const loadingPromise = fetch(
+        `${this.API_BASE_URL}/routes/${routeId}/trips?date=${dateStr}`
+      ).then(async response => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch trips from backend: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid response format: expected an array of trips');
+        }
+        
+        // Cache the results
+        this.tripsWithStopsCache.set(cacheKey, data);
+        this.loadingCache.delete(cacheKey);
+        console.log(`[MetraService] Trips fetched and cached successfully for ${cacheKey}`);
+        return data;
+      }).catch(error => {
+        this.loadingCache.delete(cacheKey);
+        throw error;
+      });
+
+      // Store the loading promise
+      this.loadingCache.set(cacheKey, loadingPromise);
       
-      return await response.json();
+      return loadingPromise;
     } catch (error) {
-      console.error('Error fetching trips:', error);
+      console.error('[MetraService] Error fetching trips:', error);
       throw error;
     }
   }

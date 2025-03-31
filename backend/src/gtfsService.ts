@@ -289,25 +289,43 @@ export class GTFSService {
   }
 
   public async getTripsByRoute(routeId: string, date?: Date): Promise<TripWithStops[]> {
-    if (!this.data) {
-      throw new Error('GTFS data not loaded');
+    try {
+      // Ensure data is loaded
+      if (!this.data) {
+        await this.loadData();
+      }
+      if (!this.data) {
+        throw new Error('Failed to load GTFS data');
+      }
+
+      const targetDate = date || new Date();
+      const activeServiceIds = this.getActiveServiceIds(targetDate);
+
+      // Get trips for the route
+      const routeTrips = this.data.trips.filter(trip => trip.route_id === routeId);
+      
+      // Get stop times for these trips
+      const tripsWithStops = routeTrips.map(trip => {
+        const stopTimes = this.data!.stopTimes
+          .filter(st => st.trip_id === trip.trip_id)
+          .map(st => ({
+            ...st,
+            stopName: this.data!.stops.find(s => s.stop_id === st.stop_id)?.stop_name || 'Unknown Stop'
+          }))
+          .sort((a, b) => a.stop_sequence - b.stop_sequence);
+
+        return {
+          ...trip,
+          stopTimes
+        };
+      });
+
+      // Filter trips by active service IDs
+      return tripsWithStops.filter(trip => activeServiceIds.includes(trip.service_id));
+    } catch (error) {
+      logger.error('Error getting trips by route:', error);
+      throw error;
     }
-
-    const targetDate = date || new Date();
-    const activeServiceIds = this.getActiveServiceIds(targetDate);
-
-    return this.data.trips
-      .filter((trip): trip is TripWithStops => 
-        trip !== null && 
-        trip.route_id === routeId && 
-        activeServiceIds.includes(trip.service_id)
-      )
-      .map(trip => ({
-        ...trip,
-        stopTimes: this.data!.stopTimes
-          .filter(stopTime => stopTime.trip_id === trip.trip_id)
-          .sort((a, b) => a.stop_sequence - b.stop_sequence)
-      }));
   }
 
   private getActiveServiceIds(date: Date): string[] {
