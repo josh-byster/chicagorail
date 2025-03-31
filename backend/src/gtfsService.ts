@@ -48,12 +48,19 @@ export class GTFSService {
         throw new Error('Failed to download GTFS data');
       }
 
-      const buffer = await response.buffer();
-      const zip = new AdmZip(buffer);
-      
-      // Extract all files to the schedule directory
+      const zipBuffer = await response.buffer();
+      const zip = new AdmZip(zipBuffer);
       zip.extractAllTo(this.GTFS_DIR, true);
-      logger.info('GTFS data downloaded and extracted successfully');
+
+      // Initialize data object with empty arrays
+      this.data = {
+        routes: [],
+        stops: [],
+        trips: [],
+        stopTimes: [],
+        servicePeriods: [],
+        lastUpdated: new Date().toISOString()
+      };
     } catch (error) {
       logger.error('Error downloading GTFS data:', error);
       throw error;
@@ -281,121 +288,31 @@ export class GTFSService {
     return isActive && isWithinDateRange;
   }
 
-  public async getTripsByRoute(routeId: string, date: Date): Promise<TripWithStops[]> {
-    try {
-      // Ensure data is loaded
-      if (!this.data) {
-        await this.loadData();
-      }
-      if (!this.data) {
-        throw new Error('Failed to load GTFS data');
-      }
-
-      // Log the input date details
-      console.log('Input date details:', {
-        originalDate: date.toISOString(),
-        originalDateString: date.toString(),
-        originalDateUTC: date.toUTCString(),
-        originalDateLocal: date.toLocaleString(),
-        originalDateTimestamp: date.getTime()
-      });
-
-      // Create a new date in UTC to avoid timezone issues
-      const localDate = new Date(Date.UTC(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate()
-      ));
-      
-      // Log the converted date details
-      console.log('Converted date details:', {
-        localDateISO: localDate.toISOString(),
-        localDateString: localDate.toString(),
-        localDateUTC: localDate.toUTCString(),
-        localDateLocal: localDate.toLocaleString(),
-        localDateTimestamp: localDate.getTime(),
-        dayOfWeek: localDate.getUTCDay(),
-        timezoneOffset: localDate.getTimezoneOffset()
-      });
-      
-      console.log(`Getting trips for route ${routeId} on ${localDate.toISOString()}`);
-      console.log('Available service periods:', JSON.stringify(this.data.servicePeriods, null, 2));
-
-      // First get all active service IDs for this date
-      const activeServiceIds = Object.values(this.data.servicePeriods)
-        .filter(service => this.isServiceActiveOnDate(service.service_id, localDate))
-        .map(service => service.service_id);
-
-      console.log(`Active service IDs for ${localDate.toISOString()}: ${activeServiceIds.join(', ')}`);
-
-      // Get all trips for this route
-      const routeTrips = this.data.trips.filter(trip => trip.route_id === routeId);
-      console.log(`Found ${routeTrips.length} total trips for route ${routeId}`);
-
-      // Filter trips to only include those with active service IDs
-      const activeTrips = routeTrips.filter(trip => {
-        const isActive = activeServiceIds.includes(trip.service_id);
-        if (trip.trip_id === 'MD-N_MN2600_V7_B') {
-          console.log(`Checking trip MD-N_MN2600_V7_B:`, {
-            service_id: trip.service_id,
-            isActive,
-            activeServiceIds,
-            date: localDate.toISOString(),
-            servicePeriod: this.data.servicePeriods.find(sp => sp.service_id === trip.service_id)
-          });
-        }
-        return isActive;
-      });
-      console.log(`Found ${activeTrips.length} active trips for route ${routeId}`);
-
-      // Get unique trips based on departure time and direction
-      const uniqueTrips = activeTrips.reduce((acc, trip) => {
-        const firstStop = this.data.stopTimes.find(st => st.trip_id === trip.trip_id);
-        if (!firstStop) return acc;
-
-        const key = `${firstStop.departure_time}-${trip.direction_id}`;
-        if (!acc.has(key)) {
-          acc.set(key, trip);
-        }
-        return acc;
-      }, new Map<string, Trip>());
-
-      console.log(`Found ${uniqueTrips.size} unique active trips for route ${routeId}`);
-      console.log('Unique trip IDs:', Array.from(uniqueTrips.values()).map(t => t.trip_id));
-
-      // Convert trips to TripWithStops format
-      const tripsWithStops: TripWithStops[] = Array.from(uniqueTrips.values()).map(trip => {
-        const stopTimes = this.data.stopTimes
-          .filter(st => st.trip_id === trip.trip_id)
-          .map(st => ({
-            ...st,
-            stopName: this.data.stops.find(s => s.stop_id === st.stop_id)?.stop_name || 'Unknown Stop'
-          }))
-          .sort((a, b) => a.stop_sequence - b.stop_sequence);
-
-        return {
-          ...trip,
-          stopTimes
-        };
-      });
-
-      // Sort trips by departure time
-      return tripsWithStops.sort((a, b) => {
-        const timeA = a.stopTimes[0]?.departure_time || '';
-        const timeB = b.stopTimes[0]?.departure_time || '';
-        
-        // Convert HH:MM:SS to total minutes for comparison
-        const [hoursA, minutesA] = timeA.split(':').map(Number);
-        const [hoursB, minutesB] = timeB.split(':').map(Number);
-        
-        const totalMinutesA = hoursA * 60 + minutesA;
-        const totalMinutesB = hoursB * 60 + minutesB;
-        
-        return totalMinutesA - totalMinutesB;
-      });
-    } catch (error) {
-      console.error('Error getting trips by route:', error);
-      throw error;
+  public async getTripsByRoute(routeId: string, date?: Date): Promise<TripWithStops[]> {
+    if (!this.data) {
+      throw new Error('GTFS data not loaded');
     }
+
+    const targetDate = date || new Date();
+    const activeServiceIds = this.getActiveServiceIds(targetDate);
+
+    return this.data.trips
+      .filter((trip): trip is TripWithStops => 
+        trip !== null && 
+        trip.route_id === routeId && 
+        activeServiceIds.includes(trip.service_id)
+      )
+      .map(trip => ({
+        ...trip,
+        stopTimes: this.data!.stopTimes
+          .filter(stopTime => stopTime.trip_id === trip.trip_id)
+          .sort((a, b) => a.stop_sequence - b.stop_sequence)
+      }));
+  }
+
+  private getActiveServiceIds(date: Date): string[] {
+    return Object.values(this.data?.servicePeriods || {})
+      .filter(service => this.isServiceActiveOnDate(service.service_id, date))
+      .map(service => service.service_id);
   }
 } 

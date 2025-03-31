@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
@@ -12,7 +12,22 @@ function App() {
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
   const metraService = MetraService.getInstance();
+
+  // Handle click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setIsDatePickerOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleRouteSelect = (route: Route) => {
     setSelectedRoute(route);
@@ -38,7 +53,7 @@ function App() {
             >
               Metra Schedule
             </motion.h1>
-            <div className="relative">
+            <div className="relative" ref={datePickerRef}>
               <button
                 onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
                 className="btn btn-primary flex items-center space-x-2"
@@ -59,13 +74,36 @@ function App() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50"
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-100"
                   >
                     <DayPicker
                       mode="single"
                       selected={selectedDate}
                       onSelect={handleDateSelect}
                       className="border-none"
+                      classNames={{
+                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                        month: "space-y-4",
+                        caption: "flex justify-center pt-1 relative items-center",
+                        caption_label: "text-sm font-medium",
+                        nav: "space-x-1 flex items-center",
+                        nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                        nav_button_previous: "absolute left-1",
+                        nav_button_next: "absolute right-1",
+                        table: "w-full border-collapse space-y-1",
+                        head_row: "flex",
+                        head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
+                        row: "flex w-full mt-2",
+                        cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                        day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                        day_selected: "bg-primary-600 text-white hover:bg-primary-700 focus:bg-primary-700",
+                        day_today: "bg-gray-100 text-gray-900",
+                        day_outside: "text-gray-400 opacity-50",
+                        day_disabled: "text-gray-400 opacity-50",
+                        day_range_middle: "aria-selected:bg-gray-100 aria-selected:text-gray-900",
+                        day_hidden: "invisible",
+                      }}
                     />
                   </motion.div>
                 )}

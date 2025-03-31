@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TripWithStops, StopTimeWithStop } from '../types/metra';
 import { MetraService } from '../services/metraService';
@@ -13,6 +13,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+
+  // Memoize the date string to prevent unnecessary re-renders
+  const dateString = useMemo(() => selectedDate.toISOString(), [selectedDate]);
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -34,7 +37,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     };
 
     loadTrips();
-  }, [selectedRoute, selectedDate]);
+  }, [selectedRoute, dateString]); // Only re-run when route or date string changes
 
   if (!selectedRoute) {
     return (
