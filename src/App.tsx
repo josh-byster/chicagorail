@@ -69,27 +69,28 @@ function App() {
               Metra Schedule
             </motion.h1>
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <StopSearch
-                  onStopSelect={handleStopSelect}
-                  selectedStop={selectedStop}
-                  onStopClear={handleStopClear}
-                />
-              </div>
-              <div className="relative" ref={datePickerRef}>
+              <StopSearch
+                onStopSelect={setSelectedStop}
+                onStopClear={handleStopClear}
+                selectedStop={selectedStop}
+              />
+              <div ref={datePickerRef} className="relative">
                 <button
                   onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                  className="btn btn-primary flex items-center space-x-2"
+                  className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-2 text-gray-900 hover:bg-gray-50 transition-colors"
                 >
-                  <span>{format(selectedDate, 'MMM d, yyyy')}</span>
-                  <svg
-                    className={`w-5 h-5 transform transition-transform ${isDatePickerOpen ? 'rotate-180' : ''}`}
+                  <span className="font-medium">
+                    {format(selectedDate, 'MMM d, yyyy')}
+                  </span>
+                  <motion.svg
+                    animate={{ rotate: isDatePickerOpen ? 180 : 0 }}
+                    className="w-5 h-5 text-gray-500"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  </motion.svg>
                 </button>
                 <AnimatePresence>
                   {isDatePickerOpen && (
