@@ -38,19 +38,139 @@ const calculateTravelTime = (firstStop: StopTimeWithStop, lastStop: StopTimeWith
   return `${hours}h ${minutes}m`;
 };
 
+const TripCard = React.memo(({ trip }: { trip: TripWithStops }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const firstStop = trip.stopTimes[0];
+  const lastStop = trip.stopTimes[trip.stopTimes.length - 1];
+  const travelTime = firstStop && lastStop ? calculateTravelTime(firstStop, lastStop) : '';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.2 }}
+      className="card mb-4"
+    >
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center space-x-4">
+          <div className="text-lg font-semibold text-gray-900">
+            {firstStop?.departure_time ? formatTime(firstStop.departure_time) : ''}
+          </div>
+          <div className="text-sm text-gray-500">
+            {firstStop?.stopName} → {lastStop?.stopName}
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
+              {trip.stopTimes.length} stops
+            </span>
+            <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+              {travelTime}
+            </span>
+          </div>
+        </div>
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <svg
+            className="w-5 h-5 text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-4"
+          >
+            <div className="space-y-2">
+              {trip.stopTimes.map((stop: StopTimeWithStop) => (
+                <div
+                  key={stop.stop_id}
+                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatTime(stop.arrival_time)}
+                    </div>
+                    <div className="text-sm text-gray-500">{stop.stopName}</div>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {stop.pickup_type === 1 ? 'Pickup' : ''} {stop.drop_off_type === 1 ? 'Drop-off' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+});
+
+TripCard.displayName = 'TripCard';
+
 export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selectedDate }) => {
   const [trips, setTrips] = useState<TripWithStops[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [selectedStop, setSelectedStop] = useState<string>('all');
   const isLoadingRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const loadingTimeoutRef = useRef<number>();
 
   // Memoize the date string to prevent unnecessary re-renders
   const dateString = useMemo(() => {
     console.log('[ScheduleView] Date changed, memoizing new date string');
     return selectedDate.toISOString();
   }, [selectedDate]);
+
+  // Get unique stops from all trips
+  const uniqueStops = useMemo(() => {
+    const stops = new Set<string>();
+    trips.forEach(trip => {
+      trip.stopTimes.forEach(stop => {
+        stops.add(stop.stopName);
+      });
+    });
+    return Array.from(stops).sort();
+  }, [trips]);
+
+  // Filter trips based on selected stop
+  const filteredTrips = useMemo(() => {
+    if (selectedStop === 'all') return trips;
+    return trips.filter(trip => 
+      trip.stopTimes.some(stop => stop.stopName === selectedStop)
+    );
+  }, [trips, selectedStop]);
+
+  // Separate trips by direction
+  const inboundTrips = filteredTrips.filter(trip => trip.direction_id === 1).sort((a, b) => {
+    const timeA = a.stopTimes[0]?.departure_time || '';
+    const timeB = b.stopTimes[0]?.departure_time || '';
+    return timeA.localeCompare(timeB);
+  });
+  
+  const outboundTrips = filteredTrips.filter(trip => trip.direction_id === 0).sort((a, b) => {
+    const timeA = a.stopTimes[0]?.departure_time || '';
+    const timeB = b.stopTimes[0]?.departure_time || '';
+    return timeA.localeCompare(timeB);
+  });
 
   // Memoize the loadTrips function to prevent recreation on every render
   const loadTrips = useCallback(async (isMounted: { current: boolean }) => {
@@ -72,6 +192,13 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
       setLoading(true);
       setError(null);
       
+      // Set a timeout to show loading state after 300ms
+      loadingTimeoutRef.current = setTimeout(() => {
+        if (isMounted.current) {
+          setShowLoading(true);
+        }
+      }, 300);
+      
       const metraService = MetraService.getInstance();
       metraService.setSelectedDate(selectedDate);
       const trips = await metraService.getTripsByRoute(selectedRoute);
@@ -80,6 +207,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
         console.log('[ScheduleView] Trips loaded successfully, updating state');
         setTrips(trips);
         setLoading(false);
+        setShowLoading(false);
         if (contentRef.current) {
           contentRef.current.style.opacity = '1';
         }
@@ -91,6 +219,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
       if (isMounted.current) {
         setError('Failed to load trips');
         setLoading(false);
+        setShowLoading(false);
         if (contentRef.current) {
           contentRef.current.style.opacity = '1';
         }
@@ -113,10 +242,14 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
       console.log('[ScheduleView] Effect cleanup');
       isMounted.current = false;
       setLoading(false);
+      setShowLoading(false);
       if (contentRef.current) {
         contentRef.current.style.opacity = '1';
       }
       isLoadingRef.current = false;
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
     };
   }, [loadTrips]);
 
@@ -125,6 +258,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     selectedRoute, 
     dateString, 
     loading, 
+    showLoading,
     tripsCount: trips.length 
   });
 
@@ -137,7 +271,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     );
   }
 
-  if (loading) {
+  if (loading && showLoading) {
     return (
       <div className="card">
         <div className="flex justify-center items-center h-32">
@@ -155,137 +289,53 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     );
   }
 
-  // Separate trips by direction
-  const inboundTrips = trips.filter(trip => trip.direction_id === 1).sort((a, b) => {
-    const timeA = a.stopTimes[0]?.departure_time || '';
-    const timeB = b.stopTimes[0]?.departure_time || '';
-    return timeA.localeCompare(timeB);
-  });
-  
-  const outboundTrips = trips.filter(trip => trip.direction_id === 0).sort((a, b) => {
-    const timeA = a.stopTimes[0]?.departure_time || '';
-    const timeB = b.stopTimes[0]?.departure_time || '';
-    return timeA.localeCompare(timeB);
-  });
-
-  console.log('[ScheduleView] Filtered trips:', {
-    total: trips.length,
-    inbound: inboundTrips.length,
-    outbound: outboundTrips.length,
-    sampleInbound: inboundTrips[0]?.direction_id,
-    sampleOutbound: outboundTrips[0]?.direction_id
-  });
-
   const handleTabChange = (newValue: number) => {
     setTabValue(newValue);
   };
 
-  const TripCard = ({ trip }: { trip: TripWithStops }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const firstStop = trip.stopTimes[0];
-    const lastStop = trip.stopTimes[trip.stopTimes.length - 1];
-    const travelTime = firstStop && lastStop ? calculateTravelTime(firstStop, lastStop) : '';
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.2 }}
-        className="card mb-4"
-      >
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center space-x-4">
-            <div className="text-lg font-semibold text-gray-900">
-              {firstStop?.departure_time ? formatTime(firstStop.departure_time) : ''}
-            </div>
-            <div className="text-sm text-gray-500">
-              {firstStop?.stopName} → {lastStop?.stopName}
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-                {trip.stopTimes.length} stops
-              </span>
-              <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                {travelTime}
-              </span>
-            </div>
-          </div>
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <svg
-              className="w-5 h-5 text-gray-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </motion.div>
-        </div>
-
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="mt-4"
-            >
-              <div className="space-y-2">
-                {trip.stopTimes.map((stop: StopTimeWithStop) => (
-                  <div
-                    key={stop.stop_id}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatTime(stop.arrival_time)}
-                      </div>
-                      <div className="text-sm text-gray-500">{stop.stopName}</div>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {stop.pickup_type === 1 ? 'Pickup' : ''} {stop.drop_off_type === 1 ? 'Drop-off' : ''}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    );
-  };
-
   return (
     <div className="card">
-      <div className="flex space-x-4 mb-6">
-        <button
-          onClick={() => handleTabChange(0)}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-            tabValue === 0
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          Outbound ({outboundTrips.length})
-        </button>
-        <button
-          onClick={() => handleTabChange(1)}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-            tabValue === 1
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          Inbound ({inboundTrips.length})
-        </button>
+      <div className="flex flex-col space-y-4 mb-6">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => handleTabChange(0)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              tabValue === 0
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Outbound ({outboundTrips.length})
+          </button>
+          <button
+            onClick={() => handleTabChange(1)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              tabValue === 1
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Inbound ({inboundTrips.length})
+          </button>
+        </div>
+        <div className="flex items-center space-x-2">
+          <label htmlFor="stop-filter" className="text-sm font-medium text-gray-700">
+            Filter by stop:
+          </label>
+          <select
+            id="stop-filter"
+            value={selectedStop}
+            onChange={(e) => setSelectedStop(e.target.value)}
+            className="block w-full max-w-xs px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+          >
+            <option value="all">All stops</option>
+            {uniqueStops.map(stop => (
+              <option key={stop} value={stop}>
+                {stop}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div 
@@ -293,29 +343,35 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
         className="transition-opacity duration-300"
         style={{ opacity: 1 }}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${tabValue}-${dateString}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
+        <div className="space-y-4">
+          <AnimatePresence mode="popLayout">
             {tabValue === 0 ? (
-              <div className="space-y-4">
-                {outboundTrips.map((trip) => (
-                  <TripCard key={trip.trip_id} trip={trip} />
-                ))}
-              </div>
+              outboundTrips.map((trip) => (
+                <motion.div
+                  key={trip.trip_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TripCard trip={trip} />
+                </motion.div>
+              ))
             ) : (
-              <div className="space-y-4">
-                {inboundTrips.map((trip) => (
-                  <TripCard key={trip.trip_id} trip={trip} />
-                ))}
-              </div>
+              inboundTrips.map((trip) => (
+                <motion.div
+                  key={trip.trip_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TripCard trip={trip} />
+                </motion.div>
+              ))
             )}
-          </motion.div>
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
