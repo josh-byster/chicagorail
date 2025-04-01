@@ -38,11 +38,42 @@ const calculateTravelTime = (firstStop: StopTimeWithStop, lastStop: StopTimeWith
   return `${hours}h ${minutes}m`;
 };
 
-const TripCard = React.memo(({ trip }: { trip: TripWithStops }) => {
+// Helper function to calculate minutes from start
+const calculateMinutesFromStart = (startTime: string, currentTime: string): number => {
+  const [startHours, startMinutes] = startTime.split(':').map(Number);
+  const [currentHours, currentMinutes] = currentTime.split(':').map(Number);
+  
+  let totalMinutes = (currentHours * 60 + currentMinutes) - (startHours * 60 + startMinutes);
+  
+  // Handle overnight trips
+  if (totalMinutes < 0) {
+    totalMinutes += 24 * 60;
+  }
+  
+  return totalMinutes;
+};
+
+// Helper function to format minutes into hours and minutes
+const formatMinutes = (minutes: number): string => {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}m`;
+};
+
+const TripCard = React.memo(({ trip, selectedStop }: { trip: TripWithStops; selectedStop: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const firstStop = trip.stopTimes[0];
   const lastStop = trip.stopTimes[trip.stopTimes.length - 1];
   const travelTime = firstStop && lastStop ? calculateTravelTime(firstStop, lastStop) : '';
+  
+  // Calculate travel time to selected stop if one is selected
+  const selectedStopTime = useMemo(() => {
+    if (selectedStop === 'all' || !firstStop) return null;
+    const stop = trip.stopTimes.find(s => s.stopName === selectedStop);
+    if (!stop) return null;
+    return calculateMinutesFromStart(firstStop.departure_time, stop.arrival_time);
+  }, [trip, selectedStop, firstStop]);
 
   return (
     <motion.div
@@ -68,8 +99,13 @@ const TripCard = React.memo(({ trip }: { trip: TripWithStops }) => {
               {trip.stopTimes.length} stops
             </span>
             <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-              {travelTime}
+              {selectedStop === 'all' ? travelTime : `Total: ${travelTime}`}
             </span>
+            {selectedStop !== 'all' && selectedStopTime !== null && (
+              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                To {selectedStop}: {formatMinutes(selectedStopTime)}
+              </span>
+            )}
           </div>
         </div>
         <motion.div
@@ -97,22 +133,30 @@ const TripCard = React.memo(({ trip }: { trip: TripWithStops }) => {
             className="mt-4"
           >
             <div className="space-y-2">
-              {trip.stopTimes.map((stop: StopTimeWithStop) => (
-                <div
-                  key={stop.stop_id}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatTime(stop.arrival_time)}
+              {trip.stopTimes.map((stop: StopTimeWithStop) => {
+                const minutesFromStart = firstStop ? calculateMinutesFromStart(firstStop.departure_time, stop.arrival_time) : 0;
+                return (
+                  <div
+                    key={stop.stop_id}
+                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatTime(stop.arrival_time)}
+                      </div>
+                      <div className="text-sm text-gray-500">{stop.stopName}</div>
                     </div>
-                    <div className="text-sm text-gray-500">{stop.stopName}</div>
+                    <div className="flex items-center space-x-4">
+                      <span className="text-xs text-gray-400">
+                        {formatMinutes(minutesFromStart)}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {stop.pickup_type === 1 ? 'Pickup' : ''} {stop.drop_off_type === 1 ? 'Drop-off' : ''}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400">
-                    {stop.pickup_type === 1 ? 'Pickup' : ''} {stop.drop_off_type === 1 ? 'Drop-off' : ''}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
@@ -354,7 +398,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <TripCard trip={trip} />
+                  <TripCard trip={trip} selectedStop={selectedStop} />
                 </motion.div>
               ))
             ) : (
@@ -366,7 +410,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <TripCard trip={trip} />
+                  <TripCard trip={trip} selectedStop={selectedStop} />
                 </motion.div>
               ))
             )}
