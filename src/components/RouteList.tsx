@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Route } from '../types/metra';
+import { Route, Stop } from '../types/metra';
 import { MetraService } from '../services/metraService';
 
 interface RouteListProps {
   onRouteSelect: (route: Route) => void;
   selectedRoute: Route | null;
+  selectedStop: Stop | null;
 }
 
-const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
+const RouteList = ({ onRouteSelect, selectedRoute, selectedStop }: RouteListProps) => {
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [filteredRoutes, setFilteredRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +24,7 @@ const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
         const metraService = MetraService.getInstance();
         const routes = await metraService.getRoutes();
         setRoutes(routes);
+        setFilteredRoutes(routes);
       } catch (error) {
         console.error('Error loading routes:', error);
         setError('Failed to load routes');
@@ -33,10 +36,26 @@ const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
     loadRoutes();
   }, []);
 
-  const filteredRoutes = routes.filter(route =>
-    route.route_long_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    route.route_short_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Update filtered routes when stop or search query changes
+  useEffect(() => {
+    if (selectedStop) {
+      // If a stop is selected, filter routes to only show those that service this stop
+      const metraService = MetraService.getInstance();
+      metraService.searchStops(selectedStop.stop_name).then(({ routes: stopRoutes }) => {
+        const filtered = routes.filter(route => 
+          stopRoutes.some(stopRoute => stopRoute.route_id === route.route_id)
+        );
+        setFilteredRoutes(filtered);
+      });
+    } else {
+      // If no stop is selected, show all routes that match the search query
+      const filtered = routes.filter(route =>
+        route.route_long_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        route.route_short_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredRoutes(filtered);
+    }
+  }, [selectedStop, searchQuery, routes]);
 
   if (loading) {
     return (
@@ -61,15 +80,17 @@ const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Metra Routes</h2>
       
       {/* Search Input */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search routes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input"
-        />
-      </div>
+      {!selectedStop && (
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Search routes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input"
+          />
+        </div>
+      )}
 
       {/* Routes List */}
       <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">

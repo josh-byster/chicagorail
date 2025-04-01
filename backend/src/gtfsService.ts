@@ -314,9 +314,16 @@ export class GTFSService {
           }))
           .sort((a, b) => a.stop_sequence - b.stop_sequence);
 
+        // Transform stop times into stops with arrival times
+        const stops = stopTimes.map(st => ({
+          ...this.data!.stops.find(s => s.stop_id === st.stop_id)!,
+          arrival_time: st.arrival_time
+        }));
+
         return {
           ...trip,
-          stopTimes
+          stopTimes,
+          stops
         };
       });
 

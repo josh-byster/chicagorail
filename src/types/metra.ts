@@ -19,6 +19,7 @@ export interface Stop {
   zone_id: string;
   stop_url: string;
   wheelchair_boarding: number;
+  arrival_time?: string;
 }
 
 export interface StopTime {
@@ -43,10 +44,12 @@ export interface Trip {
   direction_id: number;
   block_id: string;
   shape_id: string;
+  stops: Stop[];
 }
 
 export interface TripWithStops extends Trip {
   stopTimes: StopTimeWithStop[];
+  stops: Stop[];
 }
 
 export interface ServicePeriod {

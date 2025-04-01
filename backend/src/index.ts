@@ -23,6 +23,39 @@ app.get('/api/routes', async (req, res) => {
   }
 });
 
+// Search stops endpoint
+app.get('/api/search/stops', async (req, res) => {
+  try {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const data = await gtfsService.getData();
+    const matchingStops = data.stops.filter(stop => 
+      stop.stop_name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    // Get routes that service these stops
+    const routesWithStops = data.routes.filter(route => {
+      return data.trips.some(trip => 
+        trip.route_id === route.route_id &&
+        trip.stopTimes.some(stopTime => 
+          matchingStops.some(stop => stop.stop_id === stopTime.stop_id)
+        )
+      );
+    });
+
+    res.json({
+      stops: matchingStops,
+      routes: routesWithStops
+    });
+  } catch (error) {
+    logger.error('Error searching stops:', error);
+    res.status(500).json({ error: 'Failed to search stops' });
+  }
+});
+
 // Trips endpoint
 app.get('/api/routes/:routeId/trips', async (req, res) => {
   try {

@@ -14,6 +14,7 @@ export class MetraService {
   private readonly API_BASE_URL = import.meta.env.PROD 
     ? 'https://metra-tracker.joshbyster.com/api'
     : 'http://localhost:3000/api';
+  private stopNameMap: Map<string, string> = new Map();
 
   private constructor() {}
 
@@ -126,8 +127,6 @@ export class MetraService {
       }
     }
   }
-
-  private stopNameMap: Map<string, string> = new Map();
 
   private parseCSV(text: string) {
     const lines = text.split('\n');
@@ -245,5 +244,32 @@ export class MetraService {
 
   public getStopById(stopId: string): Stop | undefined {
     return this.stops.find(stop => stop.stop_id === stopId);
+  }
+
+  public async searchStops(query: string): Promise<{ stops: Stop[]; routes: Route[] }> {
+    try {
+      const response = await fetch(`${this.API_BASE_URL}/search/stops?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error('Failed to search stops');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching stops:', error);
+      throw error;
+    }
+  }
+
+  public async getTrips(routeId: string, date: Date): Promise<Trip[]> {
+    try {
+      const response = await fetch(`${this.API_BASE_URL}/routes/${routeId}/trips?date=${date.toISOString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch trips');
+      }
+      const data = await response.json();
+      return data.trips;
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+      throw error;
+    }
   }
 } 

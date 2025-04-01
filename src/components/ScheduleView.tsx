@@ -1,78 +1,67 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TripWithStops, StopTimeWithStop } from '../types/metra';
+import { Trip, Stop } from '../types/metra';
 import { MetraService } from '../services/metraService';
 
 interface ScheduleViewProps {
   selectedRoute: string;
   selectedDate: Date;
+  selectedStop: Stop | null;
 }
 
 // Helper function to convert 24h time to 12h time
 const formatTime = (timeStr: string): string => {
   const [hours, minutes] = timeStr.split(':');
-  const hour = parseInt(hours);
+  const hour = parseInt(hours) % 24; // Use modulo 24 to handle 24:00 correctly
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const hour12 = hour % 12 || 12;
   return `${hour12}:${minutes} ${ampm}`;
 };
 
 // Helper function to calculate travel time
-const calculateTravelTime = (firstStop: StopTimeWithStop, lastStop: StopTimeWithStop): string => {
-  const [firstHours, firstMinutes] = firstStop.departure_time.split(':').map(Number);
-  const [lastHours, lastMinutes] = lastStop.arrival_time.split(':').map(Number);
+const calculateTravelTime = (departure: string | undefined, arrival: string | undefined): string => {
+  if (!departure || !arrival) return '';
+  const [depHours, depMinutes] = departure.split(':').map(Number);
+  const [arrHours, arrMinutes] = arrival.split(':').map(Number);
   
-  let totalMinutes = (lastHours * 60 + lastMinutes) - (firstHours * 60 + firstMinutes);
-  
-  // Handle overnight trips
-  if (totalMinutes < 0) {
-    totalMinutes += 24 * 60;
-  }
+  let totalMinutes = (arrHours * 60 + arrMinutes) - (depHours * 60 + depMinutes);
+  if (totalMinutes < 0) totalMinutes += 24 * 60; // Handle overnight trips
   
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   
-  if (hours === 0) {
-    return `${minutes} min`;
-  }
+  if (hours === 0) return `${minutes}m`;
   return `${hours}h ${minutes}m`;
 };
 
 // Helper function to calculate minutes from start
-const calculateMinutesFromStart = (startTime: string, currentTime: string): number => {
-  const [startHours, startMinutes] = startTime.split(':').map(Number);
-  const [currentHours, currentMinutes] = currentTime.split(':').map(Number);
-  
-  let totalMinutes = (currentHours * 60 + currentMinutes) - (startHours * 60 + startMinutes);
-  
-  // Handle overnight trips
-  if (totalMinutes < 0) {
-    totalMinutes += 24 * 60;
-  }
-  
-  return totalMinutes;
+const calculateMinutesFromStart = (timeStr: string | undefined): number => {
+  if (!timeStr) return 0;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
 };
 
 // Helper function to format minutes into hours and minutes
 const formatMinutes = (minutes: number): string => {
-  if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return `${hours}h ${remainingMinutes}m`;
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 };
 
-const TripCard = React.memo(({ trip, selectedStop }: { trip: TripWithStops; selectedStop: string }) => {
+const TripCard = React.memo(({ trip, selectedStop }: { trip: Trip; selectedStop: Stop | null }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const firstStop = trip.stopTimes[0];
-  const lastStop = trip.stopTimes[trip.stopTimes.length - 1];
-  const travelTime = firstStop && lastStop ? calculateTravelTime(firstStop, lastStop) : '';
+  const firstStop = trip.stops[0];
+  const lastStop = trip.stops[trip.stops.length - 1];
+  const travelTime = firstStop?.arrival_time && lastStop?.arrival_time 
+    ? calculateTravelTime(firstStop.arrival_time, lastStop.arrival_time) 
+    : '';
   
   // Calculate travel time to selected stop if one is selected
   const selectedStopTime = useMemo(() => {
-    if (selectedStop === 'all' || !firstStop) return null;
-    const stop = trip.stopTimes.find(s => s.stopName === selectedStop);
-    if (!stop) return null;
-    return calculateMinutesFromStart(firstStop.departure_time, stop.arrival_time);
+    if (!selectedStop || !firstStop?.arrival_time) return null;
+    const stop = trip.stops.find(s => s.stop_id === selectedStop.stop_id);
+    if (!stop?.arrival_time) return null;
+    return calculateMinutesFromStart(stop.arrival_time);
   }, [trip, selectedStop, firstStop]);
 
   return (
@@ -84,26 +73,26 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: TripWithStops; sele
       className="card mb-4"
     >
       <div
-        className="flex items-center justify-between cursor-pointer"
+        className="flex items-center justify-between cursor-pointer p-4"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center space-x-4">
           <div className="text-lg font-semibold text-gray-900">
-            {firstStop?.departure_time ? formatTime(firstStop.departure_time) : ''}
+            {firstStop?.arrival_time ? formatTime(firstStop.arrival_time) : ''}
           </div>
           <div className="text-sm text-gray-500">
-            {firstStop?.stopName} → {lastStop?.stopName}
+            {firstStop?.stop_name} → {lastStop?.stop_name}
           </div>
           <div className="flex items-center space-x-2">
             <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-              {trip.stopTimes.length} stops
+              {trip.stops.length} stops
             </span>
             <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-              {selectedStop === 'all' ? travelTime : `Total: ${travelTime}`}
+              {travelTime}
             </span>
-            {selectedStop !== 'all' && selectedStopTime !== null && (
+            {selectedStop && selectedStopTime !== null && (
               <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                To {selectedStop}: {formatMinutes(selectedStopTime)}
+                To {selectedStop.stop_name}: {formatMinutes(selectedStopTime)}
               </span>
             )}
           </div>
@@ -130,28 +119,38 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: TripWithStops; sele
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="mt-4"
+            className="px-4 pb-4"
           >
             <div className="space-y-2">
-              {trip.stopTimes.map((stop: StopTimeWithStop) => {
-                const minutesFromStart = firstStop ? calculateMinutesFromStart(firstStop.departure_time, stop.arrival_time) : 0;
+              {trip.stops.map((stop: Stop, index: number) => {
+                const minutesFromStart = firstStop?.arrival_time 
+                  ? calculateMinutesFromStart(stop.arrival_time || '00:00:00') - calculateMinutesFromStart(firstStop.arrival_time)
+                  : 0;
+                const duration = minutesFromStart > 0 
+                  ? `+${Math.floor(minutesFromStart / 60)}:${(minutesFromStart % 60).toString().padStart(2, '0')}`
+                  : '0:00';
                 return (
                   <div
                     key={stop.stop_id}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    className={`flex items-center justify-between py-2 ${
+                      index < trip.stops.length - 1 ? 'border-b border-gray-100' : ''
+                    }`}
                   >
                     <div className="flex items-center space-x-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatTime(stop.arrival_time)}
+                        {stop.arrival_time ? formatTime(stop.arrival_time) : ''}
                       </div>
-                      <div className="text-sm text-gray-500">{stop.stopName}</div>
+                      <div className={`text-sm ${
+                        selectedStop && stop.stop_id === selectedStop.stop_id
+                          ? 'font-medium text-primary-600'
+                          : 'text-gray-500'
+                      }`}>
+                        {stop.stop_name}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-4">
                       <span className="text-xs text-gray-400">
-                        {formatMinutes(minutesFromStart)}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {stop.pickup_type === 1 ? 'Pickup' : ''} {stop.drop_off_type === 1 ? 'Drop-off' : ''}
+                        {duration}
                       </span>
                     </div>
                   </div>
@@ -167,158 +166,63 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: TripWithStops; sele
 
 TripCard.displayName = 'TripCard';
 
-export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selectedDate }) => {
-  const [trips, setTrips] = useState<TripWithStops[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showLoading, setShowLoading] = useState(false);
+export const ScheduleView: React.FC<ScheduleViewProps> = ({
+  selectedRoute,
+  selectedDate,
+  selectedStop,
+}) => {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tabValue, setTabValue] = useState(0);
-  const [selectedStop, setSelectedStop] = useState<string>('all');
-  const isLoadingRef = useRef(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const loadingTimeoutRef = useRef<number>();
-
-  // Memoize the date string to prevent unnecessary re-renders
-  const dateString = useMemo(() => {
-    console.log('[ScheduleView] Date changed, memoizing new date string');
-    return selectedDate.toISOString();
-  }, [selectedDate]);
-
-  // Get unique stops from all trips
-  const uniqueStops = useMemo(() => {
-    const stops = new Set<string>();
-    trips.forEach(trip => {
-      trip.stopTimes.forEach(stop => {
-        stops.add(stop.stopName);
-      });
-    });
-    return Array.from(stops).sort();
-  }, [trips]);
-
-  // Filter trips based on selected stop
-  const filteredTrips = useMemo(() => {
-    if (selectedStop === 'all') return trips;
-    return trips.filter(trip => 
-      trip.stopTimes.some(stop => stop.stopName === selectedStop)
-    );
-  }, [trips, selectedStop]);
-
-  // Separate trips by direction
-  const inboundTrips = filteredTrips.filter(trip => trip.direction_id === 1).sort((a, b) => {
-    const timeA = a.stopTimes[0]?.departure_time || '';
-    const timeB = b.stopTimes[0]?.departure_time || '';
-    return timeA.localeCompare(timeB);
-  });
-  
-  const outboundTrips = filteredTrips.filter(trip => trip.direction_id === 0).sort((a, b) => {
-    const timeA = a.stopTimes[0]?.departure_time || '';
-    const timeB = b.stopTimes[0]?.departure_time || '';
-    return timeA.localeCompare(timeB);
-  });
-
-  // Memoize the loadTrips function to prevent recreation on every render
-  const loadTrips = useCallback(async (isMounted: { current: boolean }) => {
-    console.log('[ScheduleView] loadTrips called with:', { selectedRoute, dateString });
-    
-    if (!selectedRoute || isLoadingRef.current) {
-      console.log('[ScheduleView] Skipping loadTrips:', { 
-        reason: !selectedRoute ? 'no route selected' : 'already loading' 
-      });
-      return;
-    }
-    
-    try {
-      console.log('[ScheduleView] Starting trip load');
-      isLoadingRef.current = true;
-      if (contentRef.current) {
-        contentRef.current.style.opacity = '0.5';
-      }
-      setLoading(true);
-      setError(null);
-      
-      // Set a timeout to show loading state after 300ms
-      loadingTimeoutRef.current = setTimeout(() => {
-        if (isMounted.current) {
-          setShowLoading(true);
-        }
-      }, 300);
-      
-      const metraService = MetraService.getInstance();
-      metraService.setSelectedDate(selectedDate);
-      const trips = await metraService.getTripsByRoute(selectedRoute);
-      
-      if (isMounted.current) {
-        console.log('[ScheduleView] Trips loaded successfully, updating state');
-        setTrips(trips);
-        setLoading(false);
-        setShowLoading(false);
-        if (contentRef.current) {
-          contentRef.current.style.opacity = '1';
-        }
-      } else {
-        console.log('[ScheduleView] Component unmounted, skipping state updates');
-      }
-    } catch (error) {
-      console.error('[ScheduleView] Error loading trips:', error);
-      if (isMounted.current) {
-        setError('Failed to load trips');
-        setLoading(false);
-        setShowLoading(false);
-        if (contentRef.current) {
-          contentRef.current.style.opacity = '1';
-        }
-      }
-    } finally {
-      if (isMounted.current) {
-        console.log('[ScheduleView] Resetting loading ref');
-        isLoadingRef.current = false;
-      }
-    }
-  }, [selectedRoute, selectedDate]);
+  const metraService = MetraService.getInstance();
 
   useEffect(() => {
-    console.log('[ScheduleView] Effect triggered with:', { selectedRoute, dateString });
-    const isMounted = { current: true };
-
-    loadTrips(isMounted);
-
-    return () => {
-      console.log('[ScheduleView] Effect cleanup');
-      isMounted.current = false;
-      setLoading(false);
-      setShowLoading(false);
-      if (contentRef.current) {
-        contentRef.current.style.opacity = '1';
-      }
-      isLoadingRef.current = false;
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
+    const fetchTrips = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const trips = await metraService.getTripsByRoute(selectedRoute);
+        console.log('Fetched trips:', trips);
+        setTrips(trips || []); // Ensure we always set an array
+      } catch (error) {
+        console.error('Error fetching trips:', error);
+        setError('Failed to load schedule');
+        setTrips([]); // Set empty array on error
+      } finally {
+        setLoading(false);
       }
     };
-  }, [loadTrips]);
 
-  // Log when component renders
-  console.log('[ScheduleView] Render:', { 
-    selectedRoute, 
-    dateString, 
-    loading, 
-    showLoading,
-    tripsCount: trips.length 
-  });
+    fetchTrips();
+  }, [selectedRoute, selectedDate]);
 
-  if (!selectedRoute) {
-    return (
-      <div className="card text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Select a Route</h2>
-        <p className="text-gray-600">Choose a route from the list to view its schedule</p>
-      </div>
-    );
-  }
+  // Filter trips by selected stop if one is selected and sort by departure time
+  const filteredTrips = useMemo(() => {
+    console.log('Filtering trips:', { trips, selectedStop });
+    if (!Array.isArray(trips) || trips.length === 0) {
+      console.log('No trips to filter');
+      return [];
+    }
 
-  if (loading && showLoading) {
+    // First filter by selected stop if one is selected
+    const filtered = selectedStop
+      ? trips.filter(trip => 
+          trip.stops.some(stop => stop.stop_id === selectedStop.stop_id)
+        )
+      : trips;
+
+    // Then sort by departure time
+    return filtered.sort((a, b) => {
+      const timeA = calculateMinutesFromStart(a.stops[0]?.arrival_time);
+      const timeB = calculateMinutesFromStart(b.stops[0]?.arrival_time);
+      return timeA - timeB;
+    });
+  }, [trips, selectedStop]);
+
+  if (loading) {
     return (
       <div className="card">
-        <div className="flex justify-center items-center h-32">
+        <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         </div>
       </div>
@@ -328,95 +232,32 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
   if (error) {
     return (
       <div className="card">
-        <div className="text-red-600 text-center">{error}</div>
+        <div className="text-center py-12 text-red-600">{error}</div>
       </div>
     );
   }
 
-  const handleTabChange = (newValue: number) => {
-    setTabValue(newValue);
-  };
+  if (!Array.isArray(filteredTrips) || filteredTrips.length === 0) {
+    return (
+      <div className="card">
+        <div className="text-center py-12 text-gray-600">
+          {selectedStop
+            ? `No trips found for ${selectedStop.stop_name} on this date`
+            : 'No trips found for this date'}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="card">
-      <div className="flex flex-col space-y-4 mb-6">
-        <div className="flex space-x-4">
-          <button
-            onClick={() => handleTabChange(0)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-              tabValue === 0
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Outbound ({outboundTrips.length})
-          </button>
-          <button
-            onClick={() => handleTabChange(1)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-              tabValue === 1
-                ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Inbound ({inboundTrips.length})
-          </button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <label htmlFor="stop-filter" className="text-sm font-medium text-gray-700">
-            Filter by stop:
-          </label>
-          <select
-            id="stop-filter"
-            value={selectedStop}
-            onChange={(e) => setSelectedStop(e.target.value)}
-            className="block w-full max-w-xs px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-          >
-            <option value="all">All stops</option>
-            {uniqueStops.map(stop => (
-              <option key={stop} value={stop}>
-                {stop}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div 
-        ref={contentRef}
-        className="transition-opacity duration-300"
-        style={{ opacity: 1 }}
-      >
-        <div className="space-y-4">
-          <AnimatePresence mode="popLayout">
-            {tabValue === 0 ? (
-              outboundTrips.map((trip) => (
-                <motion.div
-                  key={trip.trip_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <TripCard trip={trip} selectedStop={selectedStop} />
-                </motion.div>
-              ))
-            ) : (
-              inboundTrips.map((trip) => (
-                <motion.div
-                  key={trip.trip_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <TripCard trip={trip} selectedStop={selectedStop} />
-                </motion.div>
-              ))
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+    <div className="space-y-4">
+      {filteredTrips.map((trip) => (
+        <TripCard 
+          key={trip.trip_id} 
+          trip={trip} 
+          selectedStop={selectedStop} 
+        />
+      ))}
     </div>
   );
 }; 
