@@ -36,15 +36,8 @@ app.get('/api/search/stops', async (req, res) => {
       stop.stop_name.toLowerCase().includes(query.toLowerCase())
     );
 
-    // Get routes that service these stops
-    const routesWithStops = data.routes.filter(route => {
-      return data.trips.some(trip => 
-        trip.route_id === route.route_id &&
-        trip.stopTimes.some(stopTime => 
-          matchingStops.some(stop => stop.stop_id === stopTime.stop_id)
-        )
-      );
-    });
+    // Get routes that service these stops using the optimized method
+    const routesWithStops = gtfsService.getRoutesForStops(matchingStops);
 
     res.json({
       stops: matchingStops,

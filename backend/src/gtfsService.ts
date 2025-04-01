@@ -25,6 +25,10 @@ export class GTFSService {
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   private readonly GTFS_URL = 'https://schedules.metrarail.com/gtfs/schedule.zip';
   private readonly GTFS_DIR = path.join(__dirname, '..', 'schedule');
+  private stopsByIdMap: Map<string, Stop> = new Map();
+  private stopTimesByTripMap: Map<string, StopTimeWithStop[]> = new Map();
+  private tripsByRouteMap: Map<string, Trip[]> = new Map();
+  private routesByStopMap: Map<string, Set<string>> = new Map();
 
   private constructor() {
     // Create schedule directory if it doesn't exist
@@ -90,8 +94,9 @@ export class GTFSService {
         direction_id: parseInt(row.direction_id),
         block_id: row.block_id,
         shape_id: row.shape_id,
-        stops: [] // Initialize with empty array
-      }));
+        stops: [], // Initialize with empty array
+        stopTimes: [] // Required by TripWithStops interface
+      } as TripWithStops));
 
       const stopTimes = this.parseCSVFile('stop_times.txt', (row: any) => ({
         trip_id: row.trip_id,
@@ -101,7 +106,8 @@ export class GTFSService {
         stop_sequence: parseInt(row.stop_sequence),
         pickup_type: parseInt(row.pickup_type),
         drop_off_type: parseInt(row.drop_off_type),
-      }));
+        stopName: 'Unknown Stop' // Required by StopTimeWithStop interface
+      } as StopTimeWithStop));
 
       const routes = this.parseCSVFile('routes.txt', (row: any) => ({
         route_id: row.route_id,
@@ -139,42 +145,46 @@ export class GTFSService {
         end_date: row.end_date,
       }));
 
-      // Create stop name map for faster lookups
-      const stopNameMap = new Map(stops.map((stop: Stop) => [stop.stop_id, stop.stop_name]));
+      // Create indexes for faster lookups
+      this.stopsByIdMap = new Map(stops.map(stop => [stop.stop_id, stop]));
+      
+      // Group stop times by trip_id and include stop names
+      this.stopTimesByTripMap = new Map();
+      stopTimes.forEach(st => {
+        const stopName = this.stopsByIdMap.get(st.stop_id)?.stop_name || 'Unknown Stop';
+        const stopTimeWithName = { ...st, stopName };
+        const tripStopTimes = this.stopTimesByTripMap.get(st.trip_id) || [];
+        tripStopTimes.push(stopTimeWithName);
+        this.stopTimesByTripMap.set(st.trip_id, tripStopTimes);
+      });
 
-      // Process stop times to include stop names
-      const stopTimesWithNames = stopTimes.map((stopTime: StopTime) => ({
-        ...stopTime,
-        stopName: stopNameMap.get(stopTime.stop_id) || 'Unknown Stop'
-      }));
+      // Sort stop times by sequence for each trip
+      this.stopTimesByTripMap.forEach(stopTimes => {
+        stopTimes.sort((a, b) => a.stop_sequence - b.stop_sequence);
+      });
 
-      // Group stop times by trip_id
-      const stopTimesByTrip = stopTimesWithNames.reduce((acc: { [key: string]: StopTimeWithStop[] }, stopTime: StopTimeWithStop) => {
-        if (!acc[stopTime.trip_id]) {
-          acc[stopTime.trip_id] = [];
-        }
-        acc[stopTime.trip_id].push(stopTime);
-        return acc;
-      }, {});
+      // Group trips by route_id
+      this.tripsByRouteMap = new Map();
+      trips.forEach(trip => {
+        const routeTrips = this.tripsByRouteMap.get(trip.route_id) || [];
+        routeTrips.push(trip);
+        this.tripsByRouteMap.set(trip.route_id, routeTrips);
 
-      // Create trips with their stop times
-      const tripsWithStops = trips.map((trip: Trip) => ({
-        ...trip,
-        stopTimes: stopTimesByTrip[trip.trip_id] || [],
-        stops: [] // Initialize with empty array, will be populated later
-      }));
-
-      // Sort stop times by sequence
-      tripsWithStops.forEach((trip: TripWithStops) => {
-        trip.stopTimes.sort((a: StopTimeWithStop, b: StopTimeWithStop) => a.stop_sequence - b.stop_sequence);
+        // Build routes by stop index
+        const tripStopTimes = this.stopTimesByTripMap.get(trip.trip_id) || [];
+        tripStopTimes.forEach(st => {
+          const stopRoutes = this.routesByStopMap.get(st.stop_id) || new Set();
+          stopRoutes.add(trip.route_id);
+          this.routesByStopMap.set(st.stop_id, stopRoutes);
+        });
       });
 
       this.data = {
-        trips: tripsWithStops,
+        trips,
         routes,
         stops,
         servicePeriods: calendar,
-        stopTimes: stopTimesWithNames,
+        stopTimes,
         lastUpdated: new Date().toISOString()
       };
 
@@ -303,30 +313,18 @@ export class GTFSService {
       const targetDate = date || new Date();
       const activeServiceIds = this.getActiveServiceIds(targetDate);
 
-      // Get trips for the route
-      const routeTrips = this.data.trips.filter(trip => trip.route_id === routeId);
+      // Get trips for the route using the index
+      const routeTrips = this.tripsByRouteMap.get(routeId) || [];
       
-      // Get stop times for these trips
+      // Get stop times for these trips using the pre-processed data
       const tripsWithStops = routeTrips.map(trip => {
-        const stopTimes = this.data!.stopTimes
-          .filter(st => st.trip_id === trip.trip_id)
-          .map(st => ({
-            ...st,
-            stopName: this.data!.stops.find(s => s.stop_id === st.stop_id)?.stop_name || 'Unknown Stop'
-          }))
-          .sort((a, b) => a.stop_sequence - b.stop_sequence);
-
-        // Transform stop times into stops with arrival times
-        const stops = stopTimes.map(st => {
-          const stop = this.data!.stops.find(s => s.stop_id === st.stop_id);
-          if (!stop) {
-            throw new Error(`Stop not found for stop_id: ${st.stop_id}`);
-          }
-          return {
-            ...stop,
-            arrival_time: st.arrival_time
-          };
-        });
+        const stopTimes = this.stopTimesByTripMap.get(trip.trip_id) || [];
+        
+        // Transform stop times into stops with arrival times using the stops index
+        const stops = stopTimes.map(st => ({
+          ...this.stopsByIdMap.get(st.stop_id)!,
+          arrival_time: st.arrival_time
+        }));
 
         return {
           ...trip,
@@ -347,5 +345,27 @@ export class GTFSService {
     return Object.values(this.data?.servicePeriods || {})
       .filter(service => this.isServiceActiveOnDate(service.service_id, date))
       .map(service => service.service_id);
+  }
+
+  public getRoutesForStops(stops: Stop[]): Route[] {
+    if (!this.data) {
+      throw new Error('GTFS data not loaded');
+    }
+
+    // Create a set to store unique route IDs
+    const routeIds = new Set<string>();
+
+    // For each stop, get its routes from the index
+    stops.forEach(stop => {
+      const stopRoutes = this.routesByStopMap.get(stop.stop_id);
+      if (stopRoutes) {
+        stopRoutes.forEach(routeId => routeIds.add(routeId));
+      }
+    });
+
+    // Convert route IDs to route objects
+    return Array.from(routeIds)
+      .map(routeId => this.data!.routes.find(r => r.route_id === routeId))
+      .filter((route): route is Route => route !== undefined);
   }
 } 
