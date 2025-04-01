@@ -48,6 +48,15 @@ const formatMinutes = (minutes: number): string => {
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 };
 
+const formatDuration = (minutes: number): string => {
+  if (minutes === 0) return '0m';
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+};
+
 const TripCard = React.memo(({ trip, selectedStop }: { trip: Trip; selectedStop: Stop | null }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const firstStop = trip.stops[0];
@@ -61,7 +70,7 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: Trip; selectedStop:
     if (!selectedStop || !firstStop?.arrival_time) return null;
     const stop = trip.stops.find(s => s.stop_id === selectedStop.stop_id);
     if (!stop?.arrival_time) return null;
-    return calculateMinutesFromStart(stop.arrival_time);
+    return calculateMinutesFromStart(stop.arrival_time) - calculateMinutesFromStart(firstStop.arrival_time);
   }, [trip, selectedStop, firstStop]);
 
   return (
@@ -92,7 +101,7 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: Trip; selectedStop:
             </span>
             {selectedStop && selectedStopTime !== null && (
               <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                To {selectedStop.stop_name}: {formatMinutes(selectedStopTime)}
+                To {selectedStop.stop_name}: {formatDuration(selectedStopTime)}
               </span>
             )}
           </div>
@@ -126,9 +135,6 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: Trip; selectedStop:
                 const minutesFromStart = firstStop?.arrival_time 
                   ? calculateMinutesFromStart(stop.arrival_time || '00:00:00') - calculateMinutesFromStart(firstStop.arrival_time)
                   : 0;
-                const duration = minutesFromStart > 0 
-                  ? `+${Math.floor(minutesFromStart / 60)}:${(minutesFromStart % 60).toString().padStart(2, '0')}`
-                  : '0:00';
                 return (
                   <div
                     key={stop.stop_id}
@@ -150,7 +156,7 @@ const TripCard = React.memo(({ trip, selectedStop }: { trip: Trip; selectedStop:
                     </div>
                     <div className="flex items-center space-x-4">
                       <span className="text-xs text-gray-400">
-                        {duration}
+                        {formatDuration(minutesFromStart)}
                       </span>
                     </div>
                   </div>
@@ -174,6 +180,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDirection, setSelectedDirection] = useState<0 | 1>(0); // 0 for outbound, 1 for inbound
   const metraService = MetraService.getInstance();
 
   useEffect(() => {
@@ -181,6 +188,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       try {
         setLoading(true);
         setError(null);
+        metraService.setSelectedDate(selectedDate);
         const trips = await metraService.getTripsByRoute(selectedRoute);
         console.log('Fetched trips:', trips);
         setTrips(trips || []); // Ensure we always set an array
@@ -204,12 +212,15 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       return [];
     }
 
-    // First filter by selected stop if one is selected
-    const filtered = selectedStop
-      ? trips.filter(trip => 
-          trip.stops.some(stop => stop.stop_id === selectedStop.stop_id)
-        )
-      : trips;
+    // First filter by direction
+    let filtered = trips.filter(trip => trip.direction_id === selectedDirection);
+
+    // Then filter by selected stop if one is selected
+    if (selectedStop) {
+      filtered = filtered.filter(trip => 
+        trip.stops.some(stop => stop.stop_id === selectedStop.stop_id)
+      );
+    }
 
     // Then sort by departure time
     return filtered.sort((a, b) => {
@@ -217,7 +228,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       const timeB = calculateMinutesFromStart(b.stops[0]?.arrival_time);
       return timeA - timeB;
     });
-  }, [trips, selectedStop]);
+  }, [trips, selectedStop, selectedDirection]);
 
   if (loading) {
     return (
@@ -237,27 +248,69 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
     );
   }
 
-  if (!Array.isArray(filteredTrips) || filteredTrips.length === 0) {
-    return (
-      <div className="card">
-        <div className="text-center py-12 text-gray-600">
-          {selectedStop
-            ? `No trips found for ${selectedStop.stop_name} on this date`
-            : 'No trips found for this date'}
-        </div>
-      </div>
-    );
-  }
+  const hasInboundTrips = trips.some(trip => trip.direction_id === 1);
+  const hasOutboundTrips = trips.some(trip => trip.direction_id === 0);
 
   return (
     <div className="space-y-4">
-      {filteredTrips.map((trip) => (
-        <TripCard 
-          key={trip.trip_id} 
-          trip={trip} 
-          selectedStop={selectedStop} 
-        />
-      ))}
+      {/* Direction Tabs */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        {hasOutboundTrips && (
+          <button
+            onClick={() => setSelectedDirection(0)}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              selectedDirection === 0
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Outbound
+          </button>
+        )}
+        {hasInboundTrips && (
+          <button
+            onClick={() => setSelectedDirection(1)}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              selectedDirection === 1
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Inbound
+          </button>
+        )}
+      </div>
+
+      {/* No trips message */}
+      {(!hasInboundTrips && !hasOutboundTrips) && (
+        <div className="card">
+          <div className="text-center py-12 text-gray-600">
+            {selectedStop
+              ? `No trips found for ${selectedStop.stop_name} on this date`
+              : 'No trips found for this date'}
+          </div>
+        </div>
+      )}
+
+      {/* Trip list */}
+      {filteredTrips.length === 0 && (hasInboundTrips || hasOutboundTrips) ? (
+        <div className="card">
+          <div className="text-center py-12 text-gray-600">
+            No {selectedDirection === 0 ? 'outbound' : 'inbound'} trips found
+            {selectedStop ? ` for ${selectedStop.stop_name}` : ''} on this date
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredTrips.map((trip) => (
+            <TripCard 
+              key={trip.trip_id} 
+              trip={trip} 
+              selectedStop={selectedStop} 
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }; 

@@ -26,8 +26,18 @@ export class MetraService {
   }
 
   public setSelectedDate(date: Date): void {
-    const newDateStr = date.toISOString().split('T')[0];
-    const oldDateStr = this.selectedDate.toISOString().split('T')[0];
+    // Ensure the date is set to noon in the local timezone to avoid any timezone issues
+    const localDate = new Date(date);
+    localDate.setHours(12, 0, 0, 0);
+    
+    const newDateStr = localDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .split('/')
+      .map(n => n.padStart(2, '0'))
+      .join('-');
+    const oldDateStr = this.selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .split('/')
+      .map(n => n.padStart(2, '0'))
+      .join('-');
     
     // Only clear cache if the date actually changed
     if (newDateStr !== oldDateStr) {
@@ -36,7 +46,7 @@ export class MetraService {
       this.loadingCache.clear();
     }
     
-    this.selectedDate = date;
+    this.selectedDate = localDate;
   }
 
   public getSelectedDate(): Date {
@@ -193,7 +203,11 @@ export class MetraService {
 
   public async getTripsByRoute(routeId: string): Promise<TripWithStops[]> {
     try {
-      const dateStr = this.selectedDate.toISOString().split('T')[0];
+      // Format the date in YYYY-MM-DD format in local timezone
+      const dateStr = this.selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+        .split('/')
+        .map(n => n.padStart(2, '0'))
+        .join('-');
       const cacheKey = `${routeId}-${dateStr}`;
       
       // Check if we have cached data

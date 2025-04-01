@@ -37,7 +37,12 @@ function App() {
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      setSelectedDate(date);
+      // Set the time to noon to avoid timezone issues
+      const localDate = new Date(date);
+      localDate.setHours(12, 0, 0, 0);
+      
+      setSelectedDate(localDate);
+      metraService.setSelectedDate(localDate);
       setIsDatePickerOpen(false);
     }
   };
@@ -74,9 +79,17 @@ function App() {
               <div className="relative" ref={datePickerRef}>
                 <button
                   onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  className="btn btn-primary flex items-center space-x-2"
                 >
-                  {format(selectedDate, 'MMM d, yyyy')}
+                  <span>{format(selectedDate, 'MMM d, yyyy')}</span>
+                  <svg
+                    className={`w-5 h-5 transform transition-transform ${isDatePickerOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
                 <AnimatePresence>
                   {isDatePickerOpen && (
@@ -84,15 +97,35 @@ function App() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 bg-white rounded-lg shadow-xl z-50"
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-100"
                     >
                       <DayPicker
                         mode="single"
                         selected={selectedDate}
                         onSelect={handleDateSelect}
-                        modifiersClassNames={{
-                          selected: "bg-primary-600 text-white",
-                          today: "text-primary-600 font-bold",
+                        className="border-none"
+                        classNames={{
+                          months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                          month: "space-y-4",
+                          caption: "flex justify-center pt-1 relative items-center",
+                          caption_label: "text-sm font-medium",
+                          nav: "space-x-1 flex items-center",
+                          nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                          nav_button_previous: "absolute left-1",
+                          nav_button_next: "absolute right-1",
+                          table: "w-full border-collapse space-y-1",
+                          head_row: "flex",
+                          head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
+                          row: "flex w-full mt-2",
+                          cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                          day_selected: "bg-primary-600 text-white hover:bg-primary-700 focus:bg-primary-700",
+                          day_today: "bg-gray-100 text-gray-900",
+                          day_outside: "text-gray-400 opacity-50",
+                          day_disabled: "text-gray-400 opacity-50",
+                          day_range_middle: "aria-selected:bg-gray-100 aria-selected:text-gray-900",
+                          day_hidden: "invisible",
                         }}
                       />
                     </motion.div>

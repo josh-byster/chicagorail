@@ -61,28 +61,28 @@ export const StopSearch: React.FC<StopSearchProps> = ({ onStopSelect, onStopClea
   return (
     <div ref={searchRef} className="relative">
       {selectedStop ? (
-        <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 px-3 py-2">
+        <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3">
           <div className="flex-1">
             <div className="font-medium text-gray-900">{selectedStop.stop_name}</div>
-            <div className="flex items-center space-x-2 mt-1">
+            <div className="flex items-center space-x-2 mt-2">
               {results.routes.map((route) => (
                 <div
                   key={route.route_id}
-                  className="flex items-center space-x-1"
+                  className="flex items-center space-x-1.5"
                   title={`${route.route_long_name} (${route.route_short_name})`}
                 >
                   <div
-                    className="w-2 h-2 rounded-full"
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: `#${route.route_color}` }}
                   />
-                  <span className="text-xs text-gray-500">{route.route_short_name}</span>
+                  <span className="text-xs text-gray-600">{route.route_short_name}</span>
                 </div>
               ))}
             </div>
           </div>
           <button
             onClick={onStopClear}
-            className="p-1 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
           >
             <svg
               className="w-5 h-5"
