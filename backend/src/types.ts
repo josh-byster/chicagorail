@@ -30,7 +30,7 @@ export interface Trip {
   direction_id: number;
   block_id: string;
   shape_id: string;
-  stops?: Stop[];
+  stops: Stop[];
 }
 
 export interface StopTime {

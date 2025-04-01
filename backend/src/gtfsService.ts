@@ -90,6 +90,7 @@ export class GTFSService {
         direction_id: parseInt(row.direction_id),
         block_id: row.block_id,
         shape_id: row.shape_id,
+        stops: [] // Initialize with empty array
       }));
 
       const stopTimes = this.parseCSVFile('stop_times.txt', (row: any) => ({
@@ -159,7 +160,8 @@ export class GTFSService {
       // Create trips with their stop times
       const tripsWithStops = trips.map((trip: Trip) => ({
         ...trip,
-        stopTimes: stopTimesByTrip[trip.trip_id] || []
+        stopTimes: stopTimesByTrip[trip.trip_id] || [],
+        stops: [] // Initialize with empty array, will be populated later
       }));
 
       // Sort stop times by sequence
@@ -315,16 +317,22 @@ export class GTFSService {
           .sort((a, b) => a.stop_sequence - b.stop_sequence);
 
         // Transform stop times into stops with arrival times
-        const stops = stopTimes.map(st => ({
-          ...this.data!.stops.find(s => s.stop_id === st.stop_id)!,
-          arrival_time: st.arrival_time
-        }));
+        const stops = stopTimes.map(st => {
+          const stop = this.data!.stops.find(s => s.stop_id === st.stop_id);
+          if (!stop) {
+            throw new Error(`Stop not found for stop_id: ${st.stop_id}`);
+          }
+          return {
+            ...stop,
+            arrival_time: st.arrival_time
+          };
+        });
 
         return {
           ...trip,
           stopTimes,
           stops
-        };
+        } as TripWithStops;
       });
 
       // Filter trips by active service IDs
