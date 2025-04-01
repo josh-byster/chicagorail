@@ -70,8 +70,9 @@ function App() {
             </motion.h1>
             <div className="flex items-center space-x-4">
               <StopSearch
-                onStopSelect={setSelectedStop}
+                onStopSelect={handleStopSelect}
                 onStopClear={handleStopClear}
+                onRouteSelect={handleRouteSelect}
                 selectedStop={selectedStop}
               />
               <div ref={datePickerRef} className="relative">
