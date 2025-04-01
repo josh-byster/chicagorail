@@ -7,9 +7,10 @@ interface RouteListProps {
   onRouteSelect: (route: Route) => void;
   selectedRoute: Route | null;
   selectedStop: Stop | null;
+  selectedStopRoutes?: Route[];
 }
 
-const RouteList = ({ onRouteSelect, selectedRoute, selectedStop }: RouteListProps) => {
+const RouteList = ({ onRouteSelect, selectedRoute, selectedStop, selectedStopRoutes }: RouteListProps) => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [filteredRoutes, setFilteredRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,15 +39,9 @@ const RouteList = ({ onRouteSelect, selectedRoute, selectedStop }: RouteListProp
 
   // Update filtered routes when stop or search query changes
   useEffect(() => {
-    if (selectedStop) {
-      // If a stop is selected, filter routes to only show those that service this stop
-      const metraService = MetraService.getInstance();
-      metraService.searchStops(selectedStop.stop_name).then(({ routes: stopRoutes }) => {
-        const filtered = routes.filter(route => 
-          stopRoutes.some(stopRoute => stopRoute.route_id === route.route_id)
-        );
-        setFilteredRoutes(filtered);
-      });
+    if (selectedStop && selectedStopRoutes) {
+      // If a stop is selected, use the routes passed from StopSearch
+      setFilteredRoutes(selectedStopRoutes);
     } else {
       // If no stop is selected, show all routes that match the search query
       const filtered = routes.filter(route =>
@@ -55,7 +50,7 @@ const RouteList = ({ onRouteSelect, selectedRoute, selectedStop }: RouteListProp
       );
       setFilteredRoutes(filtered);
     }
-  }, [selectedStop, searchQuery, routes]);
+  }, [selectedStop, selectedStopRoutes, searchQuery, routes]);
 
   if (loading) {
     return (

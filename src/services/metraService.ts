@@ -11,6 +11,7 @@ export class MetraService {
   private tripsWithStopsCache: Map<string, TripWithStops[]> = new Map();
   private loadingCache: Map<string, Promise<TripWithStops[]>> = new Map();
   private lastLoadedDate: string | null = null;
+  private stopSearchCache: Map<string, { stops: Stop[]; routes: Route[] }> = new Map();
   private readonly API_BASE_URL = import.meta.env.PROD 
     ? 'https://metra-tracker.joshbyster.com/api'
     : 'http://localhost:3000/api';
@@ -262,11 +263,22 @@ export class MetraService {
 
   public async searchStops(query: string): Promise<{ stops: Stop[]; routes: Route[] }> {
     try {
+      // Check cache first
+      if (this.stopSearchCache.has(query)) {
+        console.log('[MetraService] Stop search cache hit for:', query);
+        return this.stopSearchCache.get(query)!;
+      }
+
+      console.log('[MetraService] Stop search cache miss for:', query);
       const response = await fetch(`${this.API_BASE_URL}/search/stops?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error('Failed to search stops');
       }
-      return await response.json();
+      const result = await response.json();
+      
+      // Cache the result
+      this.stopSearchCache.set(query, result);
+      return result;
     } catch (error) {
       console.error('Error searching stops:', error);
       throw error;

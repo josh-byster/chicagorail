@@ -7,10 +7,17 @@ interface StopSearchProps {
   onStopSelect: (stop: Stop) => void;
   onStopClear: () => void;
   onRouteSelect: (route: Route) => void;
+  onStopRoutesChange: (routes: Route[]) => void;
   selectedStop: Stop | null;
 }
 
-export const StopSearch: React.FC<StopSearchProps> = ({ onStopSelect, onStopClear, onRouteSelect, selectedStop }) => {
+export const StopSearch: React.FC<StopSearchProps> = ({ 
+  onStopSelect, 
+  onStopClear, 
+  onRouteSelect, 
+  onStopRoutesChange,
+  selectedStop 
+}) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<{ stops: Stop[]; routes: Route[] }>({ stops: [], routes: [] });
   const [selectedStopRoutes, setSelectedStopRoutes] = useState<Route[]>([]);
@@ -19,6 +26,12 @@ export const StopSearch: React.FC<StopSearchProps> = ({ onStopSelect, onStopClea
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const onRouteSelectRef = useRef(onRouteSelect);
+
+  // Update ref when onRouteSelect changes
+  useEffect(() => {
+    onRouteSelectRef.current = onRouteSelect;
+  }, [onRouteSelect]);
 
   // Fetch routes for selected stop
   useEffect(() => {
@@ -28,9 +41,10 @@ export const StopSearch: React.FC<StopSearchProps> = ({ onStopSelect, onStopClea
           const metraService = MetraService.getInstance();
           const { routes } = await metraService.searchStops(selectedStop.stop_name);
           setSelectedStopRoutes(routes);
+          onStopRoutesChange(routes);
           // Automatically select the first route if available
           if (routes.length > 0) {
-            onRouteSelect(routes[0]);
+            onRouteSelectRef.current(routes[0]);
           }
         } catch (error) {
           console.error('Error fetching stop routes:', error);
@@ -39,8 +53,9 @@ export const StopSearch: React.FC<StopSearchProps> = ({ onStopSelect, onStopClea
       fetchStopRoutes();
     } else {
       setSelectedStopRoutes([]);
+      onStopRoutesChange([]);
     }
-  }, [selectedStop, onRouteSelect]);
+  }, [selectedStop, onStopRoutesChange]);
 
   // Handle click outside
   useEffect(() => {
@@ -169,7 +184,7 @@ export const StopSearch: React.FC<StopSearchProps> = ({ onStopSelect, onStopClea
                             onStopSelect(stop);
                             // Automatically select the first route if available
                             if (stopRoutes.length > 0) {
-                              onRouteSelect(stopRoutes[0]);
+                              onRouteSelectRef.current(stopRoutes[0]);
                             }
                             setIsOpen(false);
                           }}

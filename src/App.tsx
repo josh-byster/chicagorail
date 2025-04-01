@@ -14,6 +14,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
+  const [selectedStopRoutes, setSelectedStopRoutes] = useState<Route[]>([]);
   const datePickerRef = useRef<HTMLDivElement>(null);
   const metraService = MetraService.getInstance();
 
@@ -53,6 +54,7 @@ function App() {
 
   const handleStopClear = () => {
     setSelectedStop(null);
+    setSelectedStopRoutes([]);
   };
 
   return (
@@ -73,6 +75,7 @@ function App() {
                 onStopSelect={handleStopSelect}
                 onStopClear={handleStopClear}
                 onRouteSelect={handleRouteSelect}
+                onStopRoutesChange={setSelectedStopRoutes}
                 selectedStop={selectedStop}
               />
               <div ref={datePickerRef} className="relative">
@@ -109,19 +112,19 @@ function App() {
                         className="border-none"
                         classNames={{
                           months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                          month: "space-y-4",
-                          caption: "flex justify-center pt-1 relative items-center",
+                          month: "space-y-4 w-[280px]",
+                          caption: "flex justify-center pt-1 relative items-center mb-4",
                           caption_label: "text-sm font-medium",
                           nav: "space-x-1 flex items-center",
                           nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
                           nav_button_previous: "absolute left-1",
                           nav_button_next: "absolute right-1",
-                          table: "w-full border-collapse space-y-1",
-                          head_row: "flex",
-                          head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
-                          row: "flex w-full mt-2",
-                          cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                          table: "w-full border-collapse",
+                          head_row: "grid grid-cols-7 mb-1",
+                          head_cell: "text-gray-500 font-normal text-[0.8rem] h-9 flex items-center justify-center",
+                          row: "grid grid-cols-7 gap-1 mb-1",
+                          cell: "text-sm relative [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 h-9",
+                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-gray-100 flex items-center justify-center",
                           day_selected: "bg-primary-600 text-white hover:bg-primary-700 focus:bg-primary-700",
                           day_today: "bg-gray-100 text-gray-900",
                           day_outside: "text-gray-400 opacity-50",
@@ -152,6 +155,7 @@ function App() {
               onRouteSelect={handleRouteSelect}
               selectedRoute={selectedRoute}
               selectedStop={selectedStop}
+              selectedStopRoutes={selectedStopRoutes}
             />
           </motion.div>
 
