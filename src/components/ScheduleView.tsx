@@ -43,8 +43,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const isLoadingRef = useRef(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Memoize the date string to prevent unnecessary re-renders
   const dateString = useMemo(() => {
@@ -53,7 +53,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
   }, [selectedDate]);
 
   // Memoize the loadTrips function to prevent recreation on every render
-  const loadTrips = useCallback(async (isMounted: { current: boolean }, timeoutId: { current: number }) => {
+  const loadTrips = useCallback(async (isMounted: { current: boolean }) => {
     console.log('[ScheduleView] loadTrips called with:', { selectedRoute, dateString });
     
     if (!selectedRoute || isLoadingRef.current) {
@@ -66,7 +66,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     try {
       console.log('[ScheduleView] Starting trip load');
       isLoadingRef.current = true;
-      setIsTransitioning(true);
+      if (contentRef.current) {
+        contentRef.current.style.opacity = '0.5';
+      }
       setLoading(true);
       setError(null);
       
@@ -78,13 +80,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
         console.log('[ScheduleView] Trips loaded successfully, updating state');
         setTrips(trips);
         setLoading(false);
-        // Add a small delay before removing the transition state to ensure smooth animation
-        timeoutId.current = window.setTimeout(() => {
-          if (isMounted.current) {
-            console.log('[ScheduleView] Removing transition state');
-            setIsTransitioning(false);
-          }
-        }, 300);
+        if (contentRef.current) {
+          contentRef.current.style.opacity = '1';
+        }
       } else {
         console.log('[ScheduleView] Component unmounted, skipping state updates');
       }
@@ -93,7 +91,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
       if (isMounted.current) {
         setError('Failed to load trips');
         setLoading(false);
-        setIsTransitioning(false);
+        if (contentRef.current) {
+          contentRef.current.style.opacity = '1';
+        }
       }
     } finally {
       if (isMounted.current) {
@@ -106,18 +106,16 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
   useEffect(() => {
     console.log('[ScheduleView] Effect triggered with:', { selectedRoute, dateString });
     const isMounted = { current: true };
-    const timeoutId = { current: 0 };
 
-    loadTrips(isMounted, timeoutId);
+    loadTrips(isMounted);
 
     return () => {
       console.log('[ScheduleView] Effect cleanup');
       isMounted.current = false;
-      if (timeoutId.current) {
-        window.clearTimeout(timeoutId.current);
-      }
       setLoading(false);
-      setIsTransitioning(false);
+      if (contentRef.current) {
+        contentRef.current.style.opacity = '1';
+      }
       isLoadingRef.current = false;
     };
   }, [loadTrips]);
@@ -127,7 +125,6 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
     selectedRoute, 
     dateString, 
     loading, 
-    isTransitioning, 
     tripsCount: trips.length 
   });
 
@@ -291,30 +288,35 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({ selectedRoute, selec
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${tabValue}-${dateString}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
-          className={isTransitioning ? 'opacity-50' : ''}
-        >
-          {tabValue === 0 ? (
-            <AnimatePresence mode="wait">
-              {outboundTrips.map((trip) => (
-                <TripCard key={trip.trip_id} trip={trip} />
-              ))}
-            </AnimatePresence>
-          ) : (
-            <AnimatePresence mode="wait">
-              {inboundTrips.map((trip) => (
-                <TripCard key={trip.trip_id} trip={trip} />
-              ))}
-            </AnimatePresence>
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <div 
+        ref={contentRef}
+        className="transition-opacity duration-300"
+        style={{ opacity: 1 }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${tabValue}-${dateString}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {tabValue === 0 ? (
+              <div className="space-y-4">
+                {outboundTrips.map((trip) => (
+                  <TripCard key={trip.trip_id} trip={trip} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {inboundTrips.map((trip) => (
+                  <TripCard key={trip.trip_id} trip={trip} />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }; 
