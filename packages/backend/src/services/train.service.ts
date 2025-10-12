@@ -123,7 +123,7 @@ export const getUpcomingTrains = (
     LEFT JOIN calendar c ON t.service_id = c.service_id
     LEFT JOIN calendar_dates cd ON t.service_id = cd.service_id AND cd.date = '${searchDate}'
     WHERE st1.stop_sequence < st2.stop_sequence
-      AND st2.arrival_time >= ?
+      AND st1.departure_time >= ?
       AND (
         -- Service explicitly added for this specific date
         cd.exception_type = 1
@@ -136,7 +136,7 @@ export const getUpcomingTrains = (
           AND c.end_date >= '${searchDate}'
         )
       )
-    ORDER BY st2.arrival_time
+    ORDER BY st1.departure_time
     ${limit ? `LIMIT ${limit}` : ''}
   `;
 

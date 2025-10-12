@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StationCombobox } from '@/components/StationCombobox/StationCombobox';
-import { ArrowLeftRight, Bookmark, Search } from 'lucide-react';
+import { ArrowLeftRight, Bookmark } from 'lucide-react';
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
@@ -19,10 +19,18 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
   const [destination, setDestination] = useState<string>('');
 
   // Fetch all stations for origin selection
-  const { data: allStations, isLoading: isLoadingAll, error: errorAll } = useStations();
+  const {
+    data: allStations,
+    isLoading: isLoadingAll,
+    error: errorAll,
+  } = useStations();
 
   // Fetch reachable stations for destination selection
-  const { data: reachableStations, isLoading: isLoadingReachable, error: errorReachable } = useReachableStations(origin || null);
+  const {
+    data: reachableStations,
+    isLoading: isLoadingReachable,
+    error: errorReachable,
+  } = useReachableStations(origin || null);
 
   const handleSwap = () => {
     const tempOrigin = origin;
@@ -37,17 +45,18 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
     setDestination('');
   };
 
-  const handleSearch = () => {
-    if (origin && destination) {
+  const isValid = origin && destination && origin !== destination;
+
+  // Auto-trigger search when both stations are selected
+  useEffect(() => {
+    if (isValid) {
       onSearch(origin, destination);
     }
-  };
-
-  const isValid = origin && destination && origin !== destination;
+  }, [origin, destination, isValid, onSearch]);
 
   const getStationName = (stationId: string) => {
     if (!allStations) return stationId;
-    const station = allStations.find(s => s.station_id === stationId);
+    const station = allStations.find((s) => s.station_id === stationId);
     return station ? station.station_name : stationId;
   };
 
@@ -88,7 +97,9 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           <StationCombobox
             value={destination}
             onChange={setDestination}
-            placeholder={origin ? "Search for destination..." : "Select origin first"}
+            placeholder={
+              origin ? 'Search for destination...' : 'Select origin first'
+            }
             stations={origin ? reachableStations : []}
             isLoading={isLoadingReachable}
             error={errorReachable}
@@ -104,18 +115,8 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           </Alert>
         )}
 
-        <div className="flex gap-3 pt-2">
-          <Button
-            onClick={handleSearch}
-            disabled={!isValid}
-            className="flex-1 h-11 text-base font-semibold"
-            size="lg"
-          >
-            <Search className="h-5 w-5 mr-2" />
-            Search Trains
-          </Button>
-
-          {isValid && (
+        {isValid && (
+          <div className="flex justify-end pt-2">
             <SaveRouteDialog
               originStationId={origin}
               destinationStationId={destination}
@@ -132,15 +133,16 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
+                size="sm"
                 aria-label="Save route"
-                className="h-11 w-11"
+                className="gap-2"
               >
-                <Bookmark className="h-5 w-5" />
+                <Bookmark className="h-4 w-4" />
+                Save Route
               </Button>
             </SaveRouteDialog>
-          )}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
