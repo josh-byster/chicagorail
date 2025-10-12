@@ -1,0 +1,82 @@
+name: Deploy Backend to Dokku
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/backend/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Procfile'
+      - 'app.json'
+      - '.github/workflows/deploy-dokku.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+
+      - name: Add Dokku host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Dokku
+        env:
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
+        run: |
+          git remote add dokku dokku@$DOKKU_HOST:$DOKKU_APP_NAME || true
+          git push dokku main:master -f
+
+      - name: Set environment variables on Dokku
+        env:
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
+        run: |
+          ssh dokku@$DOKKU_HOST config:set $DOKKU_APP_NAME \
+            NODE_ENV=production \
+            PORT=5000 \
+            DATABASE_PATH=/app/data/gtfs.db \
+            METRA_API_USERNAME="${{ secrets.METRA_API_USERNAME }}" \
+            METRA_API_PASSWORD="${{ secrets.METRA_API_PASSWORD }}" \
+            GTFS_STATIC_BASE_URL="https://gtfsapi.metrarail.com" \
+            GTFS_REALTIME_ALERTS_URL="https://gtfsapi.metrarail.com/gtfs/alerts" \
+            GTFS_REALTIME_TRIP_UPDATES_URL="https://gtfsapi.metrarail.com/gtfs/tripUpdates" \
+            GTFS_REALTIME_POSITIONS_URL="https://gtfsapi.metrarail.com/gtfs/positions" \
+            GTFS_REALTIME_POLL_INTERVAL=30000 \
+            API_TIMEOUT=5000
+
+      - name: Create persistent storage for database
+        env:
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
+        run: |
+          ssh dokku@$DOKKU_HOST storage:ensure-directory $DOKKU_APP_NAME || true
+          ssh dokku@$DOKKU_HOST storage:mount $DOKKU_APP_NAME /var/lib/dokku/data/storage/$DOKKU_APP_NAME:/app/data || true
+
+      - name: Run GTFS import
+        env:
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
+        run: |
+          ssh dokku@$DOKKU_HOST run $DOKKU_APP_NAME "cd packages/backend && npm run gtfs:import"
+
+      - name: Check deployment status
+        env:
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
+        run: |
+          ssh dokku@$DOKKU_HOST ps:report $DOKKU_APP_NAME

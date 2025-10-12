@@ -1,0 +1,19 @@
+{
+  "name": "metra-train-tracker-backend",
+  "description": "Fast Metra Train Tracker - Backend API",
+  "keywords": ["nodejs", "express", "gtfs", "metra"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1
+    }
+  },
+  "addons": [],
+  "scripts": {
+    "postdeploy": "pnpm run build && cd packages/backend && pnpm gtfs:import"
+  }
+}
