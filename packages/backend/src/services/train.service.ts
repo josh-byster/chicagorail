@@ -285,40 +285,10 @@ export const getTrainDetail = (tripId: string): Train | null => {
     WHERE service_id = ?
   `;
   const serviceInfo = db.prepare(serviceQuery).get(trip.service_id) as any | undefined;
-  
+
   // Get current date for constructing datetime strings
   const today = new Date();
   const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-
-  // Helper to get Chicago timezone offset for a given date
-  const getChicagoOffset = (dateStr: string): string => {
-    // Create a specific moment in UTC (noon to avoid edge cases)
-    const utcDate = new Date(`${dateStr}T12:00:00Z`);
-
-    // Format in Chicago timezone to see what hour it is there
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      hour: '2-digit',
-      hour12: false
-    });
-
-    const chicagoHourStr = formatter.format(utcDate);
-    const chicagoHour = parseInt(chicagoHourStr);
-
-    // Calculate offset: Chicago time - UTC time
-    const utcHour = 12;
-    let offsetHours = chicagoHour - utcHour;
-
-    // Handle day boundary crossing
-    if (offsetHours > 12) offsetHours -= 24;
-    if (offsetHours < -12) offsetHours += 24;
-
-    // Format as ±HH:MM
-    const sign = offsetHours >= 0 ? '+' : '-';
-    const absHours = Math.abs(offsetHours);
-
-    return `${sign}${String(absHours).padStart(2, '0')}:00`;
-  };
 
   // Get all stops for this trip
   const stops = getStopsForTrip(tripId, dateString);
@@ -327,22 +297,14 @@ export const getTrainDetail = (tripId: string): Train | null => {
   const originStopTime = stops[0];
   const destinationStopTime = stops[stops.length - 1];
 
-  // Construct proper datetime strings by combining date with time in Chicago timezone
-  const constructDateTime = (timeStr: string): string => {
-    if (!timeStr) return '';
-    // GTFS times are in America/Chicago timezone, append proper offset instead of 'Z' (UTC)
-    const offset = getChicagoOffset(dateString);
-    return `${dateString}T${timeStr}${offset}`;
-  };
-  
   return {
     trip_id: trip.trip_id,
     line_id: trip.line_id,
     line_name: trip.line_name,
     origin_station_id: originStopTime?.station_id || '',
     destination_station_id: destinationStopTime?.station_id || '',
-    departure_time: constructDateTime(originStopTime?.departure_time || ''),
-    arrival_time: constructDateTime(destinationStopTime?.arrival_time || ''),
+    departure_time: originStopTime?.departure_time || '',
+    arrival_time: destinationStopTime?.arrival_time || '',
     status: TrainStatus.SCHEDULED, // Default status - will be enhanced with realtime data
     delay_minutes: 0, // Default delay - will be enhanced with realtime data
     stops: stops,

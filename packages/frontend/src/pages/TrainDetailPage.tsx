@@ -1,9 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { useTrainDetail } from '@/hooks/useTrains';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Clock, MapPin, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Clock, MapPin, AlertCircle, ArrowLeft, Train as TrainIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function TrainDetailPage() {
@@ -51,109 +53,146 @@ export default function TrainDetailPage() {
     minute: '2-digit',
   });
 
+  const getStatusVariant = (status: string): 'success' | 'warning' | 'destructive' | 'secondary' => {
+    switch (status) {
+      case 'on_time':
+        return 'success';
+      case 'delayed':
+        return 'warning';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Link to="/">
-        <Button variant="ghost" size="sm" className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to home
-        </Button>
-      </Link>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Link to="/">
+          <Button variant="ghost" className="mb-6 hover:bg-accent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to home
+          </Button>
+        </Link>
 
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">{train.line_name}</h1>
-        <p className="text-muted-foreground mt-2">
-          Train {train.train_number || tripId}
-        </p>
-      </header>
-
-      <main className="space-y-6">
-        {/* Trip Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Trip Overview</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Departure</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Clock className="h-4 w-4" />
-                  <span className="font-semibold">{departureTime}</span>
-                </div>
+        <header className="mb-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-primary rounded-lg">
+                <TrainIcon className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Arrival</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Clock className="h-4 w-4" />
-                  <span className="font-semibold">{arrivalTime}</span>
-                </div>
+                <h1 className="text-3xl font-bold">{train.line_name}</h1>
+                <p className="text-muted-foreground mt-1">
+                  Train {train.train_number || tripId}
+                </p>
               </div>
             </div>
+            <Badge variant={getStatusVariant(train.status)} className="text-base px-4 py-1.5">
+              {train.status === 'on_time' ? 'On Time' : train.status === 'delayed' ? `Delayed ${train.delay_minutes} min` : train.status}
+            </Badge>
+          </div>
+        </header>
 
-            {train.platform && (
-              <div>
-                <p className="text-sm text-muted-foreground">Platform</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <MapPin className="h-4 w-4" />
-                  <span className="font-semibold">{train.platform}</span>
+        <main className="space-y-6">
+          {/* Trip Overview */}
+          <Card className="border-2">
+            <CardHeader>
+              <CardTitle className="text-xl">Trip Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Departure</p>
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <span className="font-bold text-2xl">{departureTime}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Arrival</p>
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <span className="font-bold text-2xl">{arrivalTime}</span>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {train.delay_minutes > 0 && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Delayed</AlertTitle>
-                <AlertDescription>
-                  This train is running {train.delay_minutes} minutes late
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* All Stops */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Stops ({train.stops?.length || 0})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {train.stops && train.stops.length > 0 ? (
-              <div className="space-y-2">
-                {train.stops.map((stop, index) => (
-                  <div
-                    key={`${stop.station_id}-${stop.stop_sequence}`}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50"
-                  >
-                    <div className="text-sm text-muted-foreground w-8">
-                      {index + 1}
+              {train.platform && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Platform</p>
+                    <div className="flex items-center gap-2.5">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <span className="font-semibold text-lg">{train.platform}</span>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{stop.station_id}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(stop.arrival_time).toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                    {stop.delay_minutes > 0 && (
-                      <span className="text-sm text-orange-600">
-                        +{stop.delay_minutes} min
-                      </span>
-                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                No stop information available
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+                </>
+              )}
+
+              {train.delay_minutes > 0 && (
+                <>
+                  <Separator />
+                  <Alert variant="destructive" className="border-2">
+                    <AlertCircle className="h-5 w-5" />
+                    <AlertTitle className="text-base">Delayed</AlertTitle>
+                    <AlertDescription>
+                      This train is running {train.delay_minutes} minutes late
+                    </AlertDescription>
+                  </Alert>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* All Stops */}
+          <Card className="border-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-xl">All Stops</CardTitle>
+              <Badge variant="secondary" className="text-base px-3 py-1">
+                {train.stops?.length || 0} stops
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              {train.stops && train.stops.length > 0 ? (
+                <div className="space-y-1">
+                  {train.stops.map((stop, index) => (
+                    <div
+                      key={`${stop.station_id}-${stop.stop_sequence}`}
+                      className="flex items-center gap-4 p-4 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-base">{stop.station_id}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {new Date(stop.arrival_time).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      {stop.delay_minutes > 0 && (
+                        <Badge variant="warning" className="flex-shrink-0">
+                          +{stop.delay_minutes} min
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-12">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No stop information available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
     </div>
   );
 }
