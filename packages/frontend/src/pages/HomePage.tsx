@@ -3,7 +3,11 @@ import { RouteSearch } from '@/components/RouteSearch/RouteSearch';
 import { TrainList } from '@/components/TrainList/TrainList';
 import { useTrains } from '@/hooks/useTrains';
 import { SavedRoutesList } from '@/components/SavedRoutes/SavedRoutesList';
-import { getSavedRoutes, updateLastUsed, deleteRoute } from '@/services/saved-routes';
+import {
+  getSavedRoutes,
+  updateLastUsed,
+  deleteRoute,
+} from '@/services/saved-routes';
 import { useStations } from '@/hooks/useStations';
 import { SavedRoute } from '@metra/shared';
 import { Separator } from '@/components/ui/separator';
@@ -16,7 +20,11 @@ export default function HomePage() {
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
 
   useStations();
-  const { data: trains, isLoading, error } = useTrains({
+  const {
+    data: trains,
+    isLoading,
+    error,
+  } = useTrains({
     origin,
     destination,
     enabled: hasSearched && !!origin && !!destination,
@@ -32,12 +40,17 @@ export default function HomePage() {
         // Auto-display last-used route if user has saved routes
         if (routes.length > 0) {
           // Sort routes by last_used_at (most recent first)
-          const sortedRoutes = [...routes].sort((a, b) =>
-            new Date(b.last_used_at).getTime() - new Date(a.last_used_at).getTime()
+          const sortedRoutes = [...routes].sort(
+            (a, b) =>
+              new Date(b.last_used_at).getTime() -
+              new Date(a.last_used_at).getTime()
           );
 
           const lastUsedRoute = sortedRoutes[0];
-          handleSearch(lastUsedRoute.origin_station_id, lastUsedRoute.destination_station_id);
+          handleSearch(
+            lastUsedRoute.origin_station_id,
+            lastUsedRoute.destination_station_id
+          );
         }
       } catch (err) {
         console.error('Failed to load saved routes:', err);
@@ -56,7 +69,10 @@ export default function HomePage() {
   const handleSavedRouteClick = async (route: SavedRoute) => {
     // Update last used timestamp and use count
     try {
-      await updateLastUsed(route.origin_station_id, route.destination_station_id);
+      await updateLastUsed(
+        route.origin_station_id,
+        route.destination_station_id
+      );
       const updatedRoutes = await getSavedRoutes();
       setSavedRoutes(updatedRoutes);
     } catch (err) {
@@ -119,7 +135,9 @@ export default function HomePage() {
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold">
-                    {origin && destination ? 'Upcoming Trains' : 'Select a route to see trains'}
+                    {origin && destination
+                      ? 'Upcoming Trains'
+                      : 'Select a route to see trains'}
                   </h2>
                 </div>
                 <TrainList
@@ -133,9 +151,12 @@ export default function HomePage() {
           )}
         </main>
 
-        <footer className="mt-16 pb-8 text-center">
+        <footer className="mt-16 pb-8 text-center space-y-1">
           <p className="text-sm text-muted-foreground">
             Powered by Metra's official GTFS data
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            Not affiliated with Metra or the Regional Transportation Authority
           </p>
         </footer>
       </div>
