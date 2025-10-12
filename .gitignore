@@ -84,3 +84,4 @@ Desktop.ini
 # Optional: Keep .env.example
 # ==========================================
 !.env.example
+.vercel
