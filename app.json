@@ -12,8 +12,5 @@
       "quantity": 1
     }
   },
-  "addons": [],
-  "scripts": {
-    "postdeploy": "pnpm run build && cd packages/backend && pnpm gtfs:import"
-  }
+  "addons": []
 }
