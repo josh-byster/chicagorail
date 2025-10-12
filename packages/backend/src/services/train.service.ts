@@ -207,9 +207,26 @@ export const getUpcomingTrains = (
     // Construct proper datetime strings by combining date with time in Chicago timezone
     const constructDateTime = (timeStr: string): string => {
       if (!timeStr) return '';
-      // GTFS times are in America/Chicago timezone, append proper offset instead of 'Z' (UTC)
-      const offset = getChicagoOffset(searchDate);
-      return `${searchDate}T${timeStr}${offset}`;
+
+      // Handle GTFS times that go past midnight (e.g., "25:30:00" for 1:30 AM next day)
+      const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+      let adjustedDate = searchDate;
+      let adjustedHours = hours;
+
+      if (hours >= 24) {
+        // Calculate how many days to add
+        const daysToAdd = Math.floor(hours / 24);
+        adjustedHours = hours % 24;
+
+        // Add days to the date
+        const date = new Date(searchDate);
+        date.setDate(date.getDate() + daysToAdd);
+        adjustedDate = date.toISOString().split('T')[0];
+      }
+
+      const normalizedTime = `${String(adjustedHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      const offset = getChicagoOffset(adjustedDate);
+      return `${adjustedDate}T${normalizedTime}${offset}`;
     };
 
     const train = {
@@ -364,9 +381,26 @@ const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
   // Construct proper datetime strings for stops in Chicago timezone
   const constructDateTime = (timeStr: string): string => {
     if (!timeStr) return '';
-    // GTFS times are in America/Chicago timezone, append proper offset instead of 'Z' (UTC)
-    const offset = getChicagoOffset(dateStr);
-    return `${dateStr}T${timeStr}${offset}`;
+
+    // Handle GTFS times that go past midnight (e.g., "25:30:00" for 1:30 AM next day)
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    let adjustedDate = dateStr;
+    let adjustedHours = hours;
+
+    if (hours >= 24) {
+      // Calculate how many days to add
+      const daysToAdd = Math.floor(hours / 24);
+      adjustedHours = hours % 24;
+
+      // Add days to the date
+      const date = new Date(dateStr);
+      date.setDate(date.getDate() + daysToAdd);
+      adjustedDate = date.toISOString().split('T')[0];
+    }
+
+    const normalizedTime = `${String(adjustedHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const offset = getChicagoOffset(adjustedDate);
+    return `${adjustedDate}T${normalizedTime}${offset}`;
   };
 
   // Transform stop times to StopTime objects with proper datetime strings
