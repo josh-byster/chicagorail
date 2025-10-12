@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged for formatting and linting
+pnpm exec lint-staged
+
+# Run type checking
+echo "🔍 Running type check..."
+pnpm type-check
