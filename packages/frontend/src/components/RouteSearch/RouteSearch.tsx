@@ -61,11 +61,14 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
   };
 
   return (
-    <Card className="border-2 shadow-sm">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-2xl">Find Your Train</CardTitle>
+    <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
+      <CardHeader className="pb-6 border-b bg-gradient-to-r from-primary/5 to-transparent">
+        <CardTitle className="text-2xl font-bold flex items-center gap-2">
+          <div className="h-8 w-1 bg-gradient-to-b from-primary to-blue-600 rounded-full"></div>
+          Find Your Train
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-5 pt-6">
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground">From</label>
           <StationCombobox
@@ -78,7 +81,10 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           />
         </div>
 
-        <div className="flex justify-center -my-2">
+        <div className="flex justify-center -my-2 relative">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent"></div>
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -86,7 +92,7 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
             onClick={handleSwap}
             disabled={!origin && !destination}
             aria-label="Swap stations"
-            className="rounded-full border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
+            className="relative z-10 rounded-full border-2 bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-110 transition-all shadow-md"
           >
             <ArrowLeftRight className="h-5 w-5" />
           </Button>
