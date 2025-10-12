@@ -9,6 +9,7 @@ on:
       - 'packages/shared/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - '.npmrc'
       - 'Procfile'
       - 'app.json'
       - '.github/workflows/deploy-dokku.yml'
