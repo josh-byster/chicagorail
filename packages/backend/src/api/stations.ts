@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllStations, getStationsByLine, getStationById } from '../services/station.service';
+import { getAllStations, getStationsByLine, getStationById, getReachableStations } from '../services/station.service';
 
 const router: Router = Router();
 
@@ -35,12 +35,12 @@ router.get('/stations', (req, res) => {
 
 /**
  * GET /stations/:stationId
- * 
+ *
  * Returns a single station by ID
- * 
+ *
  * Path Parameters:
  * - stationId: The station ID to look up
- * 
+ *
  * Response:
  * - 200: Station object
  * - 404: Station not found
@@ -49,18 +49,43 @@ router.get('/stations', (req, res) => {
 router.get('/stations/:stationId', (req, res) => {
   try {
     const { stationId } = req.params;
-    
+
     const station = getStationById(stationId);
-    
+
     if (!station) {
       res.status(404).json({ error: 'Station not found' });
       return;
     }
-    
+
     res.json(station);
   } catch (error) {
     console.error('Error fetching station:', error);
     res.status(500).json({ error: 'Failed to fetch station' });
+  }
+});
+
+/**
+ * GET /stations/:stationId/reachable
+ *
+ * Returns all stations reachable from the given origin station
+ *
+ * Path Parameters:
+ * - stationId: The origin station ID
+ *
+ * Response:
+ * - 200: Array of reachable Station objects
+ * - 500: Internal server error
+ */
+router.get('/stations/:stationId/reachable', (req, res) => {
+  try {
+    const { stationId } = req.params;
+
+    const stations = getReachableStations(stationId);
+
+    res.json(stations);
+  } catch (error) {
+    console.error('Error fetching reachable stations:', error);
+    res.status(500).json({ error: 'Failed to fetch reachable stations' });
   }
 });
 

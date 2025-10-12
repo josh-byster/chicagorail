@@ -58,6 +58,10 @@ export async function fetchStation(stationId: string): Promise<Station> {
   return fetchApi<Station>(`/stations/${encodeURIComponent(stationId)}`);
 }
 
+export async function fetchReachableStations(originId: string): Promise<Station[]> {
+  return fetchApi<Station[]>(`/stations/${encodeURIComponent(originId)}/reachable`);
+}
+
 // Lines API
 export async function fetchLines(): Promise<Line[]> {
   return fetchApi<Line[]>('/lines');

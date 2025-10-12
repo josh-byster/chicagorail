@@ -92,9 +92,9 @@ export const getStationsByLine = (lineId: string): Station[] => {
  */
 export const getStationById = (stationId: string): Station | null => {
   const db = getDatabase();
-  
+
   const station = db.prepare(`
-    SELECT 
+    SELECT
       stop_id as station_id,
       stop_name as station_name,
       stop_lat as latitude,
@@ -120,4 +120,47 @@ export const getStationById = (stationId: string): Station | null => {
     zone: station.zone || undefined,
     wheelchair_accessible: station.wheelchair_accessible === 1,
   };
+};
+
+/**
+ * Get reachable stations from an origin station
+ * @param originId - The origin station ID
+ * @returns Array of stations that can be reached from the origin
+ */
+export const getReachableStations = (originId: string): Station[] => {
+  const db = getDatabase();
+
+  // Query to find all destination stations that have at least one trip from the origin
+  // This looks at stop_times to find trips that include both stations
+  const stations = db.prepare(`
+    SELECT DISTINCT
+      s.stop_id as station_id,
+      s.stop_name as station_name,
+      s.stop_lat as latitude,
+      s.stop_lon as longitude,
+      s.lines_served,
+      s.zone_id as zone,
+      s.wheelchair_boarding as wheelchair_accessible
+    FROM stops s
+    WHERE s.stop_id IN (
+      SELECT DISTINCT st2.stop_id
+      FROM stop_times st1
+      JOIN stop_times st2 ON st1.trip_id = st2.trip_id
+      WHERE st1.stop_id = ?
+        AND st2.stop_id != ?
+        AND st1.stop_sequence < st2.stop_sequence
+    )
+    ORDER BY s.stop_name
+  `).all(originId, originId) as StopRow[];
+
+  // Transform database rows to Station objects
+  return stations.map((row) => ({
+    station_id: row.station_id,
+    station_name: row.station_name,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    lines_served: JSON.parse(row.lines_served || '[]'),
+    zone: row.zone || undefined,
+    wheelchair_accessible: row.wheelchair_accessible === 1,
+  }));
 };

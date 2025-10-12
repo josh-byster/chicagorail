@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StationSelect } from '@/components/StationSelect/StationSelect';
+import { StationCombobox } from '@/components/StationCombobox/StationCombobox';
 import { ArrowLeftRight, Bookmark, Search } from 'lucide-react';
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
+import { useReachableStations } from '@/hooks/useReachableStations';
 import { saveRoute } from '@/services/saved-routes';
 import { SavedRoute } from '@metra/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -16,11 +17,24 @@ interface RouteSearchProps {
 export function RouteSearch({ onSearch }: RouteSearchProps) {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
-  const { data: stations } = useStations();
+
+  // Fetch all stations for origin selection
+  const { data: allStations, isLoading: isLoadingAll, error: errorAll } = useStations();
+
+  // Fetch reachable stations for destination selection
+  const { data: reachableStations, isLoading: isLoadingReachable, error: errorReachable } = useReachableStations(origin || null);
 
   const handleSwap = () => {
-    setOrigin(destination);
-    setDestination(origin);
+    const tempOrigin = origin;
+    const tempDest = destination;
+    setOrigin(tempDest);
+    setDestination(tempOrigin);
+  };
+
+  const handleOriginChange = (value: string) => {
+    setOrigin(value);
+    // Clear destination when origin changes since reachable stations will change
+    setDestination('');
   };
 
   const handleSearch = () => {
@@ -32,8 +46,8 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
   const isValid = origin && destination && origin !== destination;
 
   const getStationName = (stationId: string) => {
-    if (!stations) return stationId;
-    const station = stations.find(s => s.station_id === stationId);
+    if (!allStations) return stationId;
+    const station = allStations.find(s => s.station_id === stationId);
     return station ? station.station_name : stationId;
   };
 
@@ -45,10 +59,13 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
       <CardContent className="space-y-5">
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground">From</label>
-          <StationSelect
+          <StationCombobox
             value={origin}
-            onChange={setOrigin}
-            placeholder="Select origin station"
+            onChange={handleOriginChange}
+            placeholder="Search for origin station..."
+            stations={allStations}
+            isLoading={isLoadingAll}
+            error={errorAll}
           />
         </div>
 
@@ -68,10 +85,14 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
 
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground">To</label>
-          <StationSelect
+          <StationCombobox
             value={destination}
             onChange={setDestination}
-            placeholder="Select destination station"
+            placeholder={origin ? "Search for destination..." : "Select origin first"}
+            stations={origin ? reachableStations : []}
+            isLoading={isLoadingReachable}
+            error={errorReachable}
+            disabled={!origin}
           />
         </div>
 
