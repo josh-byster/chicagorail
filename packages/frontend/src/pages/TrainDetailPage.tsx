@@ -167,7 +167,7 @@ export default function TrainDetailPage() {
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-base">{stop.station_id}</p>
+                        <p className="font-semibold text-base">{stop.station_name || stop.station_id}</p>
                         <p className="text-sm text-muted-foreground mt-0.5">
                           {new Date(stop.arrival_time).toLocaleTimeString('en-US', {
                             hour: 'numeric',

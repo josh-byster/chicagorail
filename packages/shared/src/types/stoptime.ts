@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const StopTimeSchema = z.object({
   trip_id: z.string().min(1),
   station_id: z.string().min(1),
+  station_name: z.string().optional(),
   arrival_time: z.string(),
   departure_time: z.string(),
   stop_sequence: z.number().int().positive(),

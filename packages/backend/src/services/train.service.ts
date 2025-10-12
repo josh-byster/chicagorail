@@ -391,6 +391,7 @@ const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
   return stopTimes.map((stopTime) => ({
     trip_id: stopTime.trip_id,
     station_id: stopTime.station_id,
+    station_name: stopTime.station_name,
     arrival_time: constructDateTime(stopTime.arrival_time),
     departure_time: constructDateTime(stopTime.departure_time),
     stop_sequence: stopTime.stop_sequence,
