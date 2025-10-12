@@ -1,4 +1,3 @@
-import * as React from "react"
 import { SavedRoute } from "@metra/shared"
 import { SavedRouteCard } from "./SavedRouteCard"
 import { useTrains } from "@/hooks/useTrains"
