@@ -29,13 +29,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
 
-      - name: Add Dokku host to known hosts
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts 2>&1 || true
-          chmod 644 ~/.ssh/known_hosts || true
-
       - name: Deploy to Dokku
         env:
           DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
