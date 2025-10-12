@@ -72,12 +72,40 @@ export const getUpcomingTrains = (
   }
   
   const db = getDatabase();
-  
-  // Get current time if not provided
-  const searchTime = time || new Date().toISOString().slice(11, 19); // HH:MM:SS format
-  
-  // Get date for calendar filtering (use provided date or today)
-  const searchDate = date || new Date().toISOString().split('T')[0];
+
+  // Get current time if not provided - must be in Chicago timezone to match GTFS data
+  const searchTime = time || (() => {
+    const now = new Date();
+    // Format current time in Chicago timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    const hour = parts.find(p => p.type === 'hour')?.value || '00';
+    const minute = parts.find(p => p.type === 'minute')?.value || '00';
+    const second = parts.find(p => p.type === 'second')?.value || '00';
+    return `${hour}:${minute}:${second}`;
+  })();
+
+  // Get date for calendar filtering (use provided date or today in Chicago timezone)
+  const searchDate = date || (() => {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = formatter.formatToParts(now);
+    const year = parts.find(p => p.type === 'year')?.value || '';
+    const month = parts.find(p => p.type === 'month')?.value || '';
+    const day = parts.find(p => p.type === 'day')?.value || '';
+    return `${year}-${month}-${day}`;
+  })();
   
   // Get day of week for the search date (0 = Sunday, 1 = Monday, etc.)
   const searchDay = new Date(searchDate).getDay();
