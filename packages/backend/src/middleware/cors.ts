@@ -3,7 +3,6 @@ import type { CorsOptions } from 'cors';
 const allowedOrigins = [
   'https://chicagorail.app',
   'https://www.chicagorail.app',
-  'https://api.chicagorail.app',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
