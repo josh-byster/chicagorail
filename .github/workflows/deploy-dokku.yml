@@ -33,8 +33,8 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts 2>&1
-          chmod 644 ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts 2>&1 || true
+          chmod 644 ~/.ssh/known_hosts || true
 
       - name: Deploy to Dokku
         env:
