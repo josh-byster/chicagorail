@@ -48,6 +48,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://api.chicagorail.app/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
