@@ -1,10 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter shared build && pnpm --filter frontend build",
+  "buildCommand": "cd packages/shared && pnpm build && cd ../frontend && pnpm build",
   "outputDirectory": "packages/frontend/dist",
-  "installCommand": "npm install -g pnpm && pnpm install --filter shared --filter frontend --ignore-scripts --config.auto-install-peers=true --config.strict-peer-dependencies=false",
+  "installCommand": "pnpm install",
   "framework": null,
-  "devCommand": "cd packages/frontend && pnpm dev",
   "headers": [
     {
       "source": "/service-worker.js",
