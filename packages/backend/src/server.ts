@@ -20,7 +20,6 @@ import trainRoutes from './api/trains';
 import alertRoutes from './api/alerts';
 import lineRoutes from './api/lines';
 import healthRoutes from './api/health';
-import { validateTrainQueryParams } from './middleware/validate-trains';
 
 const app: express.Application = express();
 const PORT = env.PORT || 3000;

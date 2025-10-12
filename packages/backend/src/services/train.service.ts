@@ -1,7 +1,7 @@
 import { getDatabase } from './database.service';
-import { Train, TrainStatus, Position } from '@metra/shared';
+import { Train, TrainStatus } from '@metra/shared';
 import { StopTime } from '@metra/shared';
-import { getRealtimeTripUpdates, getRealtimeVehiclePositions } from './gtfs-realtime.service';
+import { getRealtimeTripUpdates } from './gtfs-realtime.service';
 import { getCachedData, setCachedData, generateTrainCacheKey } from './cache.service';
 import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils';
 
@@ -11,41 +11,6 @@ import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils';
  * Queries trains by origin/destination from SQLite database
  * Applies realtime delays (stub implementation - will be enhanced with US2)
  */
-
-interface TripRow {
-  trip_id: string;
-  route_id: string;
-  service_id: string;
-  trip_headsign: string;
-  direction_id: number;
-  line_id: string;
-  line_name: string;
-  departure_time: string;
-  arrival_time: string;
-}
-
-interface StopTimeRow {
-  trip_id: string;
-  stop_id: string;
-  stop_sequence: number;
-  arrival_time: string;
-  departure_time: string;
-  station_id: string;
-  station_name: string;
-}
-
-interface CalendarRow {
-  service_id: string;
-  monday: number;
-  tuesday: number;
-  wednesday: number;
-  thursday: number;
-  friday: number;
-  saturday: number;
-  sunday: number;
-  start_date: string;
-  end_date: string;
-}
 
 /**
  * Get upcoming trains between origin and destination stations
@@ -195,11 +160,7 @@ export const getUpcomingTrains = (
   for (const trip of trips) {
     // Get all stops for this trip
     const stops = getStopsForTrip(trip.trip_id, searchDate);
-    
-    // Find the origin and destination stop times
-    const originStopTime = stops.find(stop => stop.station_id === originId);
-    const destinationStopTime = stops.find(stop => stop.station_id === destinationId);
-    
+
     // Find realtime trip update for this trip
     const realtimeTrip = tripUpdates.find(update => update.tripId === trip.trip_id);
     
@@ -285,14 +246,6 @@ export const getTrainDetail = (tripId: string): Train | null => {
     return null;
   }
   
-  // Get service information to determine the date
-  const serviceQuery = `
-    SELECT start_date, end_date
-    FROM calendar
-    WHERE service_id = ?
-  `;
-  const serviceInfo = db.prepare(serviceQuery).get(trip.service_id) as any | undefined;
-
   // Get current date for constructing datetime strings
   const today = new Date();
   const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format

@@ -20,7 +20,7 @@ interface HealthResponse {
  * - 200: Health status object
  * - 500: Internal server error
  */
-router.get('/health', (req, res) => {
+router.get('/health', (_req, res) => {
   try {
     const db = getDatabase();
     

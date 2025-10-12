@@ -1,5 +1,4 @@
 import { env } from '../config/env';
-import { getDatabase } from './database.service';
 
 /**
  * GTFS Realtime Polling Service

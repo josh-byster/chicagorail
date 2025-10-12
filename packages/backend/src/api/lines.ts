@@ -15,7 +15,7 @@ const router: Router = Router();
  * - 200: Array of Line objects
  * - 500: Internal server error
  */
-router.get('/lines', (req, res) => {
+router.get('/lines', (_req, res) => {
   try {
     const lines = getAllLines();
     res.json(lines);

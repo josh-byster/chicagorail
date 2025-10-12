@@ -1,5 +1,3 @@
-import { Train } from '@metra/shared';
-
 /**
  * Cache Service
  *
