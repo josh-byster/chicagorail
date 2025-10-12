@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm install && pnpm --filter shared build && pnpm --filter frontend build",
+  "buildCommand": "pnpm --filter shared build && pnpm --filter frontend build",
   "outputDirectory": "packages/frontend/dist",
-  "installCommand": "npm install -g pnpm && pnpm install",
+  "installCommand": "npm install -g pnpm && pnpm install --filter shared --filter frontend",
   "framework": null,
   "devCommand": "cd packages/frontend && pnpm dev",
   "headers": [
