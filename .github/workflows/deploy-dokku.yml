@@ -31,7 +31,9 @@ jobs:
       - name: Add Dokku host to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts 2>&1 || echo "Host key scan failed, continuing..."
+          chmod 700 ~/.ssh
+          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts 2>&1
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy to Dokku
         env:
@@ -39,7 +41,7 @@ jobs:
           DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
         run: |
           git remote add dokku dokku@$DOKKU_HOST:$DOKKU_APP_NAME || true
-          git push dokku main:master -f
+          GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git push dokku main:master -f
 
       - name: Set environment variables on Dokku
         env:
