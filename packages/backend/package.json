@@ -23,7 +23,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
     "gtfs": "^4.18.0",
-    "better-sqlite3": "^9.4.0",
+    "better-sqlite3": "^12.4.1",
     "zod": "^3.22.4",
     "node-cron": "^3.0.3"
   },
