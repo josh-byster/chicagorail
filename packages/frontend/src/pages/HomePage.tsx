@@ -11,8 +11,6 @@ import {
 import { useStations } from '@/hooks/useStations';
 import { SavedRoute } from '@metra/shared';
 import { Separator } from '@/components/ui/separator';
-import { Train } from 'lucide-react';
-
 export default function HomePage() {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
@@ -98,8 +96,12 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <header className="mb-10">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2.5 bg-primary rounded-lg">
-              <Train className="h-7 w-7 text-primary-foreground" />
+            <div className="p-2.5 bg-primary rounded-lg flex items-center justify-center">
+              <img
+                src="/bsicon.svg"
+                alt="Metra Train Icon"
+                className="h-7 w-7 brightness-0 invert"
+              />
             </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
