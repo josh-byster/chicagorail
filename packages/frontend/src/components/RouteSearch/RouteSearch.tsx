@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StationSelect } from '@/components/StationSelect/StationSelect';
-import { ArrowLeftRight, Bookmark } from 'lucide-react';
+import { ArrowLeftRight, Bookmark, Search } from 'lucide-react';
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
 import { saveRoute } from '@/services/saved-routes';
 import { SavedRoute } from '@metra/shared';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface RouteSearchProps {
   onSearch: (origin: string, destination: string) => void;
@@ -37,13 +38,13 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Find Your Train</CardTitle>
+    <Card className="border-2 shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-2xl">Find Your Train</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="space-y-2">
-          <label className="text-sm font-medium">From</label>
+          <label className="text-sm font-semibold text-foreground">From</label>
           <StationSelect
             value={origin}
             onChange={setOrigin}
@@ -51,21 +52,22 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           />
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center -my-2">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={handleSwap}
             disabled={!origin && !destination}
             aria-label="Swap stations"
+            className="rounded-full border-2 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
           >
-            <ArrowLeftRight className="h-4 w-4" />
+            <ArrowLeftRight className="h-5 w-5" />
           </Button>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">To</label>
+          <label className="text-sm font-semibold text-foreground">To</label>
           <StationSelect
             value={destination}
             onChange={setDestination}
@@ -73,15 +75,25 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           />
         </div>
 
-        <div className="flex gap-2">
+        {origin === destination && origin && (
+          <Alert variant="destructive" className="py-2">
+            <AlertDescription className="text-sm">
+              Origin and destination must be different
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="flex gap-3 pt-2">
           <Button
             onClick={handleSearch}
             disabled={!isValid}
-            className="flex-1"
+            className="flex-1 h-11 text-base font-semibold"
+            size="lg"
           >
+            <Search className="h-5 w-5 mr-2" />
             Search Trains
           </Button>
-          
+
           {isValid && (
             <SaveRouteDialog
               originStationId={origin}
@@ -101,18 +113,13 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
                 variant="outline"
                 size="icon"
                 aria-label="Save route"
+                className="h-11 w-11"
               >
-                <Bookmark className="h-4 w-4" />
+                <Bookmark className="h-5 w-5" />
               </Button>
             </SaveRouteDialog>
           )}
         </div>
-
-        {origin === destination && origin && (
-          <p className="text-sm text-destructive">
-            Origin and destination must be different
-          </p>
-        )}
       </CardContent>
     </Card>
   );

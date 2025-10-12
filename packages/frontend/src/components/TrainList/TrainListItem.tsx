@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, ArrowRight, MapPin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Clock, ArrowRight, MapPin, Train as TrainIcon } from 'lucide-react';
 import type { Train } from '@metra/shared';
 
 interface TrainListItemProps {
@@ -18,76 +19,80 @@ export function TrainListItem({ train }: TrainListItemProps) {
     minute: '2-digit',
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string): 'success' | 'warning' | 'destructive' | 'secondary' => {
     switch (status) {
       case 'on_time':
-        return 'text-green-600';
+        return 'success';
       case 'delayed':
-        return 'text-orange-600';
+        return 'warning';
       case 'cancelled':
-        return 'text-red-600';
+        return 'destructive';
       default:
-        return 'text-muted-foreground';
+        return 'secondary';
     }
   };
 
   const getStatusText = (status: string, delayMinutes: number) => {
-    if (status === 'on_time') return 'On time';
+    if (status === 'on_time') return 'On Time';
     if (status === 'cancelled') return 'Cancelled';
     if (status === 'delayed' && delayMinutes > 0) {
-      return `${delayMinutes} min delay`;
+      return `Delayed ${delayMinutes} min`;
     }
-    return status;
+    return 'Scheduled';
   };
 
   return (
-    <Link to={`/train/${train.trip_id}`}>
-      <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
-              {/* Line indicator */}
-              <div
-                className="w-1 h-16 rounded-full"
-                style={{ backgroundColor: train.line_id }}
-                aria-label={`${train.line_name} line`}
-              />
+    <Link to={`/train/${train.trip_id}`} className="block">
+      <Card className="hover:shadow-lg hover:border-primary/50 transition-all duration-200 cursor-pointer group overflow-hidden">
+        <CardContent className="p-0">
+          <div className="flex items-stretch">
+            {/* Line indicator with color */}
+            <div
+              className="w-2 flex-shrink-0"
+              style={{ backgroundColor: train.line_id }}
+              aria-label={`${train.line_name} line`}
+            />
 
-              {/* Time information */}
-              <div className="flex flex-col gap-2 flex-1">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-lg">{departureTime}</span>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-lg">{arrivalTime}</span>
+            <div className="flex-1 p-5">
+              {/* Header with time and status */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-primary flex-shrink-0" />
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-bold text-2xl tracking-tight">{departureTime}</span>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                    <span className="font-bold text-2xl tracking-tight text-muted-foreground">{arrivalTime}</span>
                   </div>
                 </div>
+                <Badge variant={getStatusVariant(train.status)} className="ml-3 flex-shrink-0">
+                  {getStatusText(train.status, train.delay_minutes)}
+                </Badge>
+              </div>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {/* Train details */}
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <div className="flex items-center gap-1.5 font-medium text-foreground">
+                  <TrainIcon className="h-4 w-4" />
                   <span>{train.line_name}</span>
-                  {train.train_number && (
-                    <>
-                      <span>•</span>
-                      <span>Train #{train.train_number}</span>
-                    </>
-                  )}
                 </div>
+
+                {train.train_number && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">Train #{train.train_number}</span>
+                  </>
+                )}
 
                 {train.platform && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    <span>Platform {train.platform}</span>
-                  </div>
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>Platform {train.platform}</span>
+                    </div>
+                  </>
                 )}
               </div>
-            </div>
-
-            {/* Status */}
-            <div className="text-right">
-              <span className={`text-sm font-medium ${getStatusColor(train.status)}`}>
-                {getStatusText(train.status, train.delay_minutes)}
-              </span>
             </div>
           </div>
         </CardContent>
