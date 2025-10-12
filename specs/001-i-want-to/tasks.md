@@ -70,18 +70,18 @@ This is a monorepo project with:
 
 ### Frontend Package Foundation
 
-- [ ] T025 [P] [Foundation] Initialize packages/frontend package.json with React 18, Vite, TypeScript, TanStack Query, Workbox dependencies
-- [ ] T026 [P] [Foundation] Create packages/frontend/tsconfig.json extending base config
-- [ ] T027 [P] [Foundation] Setup Vite configuration in packages/frontend/vite.config.ts with PWA plugin
-- [ ] T028 [P] [Foundation] Create packages/frontend/tailwind.config.js for Tailwind CSS
-- [ ] T029 [P] [Foundation] Install ShadCN UI and setup components.json configuration (💡 Use ShadCN MCP: `mcp__shadcn__getComponents` to see available components)
-- [ ] T030 [Foundation] Create packages/frontend/src/App.tsx main component with routing setup
-- [ ] T031 [P] [Foundation] Setup TanStack Query client in packages/frontend/src/lib/query-client.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="TanStack Query setup TypeScript"`)
-- [ ] T032 [P] [Foundation] Create packages/frontend/src/services/api.ts as backend API client
-- [ ] T033 [P] [Foundation] Setup Workbox service worker strategy in packages/frontend/src/service-worker.ts (Network First for API, Cache First for static assets) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="Workbox service worker strategies"`)
-- [ ] T034 [P] [Foundation] Create packages/frontend/src/services/storage.ts as IndexedDB wrapper using Dexie.js
-- [ ] T035 [P] [Foundation] Create packages/frontend/public/manifest.json for PWA configuration
-- [ ] T036 [P] [Foundation] Create app icons in various sizes in packages/frontend/public/icons/
+- [X] T025 [P] [Foundation] Initialize packages/frontend package.json with React 18, Vite, TypeScript, TanStack Query, Workbox dependencies
+- [X] T026 [P] [Foundation] Create packages/frontend/tsconfig.json extending base config
+- [X] T027 [P] [Foundation] Setup Vite configuration in packages/frontend/vite.config.ts with PWA plugin
+- [X] T028 [P] [Foundation] Create packages/frontend/tailwind.config.js for Tailwind CSS
+- [X] T029 [P] [Foundation] Install ShadCN UI and setup components.json configuration (💡 Use ShadCN MCP: `mcp__shadcn__getComponents` to see available components)
+- [X] T030 [Foundation] Create packages/frontend/src/App.tsx main component with routing setup
+- [X] T031 [P] [Foundation] Setup TanStack Query client in packages/frontend/src/lib/query-client.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="TanStack Query setup TypeScript"`)
+- [X] T032 [P] [Foundation] Create packages/frontend/src/services/api.ts as backend API client
+- [X] T033 [P] [Foundation] Setup Workbox service worker strategy in packages/frontend/src/service-worker.ts (Network First for API, Cache First for static assets) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="Workbox service worker strategies"`)
+- [X] T034 [P] [Foundation] Create packages/frontend/src/services/storage.ts as IndexedDB wrapper using Dexie.js
+- [X] T035 [P] [Foundation] Create packages/frontend/public/manifest.json for PWA configuration
+- [X] T036 [P] [Foundation] Create app icons in various sizes in packages/frontend/public/icons/
 
 ### Shared Type Definitions (Required for all stories)
 
