@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import { getActiveAlerts } from '../services/alert.service';
+import { getActiveAlerts } from '../services/alert.service.js';
 
 const router: Router = Router();
 
 /**
  * GET /alerts
- * 
+ *
  * Returns active service alerts
- * 
+ *
  * Query Parameters:
  * - line_id (optional): Filter alerts by line ID
  * - station_id (optional): Filter alerts by station ID
- * 
+ *
  * Response:
  * - 200: Array of ServiceAlert objects
  * - 500: Internal server error
@@ -19,12 +19,12 @@ const router: Router = Router();
 router.get('/alerts', (req, res) => {
   try {
     const { line_id, station_id } = req.query;
-    
+
     const alerts = getActiveAlerts(
       line_id as string | undefined,
       station_id as string | undefined
     );
-    
+
     res.json(alerts);
   } catch (error) {
     console.error('Error fetching alerts:', error);

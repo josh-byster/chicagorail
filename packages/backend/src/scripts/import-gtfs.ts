@@ -22,12 +22,12 @@ dotenv.config({ path: envPath });
 console.log(`Loading .env from: ${envPath}`);
 
 // Now import modules that depend on env variables
-import { initDatabase } from '../services/database.service';
-import { importGTFSStaticData } from '../services/gtfs-init.service';
+import { initDatabase } from '../services/database.service.js';
+import { importGTFSStaticData } from '../services/gtfs-init.service.js';
 
 async function main() {
   console.log('🚆 Metra GTFS Import Script');
-  console.log('=' .repeat(80));
+  console.log('='.repeat(80));
 
   try {
     // Initialize database
@@ -39,8 +39,10 @@ async function main() {
     await importGTFSStaticData();
 
     console.log('\n✨ Import complete!');
-    console.log('🔍 You can now query the database at:', process.env.DATABASE_PATH);
-
+    console.log(
+      '🔍 You can now query the database at:',
+      process.env.DATABASE_PATH
+    );
   } catch (error) {
     console.error('\n❌ Import failed:', error);
     process.exit(1);

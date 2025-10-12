@@ -1,16 +1,21 @@
 import { Router } from 'express';
-import { getAllStations, getStationsByLine, getStationById, getReachableStations } from '../services/station.service';
+import {
+  getAllStations,
+  getStationsByLine,
+  getStationById,
+  getReachableStations,
+} from '../services/station.service.js';
 
 const router: Router = Router();
 
 /**
  * GET /stations
- * 
+ *
  * Returns all stations or filters by line_id query parameter
- * 
+ *
  * Query Parameters:
  * - line_id (optional): Filter stations by line ID
- * 
+ *
  * Response:
  * - 200: Array of Station objects
  * - 500: Internal server error
@@ -18,14 +23,14 @@ const router: Router = Router();
 router.get('/stations', (req, res) => {
   try {
     const { line_id } = req.query;
-    
+
     let stations;
     if (line_id && typeof line_id === 'string') {
       stations = getStationsByLine(line_id);
     } else {
       stations = getAllStations();
     }
-    
+
     res.json(stations);
   } catch (error) {
     console.error('Error fetching stations:', error);

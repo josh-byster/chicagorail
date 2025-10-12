@@ -1,5 +1,5 @@
 import { ServiceAlert, AlertType, AlertSeverity } from '@metra/shared';
-import { getRealtimeAlerts } from './gtfs-realtime.service';
+import { getRealtimeAlerts } from './gtfs-realtime.service.js';
 
 /**
  * Alert Service
@@ -14,26 +14,30 @@ import { getRealtimeAlerts } from './gtfs-realtime.service';
  * @param stationId - Optional station ID to filter alerts (optional)
  * @returns Array of active service alerts
  */
-export const getActiveAlerts = (lineId?: string, stationId?: string): ServiceAlert[] => {
+export const getActiveAlerts = (
+  lineId?: string,
+  stationId?: string
+): ServiceAlert[] => {
   const realtimeAlerts = getRealtimeAlerts();
-  
+
   // Filter and transform alerts
   let filteredAlerts = realtimeAlerts;
-  
+
   if (lineId) {
-    filteredAlerts = filteredAlerts.filter(alert => 
-      alert.affectedLines?.includes(lineId) || 
-      alert.routeId === lineId
+    filteredAlerts = filteredAlerts.filter(
+      (alert) =>
+        alert.affectedLines?.includes(lineId) || alert.routeId === lineId
     );
   }
-  
+
   if (stationId) {
-    filteredAlerts = filteredAlerts.filter(alert => 
-      alert.affectedStations?.includes(stationId) ||
-      alert.stopId === stationId
+    filteredAlerts = filteredAlerts.filter(
+      (alert) =>
+        alert.affectedStations?.includes(stationId) ||
+        alert.stopId === stationId
     );
   }
-  
+
   // Transform to ServiceAlert objects
   return filteredAlerts.map((alert) => {
     return {

@@ -1,5 +1,5 @@
-import { env } from '../config/env';
-import { getDatabase } from './database.service';
+import { env } from '../config/env.js';
+import { getDatabase } from './database.service.js';
 
 /**
  * GTFS Static Data Import Service
@@ -80,7 +80,9 @@ export const importGTFSStaticData = async (): Promise<void> => {
     const calendar = await fetchGTFSEndpoint('/gtfs/schedule/calendar');
 
     console.log('  ⏳ Fetching calendar_dates...');
-    const calendarDates = await fetchGTFSEndpoint('/gtfs/schedule/calendar_dates');
+    const calendarDates = await fetchGTFSEndpoint(
+      '/gtfs/schedule/calendar_dates'
+    );
 
     // Insert data into database
     console.log('  💾 Inserting data into database...');
@@ -205,7 +207,10 @@ const insertRoutes = (db: any, routes: any[]) => {
 
     // Convert route_text_color number to hex color
     let textColor = '#000000'; // Default black
-    if (route.route_text_color !== undefined && route.route_text_color !== null) {
+    if (
+      route.route_text_color !== undefined &&
+      route.route_text_color !== null
+    ) {
       if (typeof route.route_text_color === 'number') {
         textColor = route.route_text_color === 0 ? '#FFFFFF' : '#000000';
       } else {
@@ -304,11 +309,7 @@ const insertCalendarDates = (db: any, calendarDates: any[]) => {
     VALUES (?, ?, ?)
   `);
   for (const calDate of calendarDates) {
-    stmt.run(
-      calDate.service_id,
-      calDate.date,
-      calDate.exception_type
-    );
+    stmt.run(calDate.service_id, calDate.date, calDate.exception_type);
   }
 };
 

@@ -1,4 +1,4 @@
-import { env } from '../config/env';
+import { env } from '../config/env.js';
 
 /**
  * GTFS Realtime Polling Service
@@ -86,7 +86,7 @@ let realtimeVehiclePositions: any[] = [];
  */
 export const pollGTFSRealtimeData = async (): Promise<void> => {
   console.log('📡 Polling GTFS realtime data...');
-  
+
   try {
     // Fetch alerts
     console.log('  ⏳ Fetching service alerts...');
@@ -94,7 +94,7 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
       getConfig().alertsUrl,
       lastAlertsModified
     );
-    
+
     if (alertsResponse.data) {
       console.log('  💾 Processing alerts data...');
       // Process and store alerts data
@@ -110,11 +110,12 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
       getConfig().tripUpdatesUrl,
       lastTripUpdatesModified
     );
-    
+
     if (tripUpdatesResponse.data) {
       console.log('  💾 Processing trip updates data...');
       // Process and store trip updates data
-      realtimeTripUpdates = tripUpdatesResponse.data.tripUpdates || tripUpdatesResponse.data;
+      realtimeTripUpdates =
+        tripUpdatesResponse.data.tripUpdates || tripUpdatesResponse.data;
       lastTripUpdatesModified = tripUpdatesResponse.lastModified;
     } else {
       console.log('  ⏩ Trip updates not modified since last fetch');
@@ -126,11 +127,12 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
       getConfig().positionsUrl,
       lastPositionsModified
     );
-    
+
     if (positionsResponse.data) {
       console.log('  💾 Processing vehicle positions data...');
       // Process and store vehicle positions data
-      realtimeVehiclePositions = positionsResponse.data.vehiclePositions || positionsResponse.data;
+      realtimeVehiclePositions =
+        positionsResponse.data.vehiclePositions || positionsResponse.data;
       lastPositionsModified = positionsResponse.lastModified;
     } else {
       console.log('  ⏩ Vehicle positions not modified since last fetch');
@@ -173,14 +175,14 @@ export const getRealtimeVehiclePositions = (): any[] => {
  */
 export const startGTFSRealtimePolling = (): void => {
   console.log('🚀 Starting GTFS realtime polling service...');
-  
+
   // Initial poll
   pollGTFSRealtimeData().catch(console.error);
-  
+
   // Set up interval polling
   setInterval(() => {
     pollGTFSRealtimeData().catch(console.error);
   }, getConfig().pollInterval);
-  
+
   console.log(`⏱️  Polling interval set to ${getConfig().pollInterval}ms`);
 };

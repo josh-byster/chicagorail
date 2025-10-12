@@ -1,16 +1,16 @@
 import { Router } from 'express';
-import { getAllLines, getLineById } from '../services/line.service';
+import { getAllLines, getLineById } from '../services/line.service.js';
 
 const router: Router = Router();
 
 /**
  * GET /lines
- * 
+ *
  * Returns all train lines
- * 
+ *
  * Query Parameters:
  * - None
- * 
+ *
  * Response:
  * - 200: Array of Line objects
  * - 500: Internal server error
@@ -27,12 +27,12 @@ router.get('/lines', (_req, res) => {
 
 /**
  * GET /lines/:lineId
- * 
+ *
  * Returns detailed line information including all stations
- * 
+ *
  * Path Parameters:
  * - lineId (required): The line ID to look up
- * 
+ *
  * Response:
  * - 200: Line object with all stations
  * - 404: Line not found
@@ -41,14 +41,14 @@ router.get('/lines', (_req, res) => {
 router.get('/lines/:lineId', (req, res) => {
   try {
     const { lineId } = req.params;
-    
+
     const line = getLineById(lineId);
-    
+
     if (!line) {
       res.status(404).json({ error: 'Line not found' });
       return;
     }
-    
+
     res.json(line);
   } catch (error) {
     console.error('Error fetching line detail:', error);

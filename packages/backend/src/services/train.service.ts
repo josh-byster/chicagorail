@@ -1,9 +1,13 @@
-import { getDatabase } from './database.service';
+import { getDatabase } from './database.service.js';
 import { Train, TrainStatus } from '@metra/shared';
 import { StopTime } from '@metra/shared';
-import { getRealtimeTripUpdates } from './gtfs-realtime.service';
-import { getCachedData, setCachedData, generateTrainCacheKey } from './cache.service';
-import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils';
+import { getRealtimeTripUpdates } from './gtfs-realtime.service.js';
+import {
+  getCachedData,
+  setCachedData,
+  generateTrainCacheKey,
+} from './cache.service.js';
+import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils.js';
 
 /**
  * Train Service
@@ -29,53 +33,70 @@ export const getUpcomingTrains = (
   date?: string
 ): Train[] => {
   // Generate cache key - include date in cache key
-  const cacheKey = generateTrainCacheKey(originId, destinationId, limit, time || date);
-  
+  const cacheKey = generateTrainCacheKey(
+    originId,
+    destinationId,
+    limit,
+    time || date
+  );
+
   // Check cache first
   const cachedData = getCachedData<Train[]>(cacheKey);
   if (cachedData) {
     return cachedData;
   }
-  
+
   const db = getDatabase();
 
   // Get current time if not provided - must be in Chicago timezone to match GTFS data
-  const searchTime = time || (() => {
-    const now = new Date();
-    // Format current time in Chicago timezone
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-    const parts = formatter.formatToParts(now);
-    const hour = parts.find(p => p.type === 'hour')?.value || '00';
-    const minute = parts.find(p => p.type === 'minute')?.value || '00';
-    const second = parts.find(p => p.type === 'second')?.value || '00';
-    return `${hour}:${minute}:${second}`;
-  })();
+  const searchTime =
+    time ||
+    (() => {
+      const now = new Date();
+      // Format current time in Chicago timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Chicago',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      const parts = formatter.formatToParts(now);
+      const hour = parts.find((p) => p.type === 'hour')?.value || '00';
+      const minute = parts.find((p) => p.type === 'minute')?.value || '00';
+      const second = parts.find((p) => p.type === 'second')?.value || '00';
+      return `${hour}:${minute}:${second}`;
+    })();
 
   // Get date for calendar filtering (use provided date or today in Chicago timezone)
-  const searchDate = date || (() => {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const parts = formatter.formatToParts(now);
-    const year = parts.find(p => p.type === 'year')?.value || '';
-    const month = parts.find(p => p.type === 'month')?.value || '';
-    const day = parts.find(p => p.type === 'day')?.value || '';
-    return `${year}-${month}-${day}`;
-  })();
-  
+  const searchDate =
+    date ||
+    (() => {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Chicago',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const parts = formatter.formatToParts(now);
+      const year = parts.find((p) => p.type === 'year')?.value || '';
+      const month = parts.find((p) => p.type === 'month')?.value || '';
+      const day = parts.find((p) => p.type === 'day')?.value || '';
+      return `${year}-${month}-${day}`;
+    })();
+
   // Get day of week for the search date (0 = Sunday, 1 = Monday, etc.)
   const searchDay = new Date(searchDate).getDay();
-  const dayColumn = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][searchDay];
+  const dayColumn = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+  ][searchDay];
 
   // Query to find trips that go from origin to destination
   // This query properly handles calendar_dates exceptions per GTFS spec:
@@ -119,8 +140,10 @@ export const getUpcomingTrains = (
     ${limit ? `LIMIT ${limit}` : ''}
   `;
 
-  const trips = db.prepare(query).all(originId, destinationId, searchTime) as any[];
-  
+  const trips = db
+    .prepare(query)
+    .all(originId, destinationId, searchTime) as any[];
+
   // Get realtime data
   const tripUpdates = getRealtimeTripUpdates();
 
@@ -133,7 +156,7 @@ export const getUpcomingTrains = (
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Chicago',
       hour: '2-digit',
-      hour12: false
+      hour12: false,
     });
 
     const chicagoHourStr = formatter.format(utcDate);
@@ -162,12 +185,14 @@ export const getUpcomingTrains = (
     const stops = getStopsForTrip(trip.trip_id, searchDate);
 
     // Find realtime trip update for this trip
-    const realtimeTrip = tripUpdates.find(update => update.tripId === trip.trip_id);
-    
+    const realtimeTrip = tripUpdates.find(
+      (update) => update.tripId === trip.trip_id
+    );
+
     // Determine train status based on realtime data
     let status = TrainStatus.SCHEDULED;
     let delayMinutes = 0;
-    
+
     if (realtimeTrip) {
       delayMinutes = realtimeTrip.delay || 0;
       if (delayMinutes > 0) {
@@ -203,17 +228,17 @@ export const getUpcomingTrains = (
       service_id: trip.service_id,
       updated_at: new Date().toISOString(),
     } as Train;
-    
+
     // Create a unique key based on departure time and line to deduplicate
     const key = `${trip.departure_time}-${trip.line_id}`;
     trainMap.set(key, train);
   }
-  
+
   const uniqueTrains = Array.from(trainMap.values());
-  
+
   // Cache the results
   setCachedData(cacheKey, uniqueTrains);
-  
+
   return uniqueTrains;
 };
 
@@ -224,7 +249,7 @@ export const getUpcomingTrains = (
  */
 export const getTrainDetail = (tripId: string): Train | null => {
   const db = getDatabase();
-  
+
   // Query to get trip details
   const query = `
     SELECT
@@ -239,13 +264,13 @@ export const getTrainDetail = (tripId: string): Train | null => {
     JOIN routes r ON t.route_id = r.route_id
     WHERE t.trip_id = ?
   `;
-  
+
   const trip = db.prepare(query).get(tripId) as any | undefined;
-  
+
   if (!trip) {
     return null;
   }
-  
+
   // Get current date for constructing datetime strings
   const today = new Date();
   const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -284,7 +309,9 @@ export const getTrainDetail = (tripId: string): Train | null => {
 const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
   const db = getDatabase();
 
-  const stopTimes = db.prepare(`
+  const stopTimes = db
+    .prepare(
+      `
     SELECT
       st.trip_id,
       st.stop_id as station_id,
@@ -296,7 +323,9 @@ const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
     JOIN stops s ON st.stop_id = s.stop_id
     WHERE st.trip_id = ?
     ORDER BY st.stop_sequence
-  `).all(tripId) as any[];
+  `
+    )
+    .all(tripId) as any[];
 
   // Get current date for constructing datetime strings
   const today = new Date();
@@ -311,7 +340,7 @@ const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Chicago',
       hour: '2-digit',
-      hour12: false
+      hour12: false,
     });
 
     const chicagoHourStr = formatter.format(utcDate);

@@ -1,6 +1,6 @@
-import { getDatabase } from './database.service';
+import { getDatabase } from './database.service.js';
 import { Line } from '@metra/shared';
-import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils';
+import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils.js';
 
 /**
  * Line Service
@@ -23,8 +23,10 @@ interface RouteRow {
  */
 export const getAllLines = (): Line[] => {
   const db = getDatabase();
-  
-  const routes = db.prepare(`
+
+  const routes = db
+    .prepare(
+      `
     SELECT 
       route_id,
       route_short_name,
@@ -34,24 +36,30 @@ export const getAllLines = (): Line[] => {
       route_text_color
     FROM routes
     ORDER BY route_long_name
-  `).all() as RouteRow[];
-  
+  `
+    )
+    .all() as RouteRow[];
+
   // Get stations for each line
   const lineStations: Record<string, string[]> = {};
-  
+
   // For each route, get unique stations
-  routes.forEach(route => {
-    const stations = db.prepare(`
+  routes.forEach((route) => {
+    const stations = db
+      .prepare(
+        `
       SELECT DISTINCT st.stop_id
       FROM stop_times st
       JOIN trips t ON st.trip_id = t.trip_id
       WHERE t.route_id = ?
       ORDER BY st.stop_id
-    `).all(route.route_id) as { stop_id: string }[];
-    
-    lineStations[route.route_id] = stations.map(s => s.stop_id);
+    `
+      )
+      .all(route.route_id) as { stop_id: string }[];
+
+    lineStations[route.route_id] = stations.map((s) => s.stop_id);
   });
-  
+
   // Transform routes to Line objects
   return routes.map((route) => ({
     line_id: route.route_id,
@@ -70,8 +78,10 @@ export const getAllLines = (): Line[] => {
  */
 export const getLineById = (lineId: string): Line | null => {
   const db = getDatabase();
-  
-  const route = db.prepare(`
+
+  const route = db
+    .prepare(
+      `
     SELECT 
       route_id,
       route_short_name,
@@ -81,23 +91,29 @@ export const getLineById = (lineId: string): Line | null => {
       route_text_color
     FROM routes
     WHERE route_id = ?
-  `).get(lineId) as RouteRow | undefined;
-  
+  `
+    )
+    .get(lineId) as RouteRow | undefined;
+
   if (!route) {
     return null;
   }
-  
+
   // Get stations for this line
-  const stations = db.prepare(`
+  const stations = db
+    .prepare(
+      `
     SELECT DISTINCT st.stop_id
     FROM stop_times st
     JOIN trips t ON st.trip_id = t.trip_id
     WHERE t.route_id = ?
     ORDER BY st.stop_id
-  `).all(lineId) as { stop_id: string }[];
-  
-  const stationIds = stations.map(s => s.stop_id);
-  
+  `
+    )
+    .all(lineId) as { stop_id: string }[];
+
+  const stationIds = stations.map((s) => s.stop_id);
+
   return {
     line_id: route.route_id,
     line_name: route.route_long_name,

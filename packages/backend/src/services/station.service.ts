@@ -1,4 +1,4 @@
-import { getDatabase } from './database.service';
+import { getDatabase } from './database.service.js';
 import { Station } from '@metra/shared';
 
 /**
@@ -24,8 +24,10 @@ interface StopRow {
  */
 export const getAllStations = (): Station[] => {
   const db = getDatabase();
-  
-  const stations = db.prepare(`
+
+  const stations = db
+    .prepare(
+      `
     SELECT 
       stop_id as station_id,
       stop_name as station_name,
@@ -36,7 +38,9 @@ export const getAllStations = (): Station[] => {
       wheelchair_boarding as wheelchair_accessible
     FROM stops
     ORDER BY stop_name
-  `).all() as StopRow[];
+  `
+    )
+    .all() as StopRow[];
 
   // Transform database rows to Station objects
   return stations.map((row) => ({
@@ -57,9 +61,11 @@ export const getAllStations = (): Station[] => {
  */
 export const getStationsByLine = (lineId: string): Station[] => {
   const db = getDatabase();
-  
+
   // Query stations that serve the specified line
-  const stations = db.prepare(`
+  const stations = db
+    .prepare(
+      `
     SELECT 
       stop_id as station_id,
       stop_name as station_name,
@@ -71,7 +77,9 @@ export const getStationsByLine = (lineId: string): Station[] => {
     FROM stops
     WHERE lines_served LIKE ?
     ORDER BY stop_name
-  `).all(`%${lineId}%`) as StopRow[];
+  `
+    )
+    .all(`%${lineId}%`) as StopRow[];
 
   // Transform database rows to Station objects
   return stations.map((row) => ({
@@ -93,7 +101,9 @@ export const getStationsByLine = (lineId: string): Station[] => {
 export const getStationById = (stationId: string): Station | null => {
   const db = getDatabase();
 
-  const station = db.prepare(`
+  const station = db
+    .prepare(
+      `
     SELECT
       stop_id as station_id,
       stop_name as station_name,
@@ -104,7 +114,9 @@ export const getStationById = (stationId: string): Station | null => {
       wheelchair_boarding as wheelchair_accessible
     FROM stops
     WHERE stop_id = ?
-  `).get(stationId) as StopRow | undefined;
+  `
+    )
+    .get(stationId) as StopRow | undefined;
 
   if (!station) {
     return null;
@@ -132,7 +144,9 @@ export const getReachableStations = (originId: string): Station[] => {
 
   // Query to find all destination stations that have at least one trip from the origin
   // This looks at stop_times to find trips that include both stations
-  const stations = db.prepare(`
+  const stations = db
+    .prepare(
+      `
     SELECT DISTINCT
       s.stop_id as station_id,
       s.stop_name as station_name,
@@ -151,7 +165,9 @@ export const getReachableStations = (originId: string): Station[] => {
         AND st1.stop_sequence < st2.stop_sequence
     )
     ORDER BY s.stop_name
-  `).all(originId, originId) as StopRow[];
+  `
+    )
+    .all(originId, originId) as StopRow[];
 
   // Transform database rows to Station objects
   return stations.map((row) => ({
