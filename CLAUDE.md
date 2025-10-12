@@ -35,31 +35,14 @@ TypeScript 5.x (both frontend and backend): Follow standard conventions
 
 **IMPORTANT**: Always use the available MCP tools for this project. Do not search the web or make assumptions.
 
-### ShadCN UI MCP
-
-**When to use**: For ALL ShadCN UI component implementations
-
-```bash
-# List all available ShadCN components
-mcp__shadcn__getComponents
-
-# Get detailed component documentation
-mcp__shadcn__getComponent component="button"
-mcp__shadcn__getComponent component="select"
-mcp__shadcn__getComponent component="dialog"
-```
-
-**Usage**:
-- ALWAYS check component documentation via MCP before implementing
-- Get installation commands, usage examples, and API reference
-- Available for all ShadCN UI components in tasks.md (Button, Select, Card, Dialog, Input, Badge, Alert, etc.)
-
 ### Ref MCP (Documentation Search)
 
-**When to use**: For searching documentation on libraries, frameworks, and APIs used in this project
+**When to use**: For ALL documentation lookups including ShadCN UI, libraries, frameworks, and APIs
 
 ```bash
 # Search for documentation
+mcp__Ref__ref_search_documentation query="ShadCN UI button component"
+mcp__Ref__ref_search_documentation query="ShadCN UI select dropdown"
 mcp__Ref__ref_search_documentation query="React TanStack Query useQuery"
 mcp__Ref__ref_search_documentation query="node-gtfs library API"
 mcp__Ref__ref_search_documentation query="Workbox service worker strategies"
@@ -69,30 +52,31 @@ mcp__Ref__ref_read_url url="https://example.com/docs/page"
 ```
 
 **Usage**:
-- Search for React, TypeScript, Express, node-gtfs, TanStack Query, Workbox, Vite documentation
+- Search for ShadCN UI, React, TypeScript, Express, node-gtfs, TanStack Query, Workbox, Vite documentation
 - Get up-to-date API references and best practices
-- Prefer Ref MCP over web search for technical documentation
+- ALWAYS use Ref MCP for all documentation lookups - do not search the web
 
-### Development Workflow with MCPs
+### Development Workflow with Ref MCP
 
 1. **Before implementing a ShadCN component**:
-   - Run `mcp__shadcn__getComponent` to get latest docs
+   - Use Ref MCP to search for component documentation
+   - Example: `mcp__Ref__ref_search_documentation query="ShadCN UI button component installation"`
    - Follow installation and usage instructions exactly
 
 2. **When implementing new features**:
    - Use Ref MCP to search for library-specific patterns
-   - Example: "How to setup TanStack Query with TypeScript"
+   - Example: `mcp__Ref__ref_search_documentation query="TanStack Query setup TypeScript"`
 
 3. **When debugging**:
    - Use Ref MCP to search for error messages or API issues
-   - Example: "node-gtfs importGtfs configuration"
+   - Example: `mcp__Ref__ref_search_documentation query="node-gtfs importGtfs configuration"`
 
 ## Technology Stack
 
 ### Frontend
 - **Framework**: React 18+ with TypeScript 5.x
 - **Build Tool**: Vite
-- **UI Library**: ShadCN UI + Tailwind CSS (use shadcn MCP for all components)
+- **UI Library**: ShadCN UI + Tailwind CSS (use Ref MCP for component docs)
 - **State Management**: TanStack Query (server state), React Context (client state)
 - **PWA**: Workbox (service worker), Dexie.js (IndexedDB)
 - **Testing**: Vitest, React Testing Library, Playwright
@@ -149,7 +133,7 @@ pnpm build:watch          # Watch mode for development
 
 ## Key Development Guidelines
 
-1. **Always use MCPs**: Use shadcn MCP for UI components, Ref MCP for documentation
+1. **Always use Ref MCP**: Use Ref MCP for ALL documentation lookups (ShadCN UI, libraries, frameworks, APIs)
 2. **Monorepo workflow**: Changes to shared/ require rebuild before backend/frontend see them
 3. **Type safety**: All entities defined in packages/shared with Zod schemas
 4. **PWA focus**: Implement offline-first patterns, test service worker caching
