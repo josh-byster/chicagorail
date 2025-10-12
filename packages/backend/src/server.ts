@@ -20,6 +20,7 @@ import trainRoutes from './api/trains.js';
 import alertRoutes from './api/alerts.js';
 import lineRoutes from './api/lines.js';
 import healthRoutes from './api/health.js';
+import { initializeOnStartup } from './services/startup.service.js';
 
 const app: express.Application = express();
 const PORT = env.PORT || 3000;
@@ -40,11 +41,24 @@ app.use('/api', healthRoutes);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚆 Metra Train Tracker API running on port ${PORT}`);
-  console.log(`📍 Environment: ${env.NODE_ENV}`);
-  console.log(`🔗 Database: ${env.DATABASE_PATH}`);
-});
+// Initialize and start server
+async function startServer() {
+  try {
+    // Initialize database and start background tasks
+    await initializeOnStartup();
+
+    // Start Express server
+    app.listen(PORT, () => {
+      console.log(`🚆 Metra Train Tracker API running on port ${PORT}`);
+      console.log(`📍 Environment: ${env.NODE_ENV}`);
+      console.log(`🔗 Database: ${env.DATABASE_PATH}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;
