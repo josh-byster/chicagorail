@@ -1,0 +1,52 @@
+[
+  {
+    "stop_id": "GENEVA",
+    "stop_name": "Geneva",
+    "stop_desc": "",
+    "stop_lat": 41.8816667,
+    "stop_lon": -88.31,
+    "zone_id": 4,
+    "stop_url": "https://metrarail.com/maps-schedules/train-lines/UP-W/stations/GENEVA",
+    "wheelchair_boarding": 1
+  },
+  {
+    "stop_id": "WCHICAGO",
+    "stop_name": "West Chicago",
+    "stop_desc": "",
+    "stop_lat": 41.8811111,
+    "stop_lon": -88.1988889,
+    "zone_id": 4,
+    "stop_url": "https://metrarail.com/maps-schedules/train-lines/UP-W/stations/WCHICAGO",
+    "wheelchair_boarding": 1
+  },
+  {
+    "stop_id": "WINFIELD",
+    "stop_name": "Winfield",
+    "stop_desc": "",
+    "stop_lat": 41.87,
+    "stop_lon": -88.1569444,
+    "zone_id": 4,
+    "stop_url": "https://metrarail.com/maps-schedules/train-lines/UP-W/stations/WINFIELD",
+    "wheelchair_boarding": 1
+  },
+  {
+    "stop_id": "WHEATON",
+    "stop_name": "Wheaton",
+    "stop_desc": "",
+    "stop_lat": 41.8644444,
+    "stop_lon": -88.1119444,
+    "zone_id": 4,
+    "stop_url": "https://metrarail.com/maps-schedules/train-lines/UP-W/stations/WHEATON",
+    "wheelchair_boarding": 1
+  },
+  {
+    "stop_id": "COLLEGEAVE",
+    "stop_name": "College Ave",
+    "stop_desc": "",
+    "stop_lat": 41.8683333,
+    "stop_lon": -88.0902778,
+    "zone_id": 4,
+    "stop_url": "https://metrarail.com/maps-schedules/train-lines/UP-W/stations/COLLEGEAVE",
+    "wheelchair_boarding": 1
+  }
+]

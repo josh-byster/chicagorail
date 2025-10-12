@@ -29,16 +29,16 @@ This is a monorepo project with:
 
 **Purpose**: Project initialization and monorepo structure
 
-- [ ] T001 [Setup] Create monorepo structure with packages/ directory containing shared/, backend/, and frontend/
-- [ ] T002 [Setup] Initialize pnpm workspace configuration in pnpm-workspace.yaml
-- [ ] T003 [Setup] Create root package.json with workspace references and dev scripts
-- [ ] T004 [P] [Setup] Create tsconfig.base.json with shared TypeScript configuration
-- [ ] T005 [P] [Setup] Setup ESLint configuration in .eslintrc.js for monorepo
-- [ ] T006 [P] [Setup] Setup Prettier configuration in .prettierrc
-- [ ] T007 [P] [Setup] Create .env.example with required environment variables (METRA_API_KEY, GTFS_STATIC_URL, GTFS_REALTIME_URL, PORT, NODE_ENV, DATABASE_PATH, VITE_API_URL)
-- [ ] T008 [P] [Setup] Create .gitignore with node_modules, dist, .env, data/*.db
-- [ ] T009 [P] [Setup] Setup GitHub Actions workflow in .github/workflows/ci-cd.yml for testing and deployment
-- [ ] T010 [P] [Setup] Create docker-compose.yml for local development
+- [X] T001 [Setup] Create monorepo structure with packages/ directory containing shared/, backend/, and frontend/
+- [X] T002 [Setup] Initialize pnpm workspace configuration in pnpm-workspace.yaml
+- [X] T003 [Setup] Create root package.json with workspace references and dev scripts
+- [X] T004 [P] [Setup] Create tsconfig.base.json with shared TypeScript configuration
+- [X] T005 [P] [Setup] Setup ESLint configuration in .eslintrc.js for monorepo
+- [X] T006 [P] [Setup] Setup Prettier configuration in .prettierrc
+- [X] T007 [P] [Setup] Create .env.example with required environment variables (METRA_API_KEY, GTFS_STATIC_URL, GTFS_REALTIME_URL, PORT, NODE_ENV, DATABASE_PATH, VITE_API_URL)
+- [X] T008 [P] [Setup] Create .gitignore with node_modules, dist, .env, data/*.db
+- [X] T009 [P] [Setup] Setup GitHub Actions workflow in .github/workflows/ci-cd.yml for testing and deployment
+- [X] T010 [P] [Setup] Create docker-compose.yml for local development
 
 ---
 
@@ -50,22 +50,22 @@ This is a monorepo project with:
 
 ### Shared Package Foundation
 
-- [ ] T011 [P] [Foundation] Initialize packages/shared package.json with TypeScript, Zod dependencies
-- [ ] T012 [P] [Foundation] Create packages/shared/tsconfig.json extending base config
-- [ ] T013 [P] [Foundation] Setup packages/shared/src/index.ts as main export file
+- [X] T011 [P] [Foundation] Initialize packages/shared package.json with TypeScript, Zod dependencies
+- [X] T012 [P] [Foundation] Create packages/shared/tsconfig.json extending base config
+- [X] T013 [P] [Foundation] Setup packages/shared/src/index.ts as main export file
 
 ### Backend Package Foundation
 
-- [ ] T014 [P] [Foundation] Initialize packages/backend package.json with Express, node-gtfs, SQLite3, Zod dependencies
-- [ ] T015 [P] [Foundation] Create packages/backend/tsconfig.json extending base config
-- [ ] T016 [Foundation] Setup Express app structure in packages/backend/src/server.ts with middleware
-- [ ] T017 [P] [Foundation] Create packages/backend/src/middleware/error-handler.ts for centralized error handling
-- [ ] T018 [P] [Foundation] Create packages/backend/src/middleware/logger.ts for request logging
-- [ ] T019 [P] [Foundation] Create packages/backend/src/middleware/cors.ts for CORS configuration
-- [ ] T020 [Foundation] Setup environment configuration in packages/backend/src/config/env.ts
-- [ ] T021 [Foundation] Initialize SQLite database with node-gtfs in packages/backend/src/services/gtfs-init.service.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs library setup"`)
-- [ ] T022 [Foundation] Import GTFS static data (Metra schedule) using node-gtfs importGtfs function (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs importGtfs configuration"`)
-- [ ] T023 [Foundation] Enable SQLite WAL mode and create indexes per research.md in packages/backend/src/services/database.service.ts
+- [X] T014 [P] [Foundation] Initialize packages/backend package.json with Express, node-gtfs, SQLite3, Zod dependencies
+- [X] T015 [P] [Foundation] Create packages/backend/tsconfig.json extending base config
+- [X] T016 [Foundation] Setup Express app structure in packages/backend/src/server.ts with middleware
+- [X] T017 [P] [Foundation] Create packages/backend/src/middleware/error-handler.ts for centralized error handling
+- [X] T018 [P] [Foundation] Create packages/backend/src/middleware/logger.ts for request logging
+- [X] T019 [P] [Foundation] Create packages/backend/src/middleware/cors.ts for CORS configuration
+- [X] T020 [Foundation] Setup environment configuration in packages/backend/src/config/env.ts
+- [X] T021 [Foundation] Initialize SQLite database with node-gtfs in packages/backend/src/services/gtfs-init.service.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs library setup"`)
+- [X] T022 [Foundation] Import GTFS static data (Metra schedule) using custom JSON endpoint integration (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs importGtfs configuration"`)
+- [X] T023 [Foundation] Enable SQLite WAL mode and create indexes per research.md in packages/backend/src/services/database.service.ts
 - [ ] T024 [Foundation] Setup GTFS realtime polling service skeleton in packages/backend/src/services/gtfs-realtime.service.ts (30-second interval with If-Modified-Since headers) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs realtime API"`)
 
 ### Frontend Package Foundation
@@ -85,13 +85,13 @@ This is a monorepo project with:
 
 ### Shared Type Definitions (Required for all stories)
 
-- [ ] T037 [P] [Foundation] Define Station interface and Zod schema in packages/shared/src/types/station.ts
-- [ ] T038 [P] [Foundation] Define Line interface and Zod schema in packages/shared/src/types/line.ts
-- [ ] T039 [P] [Foundation] Define Train interface, TrainStatus enum, Position interface, and Zod schemas in packages/shared/src/types/train.ts
-- [ ] T040 [P] [Foundation] Define StopTime interface and Zod schema in packages/shared/src/types/stoptime.ts
-- [ ] T041 [P] [Foundation] Define ServiceAlert interface, AlertType enum, AlertSeverity enum, and Zod schemas in packages/shared/src/types/alert.ts
-- [ ] T042 [Foundation] Export all types and schemas from packages/shared/src/index.ts
-- [ ] T043 [Foundation] Build shared package (pnpm build in packages/shared/)
+- [X] T037 [P] [Foundation] Define Station interface and Zod schema in packages/shared/src/types/station.ts
+- [X] T038 [P] [Foundation] Define Line interface and Zod schema in packages/shared/src/types/line.ts
+- [X] T039 [P] [Foundation] Define Train interface, TrainStatus enum, Position interface, and Zod schemas in packages/shared/src/types/train.ts
+- [X] T040 [P] [Foundation] Define StopTime interface and Zod schema in packages/shared/src/types/stoptime.ts
+- [X] T041 [P] [Foundation] Define ServiceAlert interface, AlertType enum, AlertSeverity enum, and Zod schemas in packages/shared/src/types/alert.ts
+- [X] T042 [Foundation] Export all types and schemas from packages/shared/src/index.ts
+- [X] T043 [Foundation] Build shared package (pnpm build in packages/shared/)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
