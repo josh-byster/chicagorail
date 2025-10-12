@@ -52,16 +52,18 @@ interface CalendarRow {
  * @param destinationId - The destination station ID
  * @param limit - Maximum number of trains to return (optional)
  * @param time - Time to search from (optional, defaults to current time)
+ * @param date - Date to search for (optional, defaults to today)
  * @returns Array of upcoming trains
  */
 export const getUpcomingTrains = (
   originId: string,
   destinationId: string,
   limit?: number,
-  time?: string
+  time?: string,
+  date?: string
 ): Train[] => {
-  // Generate cache key
-  const cacheKey = generateTrainCacheKey(originId, destinationId, limit, time);
+  // Generate cache key - include date in cache key
+  const cacheKey = generateTrainCacheKey(originId, destinationId, limit, time || date);
   
   // Check cache first
   const cachedData = getCachedData<Train[]>(cacheKey);
@@ -74,6 +76,13 @@ export const getUpcomingTrains = (
   // Get current time if not provided
   const searchTime = time || new Date().toISOString().slice(11, 19); // HH:MM:SS format
   
+  // Get date for calendar filtering (use provided date or today)
+  const searchDate = date || new Date().toISOString().split('T')[0];
+  
+  // Get day of week for the search date (0 = Sunday, 1 = Monday, etc.)
+  const searchDay = new Date(searchDate).getDay();
+  const dayColumn = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][searchDay];
+    
   // Query to find trips that go from origin to destination
   const query = `
     SELECT 
@@ -84,15 +93,18 @@ export const getUpcomingTrains = (
       st2.stop_id as destination_station_id,
       st1.departure_time,
       st2.arrival_time,
-      t.service_id
+      t.service_id,
+      t.direction_id
     FROM trips t
     JOIN routes r ON t.route_id = r.route_id
-    JOIN stop_times st1 ON t.trip_id = st1.trip_id
-    JOIN stop_times st2 ON t.trip_id = st2.trip_id
-    WHERE st1.stop_id = ?
-      AND st2.stop_id = ?
-      AND st1.stop_sequence < st2.stop_sequence
+    JOIN stop_times st1 ON t.trip_id = st1.trip_id AND st1.stop_id = ?
+    JOIN stop_times st2 ON t.trip_id = st2.trip_id AND st2.stop_id = ?
+    JOIN calendar c ON t.service_id = c.service_id
+    WHERE st1.stop_sequence < st2.stop_sequence
       AND st2.arrival_time >= ?
+      AND c.${dayColumn} = 1
+      AND c.start_date <= '${searchDate}'
+      AND c.end_date >= '${searchDate}'
     ORDER BY st2.arrival_time
     ${limit ? `LIMIT ${limit}` : ''}
   `;
@@ -102,8 +114,10 @@ export const getUpcomingTrains = (
   // Get realtime data
   const tripUpdates = getRealtimeTripUpdates();
   
-  // Transform trips to Train objects
-  const trains = trips.map((trip) => {
+  // Transform trips to Train objects and deduplicate
+  const trainMap = new Map<string, any>();
+  
+  for (const trip of trips) {
     // Get all stops for this trip
     const stops = getStopsForTrip(trip.trip_id);
     
@@ -129,26 +143,43 @@ export const getUpcomingTrains = (
       }
     }
     
-    return {
+    // Get current date for constructing datetime strings
+    const currentDate = new Date();
+    const dateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Construct proper datetime strings by combining date with time
+    const constructDateTime = (timeStr: string): string => {
+      if (!timeStr) return '';
+      // Assuming timeStr is in HH:MM:SS format, combine with today's date
+      return `${dateString}T${timeStr}.000Z`;
+    };
+
+    const train = {
       trip_id: trip.trip_id,
       line_id: trip.line_id,
       line_name: trip.line_name,
       origin_station_id: originId,
       destination_station_id: destinationId,
-      departure_time: originStopTime?.departure_time || trip.departure_time,
-      arrival_time: destinationStopTime?.arrival_time || trip.arrival_time,
+      departure_time: constructDateTime(trip.departure_time),
+      arrival_time: constructDateTime(trip.arrival_time),
       status: status,
       delay_minutes: delayMinutes,
       stops: stops,
       service_id: trip.service_id,
       updated_at: new Date().toISOString(),
     } as Train;
-  });
+    
+    // Create a unique key based on departure time and line to deduplicate
+    const key = `${trip.departure_time}-${trip.line_id}`;
+    trainMap.set(key, train);
+  }
+  
+  const uniqueTrains = Array.from(trainMap.values());
   
   // Cache the results
-  setCachedData(cacheKey, trains);
+  setCachedData(cacheKey, uniqueTrains);
   
-  return trains;
+  return uniqueTrains;
 };
 
 /**
@@ -178,6 +209,18 @@ export const getTrainDetail = (tripId: string): Train | null => {
     return null;
   }
   
+  // Get service information to determine the date
+  const serviceQuery = `
+    SELECT start_date, end_date
+    FROM calendar
+    WHERE service_id = ?
+  `;
+  const serviceInfo = db.prepare(serviceQuery).get(trip.service_id) as any | undefined;
+  
+  // Get current date for constructing datetime strings
+  const today = new Date();
+  const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+  
   // Get all stops for this trip
   const stops = getStopsForTrip(tripId);
   
@@ -185,14 +228,21 @@ export const getTrainDetail = (tripId: string): Train | null => {
   const originStopTime = stops[0];
   const destinationStopTime = stops[stops.length - 1];
   
+  // Construct proper datetime strings by combining date with time
+  const constructDateTime = (timeStr: string): string => {
+    if (!timeStr) return '';
+    // Assuming timeStr is in HH:MM:SS format, combine with today's date
+    return `${dateString}T${timeStr}.000Z`;
+  };
+  
   return {
     trip_id: trip.trip_id,
     line_id: trip.line_id,
     line_name: trip.line_name,
     origin_station_id: originStopTime?.station_id || '',
     destination_station_id: destinationStopTime?.station_id || '',
-    departure_time: originStopTime?.departure_time || '',
-    arrival_time: destinationStopTime?.arrival_time || '',
+    departure_time: constructDateTime(originStopTime?.departure_time || ''),
+    arrival_time: constructDateTime(destinationStopTime?.arrival_time || ''),
     status: TrainStatus.SCHEDULED, // Default status - will be enhanced with realtime data
     delay_minutes: 0, // Default delay - will be enhanced with realtime data
     stops: stops,
@@ -223,12 +273,22 @@ const getStopsForTrip = (tripId: string): StopTime[] => {
     ORDER BY st.stop_sequence
   `).all(tripId) as any[];
   
-  // Transform stop times to StopTime objects
+  // Get current date for constructing datetime strings
+  const today = new Date();
+  const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  // Construct proper datetime strings for stops
+  const constructDateTime = (timeStr: string): string => {
+    if (!timeStr) return '';
+    return `${dateString}T${timeStr}.000Z`;
+  };
+
+  // Transform stop times to StopTime objects with proper datetime strings
   return stopTimes.map((stopTime) => ({
     trip_id: stopTime.trip_id,
     station_id: stopTime.station_id,
-    arrival_time: stopTime.arrival_time,
-    departure_time: stopTime.departure_time,
+    arrival_time: constructDateTime(stopTime.arrival_time),
+    departure_time: constructDateTime(stopTime.departure_time),
     stop_sequence: stopTime.stop_sequence,
     delay_minutes: 0, // Default delay - will be enhanced with realtime data
     headsign: '', // Will be populated from trip data

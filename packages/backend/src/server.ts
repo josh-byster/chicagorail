@@ -1,6 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/logger';
 import { corsOptions } from './middleware/cors';
@@ -12,11 +22,8 @@ import lineRoutes from './api/lines';
 import healthRoutes from './api/health';
 import { validateTrainQueryParams } from './middleware/validate-trains';
 
-// Load environment variables
-dotenv.config();
-
 const app: express.Application = express();
-const PORT = env.PORT;
+const PORT = env.PORT || 3000;
 
 // Middleware
 app.use(cors(corsOptions));
@@ -26,7 +33,7 @@ app.use(requestLogger);
 
 // API routes
 app.use('/api', stationRoutes);
-app.use('/api', validateTrainQueryParams, trainRoutes);
+app.use('/api', trainRoutes);
 app.use('/api', alertRoutes);
 app.use('/api', lineRoutes);
 app.use('/api', healthRoutes);

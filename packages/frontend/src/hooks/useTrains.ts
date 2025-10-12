@@ -8,10 +8,11 @@ interface UseTrainsParams {
   destination: string;
   limit?: number;
   time?: string;
+  date?: string;
   enabled?: boolean;
 }
 
-export function useTrains({ origin, destination, limit, time, enabled = true }: UseTrainsParams) {
+export function useTrains({ origin, destination, limit, time, date, enabled = true }: UseTrainsParams) {
   return useQuery({
     queryKey: ['trains', origin, destination, limit, time],
     queryFn: async (): Promise<Train[]> => {

@@ -73,12 +73,14 @@ export async function fetchTrains(params: {
   destination: string;
   limit?: number;
   time?: string;
+  date?: string;
 }): Promise<Train[]> {
   const searchParams = new URLSearchParams({
     origin: params.origin,
     destination: params.destination,
     ...(params.limit && { limit: params.limit.toString() }),
     ...(params.time && { time: params.time }),
+    ...(params.date && { date: params.date }),
   });
 
   return fetchApi<Train[]>(`/trains?${searchParams}`);

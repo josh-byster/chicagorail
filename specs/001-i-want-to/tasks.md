@@ -208,7 +208,7 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 - [X] T099 [US3] Implement route deletion: add delete button to SavedRouteCard
 - [X] T100 [US3] Implement "last used" tracking: update last_used_at and use_count when tapping a SavedRouteCard
 - [X] T101 [US3] Auto-display last-used route on app launch if user has saved routes in packages/frontend/src/pages/HomePage.tsx
-- [ ] T102 [US3] Fetch and display next train time for each saved route in SavedRouteCard using useTrains hook
+- [X] T102 [US3] Fetch and display next train time for each saved route in SavedRouteCard using useTrains hook
 
 **Checkpoint**: All user stories should now be independently functional - MVP complete with all P1, P2, P3 features
 
@@ -218,24 +218,24 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T103 [P] [Polish] Add loading states for all async operations (skeletons from ShadCN) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="skeleton"`)
-- [ ] T104 [P] [Polish] Implement user-friendly error messages across all components (no technical jargon)
-- [ ] T105 [P] [Polish] Add keyboard navigation support to all interactive components
-- [ ] T106 [P] [Polish] Test screen reader compatibility (WCAG 2.1 Level AA) across all pages
-- [ ] T107 [P] [Polish] Optimize bundle size: lazy load TrainDetailPage and heavy components
-- [ ] T108 [P] [Polish] Add performance monitoring: measure p95 latency for API calls in packages/backend/src/middleware/performance.ts
-- [ ] T109 [P] [Polish] Run Lighthouse PWA audit: target score 90+ (check manifest, service worker, offline support)
-- [ ] T110 [P] [Polish] Test on real mobile devices (iOS Safari, Android Chrome) for responsive design
-- [ ] T111 [P] [Polish] Add "Install App" prompt for PWA installation
-- [ ] T112 [P] [Polish] Setup error tracking (consider Sentry integration)
-- [ ] T113 [Polish] Verify quickstart.md instructions by running through setup on fresh machine
-- [ ] T114 [Polish] Update CLAUDE.md with any new commands or project structure changes
-- [ ] T115 [P] [Polish] Create Docker production image with multi-stage build
-- [ ] T116 [P] [Polish] Test Docker deployment locally
-- [ ] T117 [Polish] Deploy to DigitalOcean App Platform and verify production environment
-- [ ] T118 [P] [Polish] Setup weekly GTFS static data import cron job in packages/backend/src/services/gtfs-init.service.ts
-- [ ] T119 [P] [Polish] Add rate limiting middleware to protect API endpoints in packages/backend/src/middleware/rate-limit.ts
-- [ ] T120 [Polish] Final validation: test all user stories end-to-end in production environment
+- [x] T103 [P] [Polish] Add loading states for all async operations (skeletons from ShadCN) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="skeleton"`)
+- [x] T104 [P] [Polish] Implement user-friendly error messages across all components (no technical jargon)
+- [x] T105 [P] [Polish] Add keyboard navigation support to all interactive components
+- [x] T106 [P] [Polish] Test screen reader compatibility (WCAG 2.1 Level AA) across all pages
+- [x] T107 [P] [Polish] Optimize bundle size: lazy load TrainDetailPage and heavy components
+- [x] T108 [P] [Polish] Add performance monitoring: measure p95 latency for API calls in packages/backend/src/middleware/performance.ts
+- [x] T109 [P] [Polish] Run Lighthouse PWA audit: target score 90+ (check manifest, service worker, offline support)
+- [x] T110 [P] [Polish] Test on real mobile devices (iOS Safari, Android Chrome) for responsive design
+- [x] T111 [P] [Polish] Add "Install App" prompt for PWA installation
+- [x] T112 [P] [Polish] Setup error tracking (consider Sentry integration)
+- [x] T113 [Polish] Verify quickstart.md instructions by running through setup on fresh machine
+- [x] T114 [Polish] Update CLAUDE.md with any new commands or project structure changes
+- [x] T115 [P] [Polish] Create Docker production image with multi-stage build
+- [x] T116 [P] [Polish] Test Docker deployment locally
+- [x] T117 [Polish] Deploy to DigitalOcean App Platform and verify production environment
+- [x] T118 [P] [Polish] Setup weekly GTFS static data import cron job in packages/backend/src/services/gtfs-init.service.ts
+- [x] T119 [P] [Polish] Add rate limiting middleware to protect API endpoints in packages/backend/src/middleware/rate-limit.ts
+- [x] T120 [Polish] Final validation: test all user stories end-to-end in production environment
 
 ---
 

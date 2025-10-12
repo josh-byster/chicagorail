@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getUpcomingTrains, getTrainDetail } from '../services/train.service';
+import { validateTrainQueryParams } from '../middleware/validate-trains';
 
 const router: Router = Router();
 
@@ -19,9 +20,9 @@ const router: Router = Router();
  * - 400: Missing required parameters
  * - 500: Internal server error
  */
-router.get('/trains', (req, res) => {
+router.get('/trains', validateTrainQueryParams, (req, res) => {
   try {
-    const { origin, destination, limit, time } = req.query;
+    const { origin, destination, limit, time, date } = req.query;
     
     // Parse limit as number if provided
     const limitNum = limit ? parseInt(limit as string, 10) : undefined;
@@ -31,7 +32,7 @@ router.get('/trains', (req, res) => {
     }
     
     // Get upcoming trains
-    const trains = getUpcomingTrains(origin as string, destination as string, limitNum, time as string | undefined);
+    const trains = getUpcomingTrains(origin as string, destination as string, limitNum, time as string | undefined, date as string | undefined);
     
     res.json(trains);
   } catch (error) {
