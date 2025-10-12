@@ -1,5 +1,6 @@
 import { getDatabase } from './database.service';
 import { Line } from '@metra/shared';
+import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils';
 
 /**
  * Line Service
@@ -56,8 +57,8 @@ export const getAllLines = (): Line[] => {
     line_id: route.route_id,
     line_name: route.route_long_name,
     line_short_name: route.route_short_name,
-    line_color: route.route_color ? `#${route.route_color}` : '#000000',
-    line_text_color: route.route_text_color ? `#${route.route_text_color}` : '#FFFFFF',
+    line_color: normalizeHexColor(route.route_color, '000000'),
+    line_text_color: normalizeTextColor(route.route_text_color, 'FFFFFF'),
     stations: lineStations[route.route_id] || [],
   })) as Line[];
 };
@@ -101,8 +102,8 @@ export const getLineById = (lineId: string): Line | null => {
     line_id: route.route_id,
     line_name: route.route_long_name,
     line_short_name: route.route_short_name,
-    line_color: route.route_color ? `#${route.route_color}` : '#000000',
-    line_text_color: route.route_text_color ? `#${route.route_text_color}` : '#FFFFFF',
+    line_color: normalizeHexColor(route.route_color, '000000'),
+    line_text_color: normalizeTextColor(route.route_text_color, 'FFFFFF'),
     stations: stationIds,
   } as Line;
 };

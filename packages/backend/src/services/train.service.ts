@@ -3,6 +3,7 @@ import { Train, TrainStatus, Position } from '@metra/shared';
 import { StopTime } from '@metra/shared';
 import { getRealtimeTripUpdates, getRealtimeVehiclePositions } from './gtfs-realtime.service';
 import { getCachedData, setCachedData, generateTrainCacheKey } from './cache.service';
+import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils';
 
 /**
  * Train Service
@@ -121,6 +122,8 @@ export const getUpcomingTrains = (
       t.trip_id,
       t.route_id as line_id,
       r.route_long_name as line_name,
+      r.route_color,
+      r.route_text_color,
       st1.stop_id as origin_station_id,
       st2.stop_id as destination_station_id,
       st1.departure_time,
@@ -227,6 +230,8 @@ export const getUpcomingTrains = (
       trip_id: trip.trip_id,
       line_id: trip.line_id,
       line_name: trip.line_name,
+      line_color: normalizeHexColor(trip.route_color),
+      line_text_color: normalizeTextColor(trip.route_text_color),
       origin_station_id: originId,
       destination_station_id: destinationId,
       departure_time: constructDateTime(trip.departure_time),
@@ -261,10 +266,12 @@ export const getTrainDetail = (tripId: string): Train | null => {
   
   // Query to get trip details
   const query = `
-    SELECT 
+    SELECT
       t.trip_id,
       t.route_id as line_id,
       r.route_long_name as line_name,
+      r.route_color,
+      r.route_text_color,
       t.trip_headsign,
       t.service_id
     FROM trips t
@@ -301,6 +308,8 @@ export const getTrainDetail = (tripId: string): Train | null => {
     trip_id: trip.trip_id,
     line_id: trip.line_id,
     line_name: trip.line_name,
+    line_color: normalizeHexColor(trip.route_color),
+    line_text_color: normalizeTextColor(trip.route_text_color),
     origin_station_id: originStopTime?.station_id || '',
     destination_station_id: destinationStopTime?.station_id || '',
     departure_time: originStopTime?.departure_time || '',

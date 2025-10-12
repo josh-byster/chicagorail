@@ -49,7 +49,7 @@ export function TrainListItem({ train }: TrainListItemProps) {
             {/* Line indicator with color */}
             <div
               className="w-2 flex-shrink-0"
-              style={{ backgroundColor: train.line_id }}
+              style={{ backgroundColor: train.line_color || '#000000' }}
               aria-label={`${train.line_name} line`}
             />
 

@@ -28,6 +28,8 @@ export const TrainSchema = z.object({
   train_number: z.string().optional(),
   line_id: z.string().min(1),
   line_name: z.string(),
+  line_color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(), // Hex color with # prefix
+  line_text_color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(), // Hex color with # prefix
   origin_station_id: z.string().min(1),
   destination_station_id: z.string().min(1),
   departure_time: z.string(),
