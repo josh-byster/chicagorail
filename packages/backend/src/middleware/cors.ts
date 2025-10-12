@@ -16,7 +16,11 @@ export const corsOptions: CorsOptions = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      const error = new Error(
+        `CORS: Origin '${origin}' not allowed. Allowed origins: ${allowedOrigins.join(', ')}`
+      );
+      console.error(error.message);
+      callback(error);
     }
   },
   credentials: true,
