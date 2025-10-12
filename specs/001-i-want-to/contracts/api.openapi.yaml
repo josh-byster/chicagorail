@@ -1,0 +1,618 @@
+openapi: 3.0.3
+info:
+  title: Metra Train Tracker API
+  description: REST API for real-time Metra train tracking and schedule information
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+  - url: https://api.metra-tracker.app/api
+    description: Production
+
+tags:
+  - name: stations
+    description: Station information
+  - name: lines
+    description: Rail line information
+  - name: trains
+    description: Train schedules and real-time status
+  - name: routes
+    description: User saved routes
+  - name: alerts
+    description: Service alerts and disruptions
+
+paths:
+  /stations:
+    get:
+      summary: Get all stations
+      description: Returns list of all Metra stations with location and service information
+      tags: [stations]
+      parameters:
+        - name: line_id
+          in: query
+          description: Filter stations by line ID
+          required: false
+          schema:
+            type: string
+            example: "UP-N"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Station'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /stations/{stationId}:
+    get:
+      summary: Get station by ID
+      description: Returns detailed information for a specific station
+      tags: [stations]
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          description: Station ID
+          schema:
+            type: string
+            example: "OTC"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Station'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /lines:
+    get:
+      summary: Get all rail lines
+      description: Returns list of all Metra rail lines
+      tags: [lines]
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Line'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /lines/{lineId}:
+    get:
+      summary: Get line by ID
+      description: Returns detailed information for a specific rail line
+      tags: [lines]
+      parameters:
+        - name: lineId
+          in: path
+          required: true
+          description: Line ID
+          schema:
+            type: string
+            example: "UP-N"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Line'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /trains:
+    get:
+      summary: Get trains for route
+      description: Returns upcoming trains between origin and destination stations
+      tags: [trains]
+      parameters:
+        - name: origin
+          in: query
+          required: true
+          description: Origin station ID
+          schema:
+            type: string
+            example: "OTC"
+        - name: destination
+          in: query
+          required: true
+          description: Destination station ID
+          schema:
+            type: string
+            example: "AH"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of trains to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+        - name: time
+          in: query
+          required: false
+          description: Time filter (ISO 8601 timestamp, defaults to now)
+          schema:
+            type: string
+            format: date-time
+            example: "2025-10-11T14:30:00Z"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trains:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Train'
+                  updated_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp of data freshness
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /trains/{tripId}:
+    get:
+      summary: Get train details
+      description: Returns detailed information for a specific train including all stops
+      tags: [trains]
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          description: Trip ID
+          schema:
+            type: string
+            example: "UP-N_123_20251011"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Train'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /routes:
+    get:
+      summary: Get saved routes
+      description: Returns all saved routes (client-side only, not persisted on server)
+      tags: [routes]
+      deprecated: true
+      responses:
+        '501':
+          description: Not implemented - routes are stored client-side only
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Routes are managed client-side in localStorage"
+
+  /alerts:
+    get:
+      summary: Get service alerts
+      description: Returns active service alerts and disruptions
+      tags: [alerts]
+      parameters:
+        - name: line_id
+          in: query
+          required: false
+          description: Filter alerts by line ID
+          schema:
+            type: string
+            example: "UP-N"
+        - name: station_id
+          in: query
+          required: false
+          description: Filter alerts by station ID
+          schema:
+            type: string
+            example: "OTC"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceAlert'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns API health status and last GTFS update time
+      tags: [system]
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  gtfs_last_updated:
+                    type: string
+                    format: date-time
+                    description: Last GTFS realtime update
+                  gtfs_static_version:
+                    type: string
+                    description: GTFS static data version/date
+
+components:
+  schemas:
+    Station:
+      type: object
+      required:
+        - station_id
+        - station_name
+        - latitude
+        - longitude
+        - lines_served
+        - wheelchair_accessible
+      properties:
+        station_id:
+          type: string
+          example: "OTC"
+        station_name:
+          type: string
+          example: "Ogilvie Transportation Center"
+        station_code:
+          type: string
+          example: "OTC"
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          example: 41.8826
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          example: -87.6400
+        lines_served:
+          type: array
+          items:
+            type: string
+          example: ["UP-N", "UP-NW", "UP-W"]
+        zone:
+          type: string
+          example: "A"
+        wheelchair_accessible:
+          type: boolean
+          example: true
+        platform_count:
+          type: integer
+          example: 6
+
+    Line:
+      type: object
+      required:
+        - line_id
+        - line_name
+        - line_short_name
+        - line_color
+        - line_text_color
+        - stations
+      properties:
+        line_id:
+          type: string
+          example: "UP-N"
+        line_name:
+          type: string
+          example: "Union Pacific North"
+        line_short_name:
+          type: string
+          example: "UP-N"
+        line_color:
+          type: string
+          pattern: '^#[0-9A-F]{6}$'
+          example: "#C60C30"
+        line_text_color:
+          type: string
+          pattern: '^#[0-9A-F]{6}$'
+          example: "#FFFFFF"
+        stations:
+          type: array
+          items:
+            type: string
+          example: ["OTC", "CL", "RAV", "ROGERS", "MORSE"]
+        line_url:
+          type: string
+          format: uri
+          example: "https://metra.com/riding-metra/lines/up-n"
+        description:
+          type: string
+          example: "Service between Chicago and Kenosha, WI"
+
+    Train:
+      type: object
+      required:
+        - trip_id
+        - line_id
+        - line_name
+        - origin_station_id
+        - destination_station_id
+        - departure_time
+        - arrival_time
+        - status
+        - delay_minutes
+        - stops
+        - updated_at
+      properties:
+        trip_id:
+          type: string
+          example: "UP-N_312_20251011"
+        train_number:
+          type: string
+          example: "312"
+        line_id:
+          type: string
+          example: "UP-N"
+        line_name:
+          type: string
+          example: "Union Pacific North"
+        origin_station_id:
+          type: string
+          example: "OTC"
+        destination_station_id:
+          type: string
+          example: "KENOSHA"
+        departure_time:
+          type: string
+          format: date-time
+          example: "2025-10-11T14:30:00Z"
+        arrival_time:
+          type: string
+          format: date-time
+          example: "2025-10-11T16:15:00Z"
+        status:
+          type: string
+          enum: [scheduled, on_time, delayed, early, approaching, departed, arrived, cancelled]
+          example: "on_time"
+        delay_minutes:
+          type: integer
+          example: 0
+        current_station_id:
+          type: string
+          example: "CL"
+        current_position:
+          $ref: '#/components/schemas/Position'
+        platform:
+          type: string
+          example: "3"
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopTime'
+        service_id:
+          type: string
+          example: "weekday_fall2024"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-10-11T14:28:30Z"
+
+    StopTime:
+      type: object
+      required:
+        - trip_id
+        - station_id
+        - arrival_time
+        - departure_time
+        - stop_sequence
+        - delay_minutes
+        - pickup_type
+        - drop_off_type
+      properties:
+        trip_id:
+          type: string
+          example: "UP-N_312_20251011"
+        station_id:
+          type: string
+          example: "AH"
+        arrival_time:
+          type: string
+          format: date-time
+          example: "2025-10-11T15:30:00Z"
+        departure_time:
+          type: string
+          format: date-time
+          example: "2025-10-11T15:31:00Z"
+        stop_sequence:
+          type: integer
+          minimum: 1
+          example: 5
+        actual_arrival:
+          type: string
+          format: date-time
+          example: "2025-10-11T15:32:00Z"
+        actual_departure:
+          type: string
+          format: date-time
+        delay_minutes:
+          type: integer
+          example: 2
+        headsign:
+          type: string
+          example: "Kenosha"
+        platform:
+          type: string
+          example: "2"
+        pickup_type:
+          type: integer
+          minimum: 0
+          maximum: 3
+          example: 0
+        drop_off_type:
+          type: integer
+          minimum: 0
+          maximum: 3
+          example: 0
+
+    Position:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          example: 41.9000
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          example: -87.6500
+        bearing:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 359
+          example: 180
+        speed:
+          type: number
+          format: double
+          minimum: 0
+          example: 55.5
+
+    ServiceAlert:
+      type: object
+      required:
+        - alert_id
+        - alert_type
+        - severity
+        - header
+        - description
+        - start_time
+      properties:
+        alert_id:
+          type: string
+          example: "alert_20251011_001"
+        affected_lines:
+          type: array
+          items:
+            type: string
+          example: ["UP-N"]
+        affected_stations:
+          type: array
+          items:
+            type: string
+          example: ["CL", "RAV"]
+        affected_trips:
+          type: array
+          items:
+            type: string
+        alert_type:
+          type: string
+          enum: [delay, cancellation, detour, schedule_change, construction, weather, incident, information]
+          example: "delay"
+        severity:
+          type: string
+          enum: [info, warning, severe]
+          example: "warning"
+        header:
+          type: string
+          maxLength: 100
+          example: "UP-N Line Delays"
+        description:
+          type: string
+          example: "Trains on the UP-N line are experiencing 10-15 minute delays due to track maintenance."
+        start_time:
+          type: string
+          format: date-time
+          example: "2025-10-11T14:00:00Z"
+        end_time:
+          type: string
+          format: date-time
+          example: "2025-10-11T18:00:00Z"
+        url:
+          type: string
+          format: uri
+          example: "https://metra.com/alerts/up-n-delays"
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "An error occurred"
+        code:
+          type: string
+          example: "ERR_INVALID_REQUEST"
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Missing required parameter: origin"
+            code: "ERR_MISSING_PARAM"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Station not found"
+            code: "ERR_NOT_FOUND"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "An unexpected error occurred"
+            code: "ERR_INTERNAL"
