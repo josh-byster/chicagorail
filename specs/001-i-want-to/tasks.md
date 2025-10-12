@@ -119,21 +119,21 @@ This is a monorepo project with:
 
 ### Frontend Implementation for US1
 
-- [ ] T052 [P] [US1] Install and configure ShadCN Select component for station selection (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="select"`)
-- [ ] T053 [P] [US1] Install and configure ShadCN Card component for train display (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="card"`)
-- [ ] T054 [P] [US1] Install and configure ShadCN Button component for interactions (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="button"`)
-- [ ] T055 [US1] Create StationSelect component in packages/frontend/src/components/StationSelect/StationSelect.tsx (searchable dropdown with station names)
-- [ ] T056 [US1] Create RouteSearch component in packages/frontend/src/components/RouteSearch/RouteSearch.tsx (origin/destination station selectors, swap button)
-- [ ] T057 [US1] Create TrainListItem component in packages/frontend/src/components/TrainList/TrainListItem.tsx (displays single train with departure/arrival times, line color, platform)
-- [ ] T058 [US1] Create TrainList component in packages/frontend/src/components/TrainList/TrainList.tsx (renders list of trains)
-- [ ] T059 [US1] Create HomePage component in packages/frontend/src/pages/HomePage.tsx (combines RouteSearch + TrainList)
-- [ ] T060 [US1] Create TrainDetailPage component in packages/frontend/src/pages/TrainDetailPage.tsx (shows all stops for selected train)
-- [ ] T061 [US1] Add API client methods in packages/frontend/src/services/api.ts (fetchStations, fetchTrains, fetchTrainDetail)
-- [ ] T062 [US1] Create TanStack Query hooks in packages/frontend/src/hooks/useStations.ts and packages/frontend/src/hooks/useTrains.ts
-- [ ] T063 [US1] Setup React Router in packages/frontend/src/App.tsx with routes for HomePage and TrainDetailPage
-- [ ] T064 [US1] Cache stations in IndexedDB on first load in packages/frontend/src/services/storage.ts
-- [ ] T065 [US1] Implement loading states for train queries (Skeleton components from ShadCN) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="skeleton"`)
-- [ ] T066 [US1] Implement error handling UI for API failures (ShadCN Alert component) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
+- [X] T052 [P] [US1] Install and configure ShadCN Select component for station selection (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="select"`)
+- [X] T053 [P] [US1] Install and configure ShadCN Card component for train display (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="card"`)
+- [X] T054 [P] [US1] Install and configure ShadCN Button component for interactions (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="button"`)
+- [X] T055 [US1] Create StationSelect component in packages/frontend/src/components/StationSelect/StationSelect.tsx (searchable dropdown with station names)
+- [X] T056 [US1] Create RouteSearch component in packages/frontend/src/components/RouteSearch/RouteSearch.tsx (origin/destination station selectors, swap button)
+- [X] T057 [US1] Create TrainListItem component in packages/frontend/src/components/TrainList/TrainListItem.tsx (displays single train with departure/arrival times, line color, platform)
+- [X] T058 [US1] Create TrainList component in packages/frontend/src/components/TrainList/TrainList.tsx (renders list of trains)
+- [X] T059 [US1] Create HomePage component in packages/frontend/src/pages/HomePage.tsx (combines RouteSearch + TrainList)
+- [X] T060 [US1] Create TrainDetailPage component in packages/frontend/src/pages/TrainDetailPage.tsx (shows all stops for selected train)
+- [X] T061 [US1] Add API client methods in packages/frontend/src/services/api.ts (fetchStations, fetchTrains, fetchTrainDetail)
+- [X] T062 [US1] Create TanStack Query hooks in packages/frontend/src/hooks/useStations.ts and packages/frontend/src/hooks/useTrains.ts
+- [X] T063 [US1] Setup React Router in packages/frontend/src/App.tsx with routes for HomePage and TrainDetailPage
+- [X] T064 [US1] Cache stations in IndexedDB on first load in packages/frontend/src/services/storage.ts
+- [X] T065 [US1] Implement loading states for train queries (Skeleton components from ShadCN) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="skeleton"`)
+- [X] T066 [US1] Implement error handling UI for API failures (ShadCN Alert component) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can search routes and see upcoming trains
 
@@ -196,7 +196,7 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 
 ### Frontend Implementation for US3
 
-- [ ] T090 [P] [US3] Define SavedRoute interface in packages/shared/src/types/route.ts with Zod schema
+- [X] T090 [P] [US3] Define SavedRoute interface in packages/shared/src/types/route.ts with Zod schema
 - [ ] T091 [US3] Create SavedRoute storage service in packages/frontend/src/services/saved-routes.ts (CRUD operations using LocalStorage + IndexedDB)
 - [ ] T092 [P] [US3] Install and configure ShadCN Dialog component for save route modal (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="dialog"`)
 - [ ] T093 [P] [US3] Install and configure ShadCN Input component for route label input (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="input"`)
