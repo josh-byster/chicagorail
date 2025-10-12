@@ -79,6 +79,9 @@ export const importGTFSStaticData = async (): Promise<void> => {
     console.log('  ⏳ Fetching calendar...');
     const calendar = await fetchGTFSEndpoint('/gtfs/schedule/calendar');
 
+    console.log('  ⏳ Fetching calendar_dates...');
+    const calendarDates = await fetchGTFSEndpoint('/gtfs/schedule/calendar_dates');
+
     // Insert data into database
     console.log('  💾 Inserting data into database...');
     insertAgencies(db, agencies);
@@ -87,6 +90,7 @@ export const importGTFSStaticData = async (): Promise<void> => {
     insertTrips(db, trips);
     insertStopTimes(db, stopTimes);
     insertCalendar(db, calendar);
+    insertCalendarDates(db, calendarDates);
 
     // Create indexes for performance (per research.md)
     createIndexes(db);
@@ -160,6 +164,13 @@ const createTables = (db: any) => {
       sunday INTEGER,
       start_date TEXT,
       end_date TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS calendar_dates (
+      service_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      exception_type INTEGER NOT NULL,
+      PRIMARY KEY (service_id, date)
     );
   `);
 };
@@ -287,6 +298,20 @@ const insertCalendar = (db: any, calendar: any[]) => {
   }
 };
 
+const insertCalendarDates = (db: any, calendarDates: any[]) => {
+  const stmt = db.prepare(`
+    INSERT OR REPLACE INTO calendar_dates (service_id, date, exception_type)
+    VALUES (?, ?, ?)
+  `);
+  for (const calDate of calendarDates) {
+    stmt.run(
+      calDate.service_id,
+      calDate.date,
+      calDate.exception_type
+    );
+  }
+};
+
 const createIndexes = (db: any) => {
   console.log('  🔍 Creating performance indexes...');
   db.exec(`
@@ -295,6 +320,8 @@ const createIndexes = (db: any) => {
     CREATE INDEX IF NOT EXISTS idx_stop_times_trip ON stop_times(trip_id);
     CREATE INDEX IF NOT EXISTS idx_stop_times_stop ON stop_times(stop_id);
     CREATE INDEX IF NOT EXISTS idx_stop_times_arrival ON stop_times(arrival_time);
+    CREATE INDEX IF NOT EXISTS idx_calendar_dates_service ON calendar_dates(service_id);
+    CREATE INDEX IF NOT EXISTS idx_calendar_dates_date ON calendar_dates(date);
   `);
 };
 

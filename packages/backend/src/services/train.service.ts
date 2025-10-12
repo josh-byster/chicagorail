@@ -82,10 +82,14 @@ export const getUpcomingTrains = (
   // Get day of week for the search date (0 = Sunday, 1 = Monday, etc.)
   const searchDay = new Date(searchDate).getDay();
   const dayColumn = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][searchDay];
-    
+
   // Query to find trips that go from origin to destination
+  // This query properly handles calendar_dates exceptions per GTFS spec:
+  // - exception_type = 1: service added for this date (overrides calendar)
+  // - exception_type = 2: service removed for this date (overrides calendar)
+  // Note: Metra uses YYYY-MM-DD format for dates (not standard YYYYMMDD)
   const query = `
-    SELECT 
+    SELECT
       t.trip_id,
       t.route_id as line_id,
       r.route_long_name as line_name,
@@ -99,27 +103,67 @@ export const getUpcomingTrains = (
     JOIN routes r ON t.route_id = r.route_id
     JOIN stop_times st1 ON t.trip_id = st1.trip_id AND st1.stop_id = ?
     JOIN stop_times st2 ON t.trip_id = st2.trip_id AND st2.stop_id = ?
-    JOIN calendar c ON t.service_id = c.service_id
+    LEFT JOIN calendar c ON t.service_id = c.service_id
+    LEFT JOIN calendar_dates cd ON t.service_id = cd.service_id AND cd.date = '${searchDate}'
     WHERE st1.stop_sequence < st2.stop_sequence
       AND st2.arrival_time >= ?
-      AND c.${dayColumn} = 1
-      AND c.start_date <= '${searchDate}'
-      AND c.end_date >= '${searchDate}'
+      AND (
+        -- Service explicitly added for this specific date
+        cd.exception_type = 1
+        OR
+        -- Regular service (no exception) running on this day
+        (
+          cd.service_id IS NULL
+          AND c.${dayColumn} = 1
+          AND c.start_date <= '${searchDate}'
+          AND c.end_date >= '${searchDate}'
+        )
+      )
     ORDER BY st2.arrival_time
     ${limit ? `LIMIT ${limit}` : ''}
   `;
-  
+
   const trips = db.prepare(query).all(originId, destinationId, searchTime) as any[];
   
   // Get realtime data
   const tripUpdates = getRealtimeTripUpdates();
-  
+
+  // Helper to get Chicago timezone offset for a given date
+  const getChicagoOffset = (dateStr: string): string => {
+    // Create a specific moment in UTC (noon to avoid edge cases)
+    const utcDate = new Date(`${dateStr}T12:00:00Z`);
+
+    // Format in Chicago timezone to see what hour it is there
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      hour12: false
+    });
+
+    const chicagoHourStr = formatter.format(utcDate);
+    const chicagoHour = parseInt(chicagoHourStr);
+
+    // Calculate offset: Chicago time - UTC time
+    const utcHour = 12;
+    let offsetHours = chicagoHour - utcHour;
+
+    // Handle day boundary crossing
+    if (offsetHours > 12) offsetHours -= 24;
+    if (offsetHours < -12) offsetHours += 24;
+
+    // Format as ±HH:MM
+    const sign = offsetHours >= 0 ? '+' : '-';
+    const absHours = Math.abs(offsetHours);
+
+    return `${sign}${String(absHours).padStart(2, '0')}:00`;
+  };
+
   // Transform trips to Train objects and deduplicate
   const trainMap = new Map<string, any>();
-  
+
   for (const trip of trips) {
     // Get all stops for this trip
-    const stops = getStopsForTrip(trip.trip_id);
+    const stops = getStopsForTrip(trip.trip_id, searchDate);
     
     // Find the origin and destination stop times
     const originStopTime = stops.find(stop => stop.station_id === originId);
@@ -142,16 +186,13 @@ export const getUpcomingTrains = (
         status = TrainStatus.ON_TIME;
       }
     }
-    
-    // Get current date for constructing datetime strings
-    const currentDate = new Date();
-    const dateString = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    // Construct proper datetime strings by combining date with time
+
+    // Construct proper datetime strings by combining date with time in Chicago timezone
     const constructDateTime = (timeStr: string): string => {
       if (!timeStr) return '';
-      // Assuming timeStr is in HH:MM:SS format, combine with today's date
-      return `${dateString}T${timeStr}.000Z`;
+      // GTFS times are in America/Chicago timezone, append proper offset instead of 'Z' (UTC)
+      const offset = getChicagoOffset(searchDate);
+      return `${searchDate}T${timeStr}${offset}`;
     };
 
     const train = {
@@ -220,19 +261,50 @@ export const getTrainDetail = (tripId: string): Train | null => {
   // Get current date for constructing datetime strings
   const today = new Date();
   const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-  
+
+  // Helper to get Chicago timezone offset for a given date
+  const getChicagoOffset = (dateStr: string): string => {
+    // Create a specific moment in UTC (noon to avoid edge cases)
+    const utcDate = new Date(`${dateStr}T12:00:00Z`);
+
+    // Format in Chicago timezone to see what hour it is there
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      hour12: false
+    });
+
+    const chicagoHourStr = formatter.format(utcDate);
+    const chicagoHour = parseInt(chicagoHourStr);
+
+    // Calculate offset: Chicago time - UTC time
+    const utcHour = 12;
+    let offsetHours = chicagoHour - utcHour;
+
+    // Handle day boundary crossing
+    if (offsetHours > 12) offsetHours -= 24;
+    if (offsetHours < -12) offsetHours += 24;
+
+    // Format as ±HH:MM
+    const sign = offsetHours >= 0 ? '+' : '-';
+    const absHours = Math.abs(offsetHours);
+
+    return `${sign}${String(absHours).padStart(2, '0')}:00`;
+  };
+
   // Get all stops for this trip
-  const stops = getStopsForTrip(tripId);
-  
+  const stops = getStopsForTrip(tripId, dateString);
+
   // Find origin and destination from stops
   const originStopTime = stops[0];
   const destinationStopTime = stops[stops.length - 1];
-  
-  // Construct proper datetime strings by combining date with time
+
+  // Construct proper datetime strings by combining date with time in Chicago timezone
   const constructDateTime = (timeStr: string): string => {
     if (!timeStr) return '';
-    // Assuming timeStr is in HH:MM:SS format, combine with today's date
-    return `${dateString}T${timeStr}.000Z`;
+    // GTFS times are in America/Chicago timezone, append proper offset instead of 'Z' (UTC)
+    const offset = getChicagoOffset(dateString);
+    return `${dateString}T${timeStr}${offset}`;
   };
   
   return {
@@ -254,13 +326,14 @@ export const getTrainDetail = (tripId: string): Train | null => {
 /**
  * Get all stops for a specific trip
  * @param tripId - The trip ID to look up stops for
+ * @param dateString - The date string (YYYY-MM-DD) for timezone calculations (optional, defaults to today)
  * @returns Array of StopTime objects for the trip
  */
-const getStopsForTrip = (tripId: string): StopTime[] => {
+const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
   const db = getDatabase();
-  
+
   const stopTimes = db.prepare(`
-    SELECT 
+    SELECT
       st.trip_id,
       st.stop_id as station_id,
       st.arrival_time,
@@ -272,15 +345,47 @@ const getStopsForTrip = (tripId: string): StopTime[] => {
     WHERE st.trip_id = ?
     ORDER BY st.stop_sequence
   `).all(tripId) as any[];
-  
+
   // Get current date for constructing datetime strings
   const today = new Date();
-  const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-  
-  // Construct proper datetime strings for stops
+  const dateStr = dateString || today.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Helper to get Chicago timezone offset for a given date
+  const getChicagoOffset = (dateStr: string): string => {
+    // Create a specific moment in UTC (noon to avoid edge cases)
+    const utcDate = new Date(`${dateStr}T12:00:00Z`);
+
+    // Format in Chicago timezone to see what hour it is there
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      hour12: false
+    });
+
+    const chicagoHourStr = formatter.format(utcDate);
+    const chicagoHour = parseInt(chicagoHourStr);
+
+    // Calculate offset: Chicago time - UTC time
+    const utcHour = 12;
+    let offsetHours = chicagoHour - utcHour;
+
+    // Handle day boundary crossing
+    if (offsetHours > 12) offsetHours -= 24;
+    if (offsetHours < -12) offsetHours += 24;
+
+    // Format as ±HH:MM
+    const sign = offsetHours >= 0 ? '+' : '-';
+    const absHours = Math.abs(offsetHours);
+
+    return `${sign}${String(absHours).padStart(2, '0')}:00`;
+  };
+
+  // Construct proper datetime strings for stops in Chicago timezone
   const constructDateTime = (timeStr: string): string => {
     if (!timeStr) return '';
-    return `${dateString}T${timeStr}.000Z`;
+    // GTFS times are in America/Chicago timezone, append proper offset instead of 'Z' (UTC)
+    const offset = getChicagoOffset(dateStr);
+    return `${dateStr}T${timeStr}${offset}`;
   };
 
   // Transform stop times to StopTime objects with proper datetime strings
