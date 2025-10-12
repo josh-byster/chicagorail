@@ -29,6 +29,6 @@
       "@metra/shared": ["../shared/src"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "../shared/src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

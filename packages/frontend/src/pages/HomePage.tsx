@@ -15,7 +15,7 @@ export default function HomePage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
 
-  const { data: stations } = useStations();
+  useStations();
   const { data: trains, isLoading, error } = useTrains({
     origin,
     destination,
