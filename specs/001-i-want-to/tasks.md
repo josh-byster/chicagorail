@@ -66,7 +66,7 @@ This is a monorepo project with:
 - [X] T021 [Foundation] Initialize SQLite database with node-gtfs in packages/backend/src/services/gtfs-init.service.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs library setup"`)
 - [X] T022 [Foundation] Import GTFS static data (Metra schedule) using custom JSON endpoint integration (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs importGtfs configuration"`)
 - [X] T023 [Foundation] Enable SQLite WAL mode and create indexes per research.md in packages/backend/src/services/database.service.ts
-- [ ] T024 [Foundation] Setup GTFS realtime polling service skeleton in packages/backend/src/services/gtfs-realtime.service.ts (30-second interval with If-Modified-Since headers) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs realtime API"`)
+- [X] T024 [Foundation] Setup GTFS realtime polling service skeleton in packages/backend/src/services/gtfs-realtime.service.ts (30-second interval with If-Modified-Since headers) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs realtime API"`)
 
 ### Frontend Package Foundation
 
@@ -108,14 +108,14 @@ This is a monorepo project with:
 
 ### Backend Implementation for US1
 
-- [ ] T044 [P] [US1] Create Station service in packages/backend/src/services/station.service.ts (query stations from SQLite, filter by line)
-- [ ] T045 [P] [US1] Create Train service in packages/backend/src/services/train.service.ts (query trains by origin/destination, apply realtime delays)
-- [ ] T046 [US1] Create GET /stations endpoint in packages/backend/src/api/stations.ts (list all stations, filter by line_id query param)
-- [ ] T047 [US1] Create GET /stations/:stationId endpoint in packages/backend/src/api/stations.ts (get single station details)
-- [ ] T048 [US1] Create GET /trains endpoint in packages/backend/src/api/trains.ts (requires origin, destination query params; optional limit, time; returns upcoming trains)
-- [ ] T049 [US1] Create GET /trains/:tripId endpoint in packages/backend/src/api/trains.ts (detailed train info with all stops)
-- [ ] T050 [US1] Register station and train routes in packages/backend/src/server.ts
-- [ ] T051 [US1] Add request validation middleware for train query parameters in packages/backend/src/middleware/validate-trains.ts
+- [X] T044 [P] [US1] Create Station service in packages/backend/src/services/station.service.ts (query stations from SQLite, filter by line)
+- [X] T045 [P] [US1] Create Train service in packages/backend/src/services/train.service.ts (query trains by origin/destination, apply realtime delays)
+- [X] T046 [US1] Create GET /stations endpoint in packages/backend/src/api/stations.ts (list all stations, filter by line_id query param)
+- [X] T047 [US1] Create GET /stations/:stationId endpoint in packages/backend/src/api/stations.ts (get single station details)
+- [X] T048 [US1] Create GET /trains endpoint in packages/backend/src/api/trains.ts (requires origin, destination query params; optional limit, time; returns upcoming trains)
+- [X] T049 [US1] Create GET /trains/:tripId endpoint in packages/backend/src/api/trains.ts (detailed train info with all stops)
+- [X] T050 [US1] Register station and train routes in packages/backend/src/server.ts
+- [X] T051 [US1] Add request validation middleware for train query parameters in packages/backend/src/middleware/validate-trains.ts
 
 ### Frontend Implementation for US1
 
@@ -150,32 +150,32 @@ This is a monorepo project with:
 
 ### Backend Implementation for US2
 
-- [ ] T067 [P] [US2] Implement GTFS Realtime polling in packages/backend/src/services/gtfs-realtime.service.ts (fetch vehicle positions, trip updates every 30 seconds)
-- [ ] T068 [US2] Update Train service in packages/backend/src/services/train.service.ts to merge realtime position and delay data
-- [ ] T069 [P] [US2] Create ServiceAlert service in packages/backend/src/services/alert.service.ts (query active alerts from GTFS realtime)
-- [ ] T070 [P] [US2] Create Line service in packages/backend/src/services/line.service.ts (query lines from SQLite)
-- [ ] T071 [US2] Create GET /lines endpoint in packages/backend/src/api/lines.ts (list all lines)
-- [ ] T072 [US2] Create GET /lines/:lineId endpoint in packages/backend/src/api/lines.ts (get single line details)
-- [ ] T073 [US2] Create GET /alerts endpoint in packages/backend/src/api/alerts.ts (filter by line_id or station_id query params)
-- [ ] T074 [US2] Create GET /health endpoint in packages/backend/src/api/health.ts (return status, gtfs_last_updated, gtfs_static_version)
-- [ ] T075 [US2] Register alert, line, and health routes in packages/backend/src/server.ts
-- [ ] T076 [US2] Add caching layer in packages/backend/src/services/cache.service.ts (cache trains for 30 seconds to reduce SQLite queries)
+- [X] T067 [P] [US2] Implement GTFS Realtime polling in packages/backend/src/services/gtfs-realtime.service.ts (fetch vehicle positions, trip updates every 30 seconds)
+- [X] T068 [US2] Update Train service in packages/backend/src/services/train.service.ts to merge realtime position and delay data
+- [X] T069 [P] [US2] Create ServiceAlert service in packages/backend/src/services/alert.service.ts (query active alerts from GTFS realtime)
+- [X] T070 [P] [US2] Create Line service in packages/backend/src/services/line.service.ts (query lines from SQLite)
+- [X] T071 [US2] Create GET /lines endpoint in packages/backend/src/api/lines.ts (list all lines)
+- [X] T072 [US2] Create GET /lines/:lineId endpoint in packages/backend/src/api/lines.ts (get single line details)
+- [X] T073 [US2] Create GET /alerts endpoint in packages/backend/src/api/alerts.ts (filter by line_id or station_id query params)
+- [X] T074 [US2] Create GET /health endpoint in packages/backend/src/api/health.ts (return status, gtfs_last_updated, gtfs_static_version)
+- [X] T075 [US2] Register alert, line, and health routes in packages/backend/src/server.ts
+- [X] T076 [US2] Add caching layer in packages/backend/src/services/cache.service.ts (cache trains for 30 seconds to reduce SQLite queries)
 
 ### Frontend Implementation for US2
 
-- [ ] T077 [P] [US2] Install and configure ShadCN Badge component for status indicators (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="badge"`)
-- [ ] T078 [P] [US2] Install and configure ShadCN Alert component for service alerts (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
-- [ ] T079 [US2] Create TrainStatus component in packages/frontend/src/components/TrainStatus/TrainStatus.tsx (shows status badge: on_time/delayed/cancelled with color coding)
-- [ ] T080 [US2] Update TrainListItem to display delay_minutes and status badge from TrainStatus component
-- [ ] T081 [US2] Create TrainPosition component in packages/frontend/src/components/TrainDetail/TrainPosition.tsx (progress bar showing current position between origin and destination)
-- [ ] T082 [US2] Update TrainDetailPage to include TrainPosition component and show current_station_id
-- [ ] T083 [US2] Create ServiceAlertBanner component in packages/frontend/src/components/ServiceAlertBanner/ServiceAlertBanner.tsx (displays active alerts)
-- [ ] T084 [US2] Add ServiceAlertBanner to HomePage (show alerts affecting searched route)
-- [ ] T085 [US2] Implement auto-refresh using TanStack Query refetchInterval (30 seconds) for train data in packages/frontend/src/hooks/useTrains.ts
-- [ ] T086 [US2] Add visual notification when train is approaching (within 5 minutes) in packages/frontend/src/components/TrainList/TrainList.tsx
-- [ ] T087 [US2] Update IndexedDB storage to cache realtime train data with 30-second TTL in packages/frontend/src/services/storage.ts
-- [ ] T088 [US2] Add "Last updated" timestamp display in packages/frontend/src/components/TrainList/TrainList.tsx
-- [ ] T089 [US2] Handle offline scenario: show cached data with staleness indicator in packages/frontend/src/components/TrainList/TrainList.tsx
+- [X] T077 [P] [US2] Install and configure ShadCN Badge component for status indicators (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="badge"`)
+- [X] T078 [P] [US2] Install and configure ShadCN Alert component for service alerts (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
+- [X] T079 [US2] Create TrainStatus component in packages/frontend/src/components/TrainStatus/TrainStatus.tsx (shows status badge: on_time/delayed/cancelled with color coding)
+- [X] T080 [US2] Update TrainListItem to display delay_minutes and status badge from TrainStatus component
+- [X] T081 [US2] Create TrainPosition component in packages/frontend/src/components/TrainDetail/TrainPosition.tsx (progress bar showing current position between origin and destination)
+- [X] T082 [US2] Update TrainDetailPage to include TrainPosition component and show current_station_id
+- [X] T083 [US2] Create ServiceAlertBanner component in packages/frontend/src/components/ServiceAlertBanner/ServiceAlertBanner.tsx (displays active alerts)
+- [X] T084 [US2] Add ServiceAlertBanner to HomePage (show alerts affecting searched route)
+- [X] T085 [US2] Implement auto-refresh using TanStack Query refetchInterval (30 seconds) for train data in packages/frontend/src/hooks/useTrains.ts
+- [X] T086 [US2] Add visual notification when train is approaching (within 5 minutes) in packages/frontend/src/components/TrainList/TrainList.tsx
+- [X] T087 [US2] Update IndexedDB storage to cache realtime train data with 30-second TTL in packages/frontend/src/services/storage.ts
+- [X] T088 [US2] Add "Last updated" timestamp display in packages/frontend/src/components/TrainList/TrainList.tsx
+- [X] T089 [US2] Handle offline scenario: show cached data with staleness indicator in packages/frontend/src/components/TrainList/TrainList.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - users can search routes AND see realtime status
 
@@ -197,17 +197,17 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 ### Frontend Implementation for US3
 
 - [X] T090 [P] [US3] Define SavedRoute interface in packages/shared/src/types/route.ts with Zod schema
-- [ ] T091 [US3] Create SavedRoute storage service in packages/frontend/src/services/saved-routes.ts (CRUD operations using LocalStorage + IndexedDB)
-- [ ] T092 [P] [US3] Install and configure ShadCN Dialog component for save route modal (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="dialog"`)
-- [ ] T093 [P] [US3] Install and configure ShadCN Input component for route label input (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="input"`)
-- [ ] T094 [US3] Create SaveRouteDialog component in packages/frontend/src/components/SavedRoutes/SaveRouteDialog.tsx (modal to label and save current route)
-- [ ] T095 [US3] Create SavedRouteCard component in packages/frontend/src/components/SavedRoutes/SavedRouteCard.tsx (displays favorite route with next train time, origin → destination)
-- [ ] T096 [US3] Create SavedRoutesList component in packages/frontend/src/components/SavedRoutes/SavedRoutesList.tsx (grid of SavedRouteCard components)
-- [ ] T097 [US3] Update HomePage to show SavedRoutesList above RouteSearch
-- [ ] T098 [US3] Add "Save Route" button to RouteSearch component that opens SaveRouteDialog
-- [ ] T099 [US3] Implement route deletion: add delete button to SavedRouteCard
-- [ ] T100 [US3] Implement "last used" tracking: update last_used_at and use_count when tapping a SavedRouteCard
-- [ ] T101 [US3] Auto-display last-used route on app launch if user has saved routes in packages/frontend/src/pages/HomePage.tsx
+- [X] T091 [US3] Create SavedRoute storage service in packages/frontend/src/services/saved-routes.ts (CRUD operations using LocalStorage + IndexedDB)
+- [X] T092 [P] [US3] Install and configure ShadCN Dialog component for save route modal (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="dialog"`)
+- [X] T093 [P] [US3] Install and configure ShadCN Input component for route label input (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="input"`)
+- [X] T094 [US3] Create SaveRouteDialog component in packages/frontend/src/components/SavedRoutes/SaveRouteDialog.tsx (modal to label and save current route)
+- [X] T095 [US3] Create SavedRouteCard component in packages/frontend/src/components/SavedRoutes/SavedRouteCard.tsx (displays favorite route with next train time, origin → destination)
+- [X] T096 [US3] Create SavedRoutesList component in packages/frontend/src/components/SavedRoutes/SavedRoutesList.tsx (grid of SavedRouteCard components)
+- [X] T097 [US3] Update HomePage to show SavedRoutesList above RouteSearch
+- [X] T098 [US3] Add "Save Route" button to RouteSearch component that opens SaveRouteDialog
+- [X] T099 [US3] Implement route deletion: add delete button to SavedRouteCard
+- [X] T100 [US3] Implement "last used" tracking: update last_used_at and use_count when tapping a SavedRouteCard
+- [X] T101 [US3] Auto-display last-used route on app launch if user has saved routes in packages/frontend/src/pages/HomePage.tsx
 - [ ] T102 [US3] Fetch and display next train time for each saved route in SavedRouteCard using useTrains hook
 
 **Checkpoint**: All user stories should now be independently functional - MVP complete with all P1, P2, P3 features

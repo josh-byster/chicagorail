@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StationSelect } from '@/components/StationSelect/StationSelect';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, Bookmark } from 'lucide-react';
+import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
+import { useStations } from '@/hooks/useStations';
+import { saveRoute } from '@/services/saved-routes';
+import { SavedRoute } from '@metra/shared';
 
 interface RouteSearchProps {
   onSearch: (origin: string, destination: string) => void;
@@ -11,6 +15,7 @@ interface RouteSearchProps {
 export function RouteSearch({ onSearch }: RouteSearchProps) {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
+  const { data: stations } = useStations();
 
   const handleSwap = () => {
     setOrigin(destination);
@@ -24,6 +29,12 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
   };
 
   const isValid = origin && destination && origin !== destination;
+
+  const getStationName = (stationId: string) => {
+    if (!stations) return stationId;
+    const station = stations.find(s => s.station_id === stationId);
+    return station ? station.station_name : stationId;
+  };
 
   return (
     <Card>
@@ -62,13 +73,40 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           />
         </div>
 
-        <Button
-          onClick={handleSearch}
-          disabled={!isValid}
-          className="w-full"
-        >
-          Search Trains
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSearch}
+            disabled={!isValid}
+            className="flex-1"
+          >
+            Search Trains
+          </Button>
+          
+          {isValid && (
+            <SaveRouteDialog
+              originStationId={origin}
+              destinationStationId={destination}
+              originStationName={getStationName(origin)}
+              destinationStationName={getStationName(destination)}
+              onSave={async (route: SavedRoute) => {
+                try {
+                  await saveRoute(route);
+                } catch (err) {
+                  console.error('Failed to save route:', err);
+                }
+              }}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Save route"
+              >
+                <Bookmark className="h-4 w-4" />
+              </Button>
+            </SaveRouteDialog>
+          )}
+        </div>
 
         {origin === destination && origin && (
           <p className="text-sm text-destructive">

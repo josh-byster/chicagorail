@@ -5,11 +5,17 @@ import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/logger';
 import { corsOptions } from './middleware/cors';
 import { env } from './config/env';
+import stationRoutes from './api/stations';
+import trainRoutes from './api/trains';
+import alertRoutes from './api/alerts';
+import lineRoutes from './api/lines';
+import healthRoutes from './api/health';
+import { validateTrainQueryParams } from './middleware/validate-trains';
 
 // Load environment variables
 dotenv.config();
 
-const app = express();
+const app: express.Application = express();
 const PORT = env.PORT;
 
 // Middleware
@@ -18,20 +24,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: env.NODE_ENV,
-  });
-});
-
-// API routes will be registered here
-// app.use('/api/stations', stationRoutes);
-// app.use('/api/trains', trainRoutes);
-// app.use('/api/lines', lineRoutes);
-// app.use('/api/alerts', alertRoutes);
+// API routes
+app.use('/api', stationRoutes);
+app.use('/api', validateTrainQueryParams, trainRoutes);
+app.use('/api', alertRoutes);
+app.use('/api', lineRoutes);
+app.use('/api', healthRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
