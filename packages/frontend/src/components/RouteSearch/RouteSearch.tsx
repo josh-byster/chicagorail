@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Check, Bookmark } from 'lucide-react';
+import { ArrowLeft, Check, Bookmark, ChevronDown } from 'lucide-react';
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
@@ -24,12 +25,21 @@ type Step = 'origin' | 'destination';
 
 export function RouteSearch() {
   const { origin, destination, setRoute } = useRouteSearchStore();
+  const [searchParams] = useSearchParams();
+
+  // Check URL params to determine initial collapsed state
+  const urlOrigin = searchParams.get('origin');
+  const urlDestination = searchParams.get('destination');
+  const hasUrlRoute = Boolean(urlOrigin && urlDestination);
+
+  const initialCollapsed = hasUrlRoute || Boolean(origin && destination);
 
   const [step, setStep] = useState<Step>(
     origin && destination ? 'destination' : 'origin'
   );
   const [isDestinationSearchOpen, setIsDestinationSearchOpen] =
     useState(!destination);
+  const [isCollapsed, setIsCollapsed] = useState(initialCollapsed);
 
   // Fetch all stations for origin selection
   const {
@@ -54,17 +64,24 @@ export function RouteSearch() {
   const handleDestinationSelect = (stationId: string) => {
     setRoute(origin, stationId); // Set complete route
     setIsDestinationSearchOpen(false);
+    setIsCollapsed(true);
   };
 
   const handleBack = () => {
     setStep('origin');
     setRoute('', ''); // Clear both
     setIsDestinationSearchOpen(true);
+    setIsCollapsed(false);
   };
 
   const handleChangeDestination = () => {
     setRoute(origin, ''); // Keep origin, clear destination
     setIsDestinationSearchOpen(true);
+    setIsCollapsed(false);
+  };
+
+  const handleExpand = () => {
+    setIsCollapsed(false);
   };
 
   // Update step and search state when store values change
@@ -72,12 +89,15 @@ export function RouteSearch() {
     if (origin && destination) {
       setStep('destination');
       setIsDestinationSearchOpen(false);
+      setIsCollapsed(true);
     } else if (origin) {
       setStep('destination');
       setIsDestinationSearchOpen(true);
+      setIsCollapsed(false);
     } else {
       setStep('origin');
       setIsDestinationSearchOpen(true);
+      setIsCollapsed(false);
     }
   }, [origin, destination]);
 
@@ -94,8 +114,70 @@ export function RouteSearch() {
     (s) => s.station_id === destination
   );
 
+  // Collapsed view when route is complete (don't wait for station data to load)
+  if (isCollapsed && isValid) {
+    return (
+      <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="h-8 w-1 bg-gradient-to-b from-primary to-blue-600 rounded-full shrink-0"></div>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="font-semibold text-foreground truncate">
+                    {originStation?.station_name || origin}
+                  </span>
+                  <span className="text-muted-foreground shrink-0">→</span>
+                  <span className="font-semibold text-foreground truncate">
+                    {destinationStation?.station_name || destination}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <SaveRouteDialog
+                originStationId={origin}
+                destinationStationId={destination}
+                originStationName={getStationName(origin)}
+                destinationStationName={getStationName(destination)}
+                onSave={async (route: SavedRoute) => {
+                  try {
+                    await saveRoute(route);
+                  } catch (err) {
+                    console.error('Failed to save route:', err);
+                  }
+                }}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Save route"
+                  className="gap-2"
+                >
+                  <Bookmark className="h-4 w-4" />
+                </Button>
+              </SaveRouteDialog>
+              <Button
+                onClick={handleExpand}
+                variant="ghost"
+                size="sm"
+                aria-label="Expand route search"
+                className="gap-1"
+              >
+                <span className="text-sm">Change</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Expanded view
   return (
-    <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
+    <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
       <CardHeader className="pb-6 border-b bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-2xl font-bold flex items-center gap-2">
           <div className="h-8 w-1 bg-gradient-to-b from-primary to-blue-600 rounded-full"></div>
