@@ -37,7 +37,8 @@ export const getUpcomingTrains = (
     originId,
     destinationId,
     limit,
-    time || date
+    time,
+    date
   );
 
   // Check cache first

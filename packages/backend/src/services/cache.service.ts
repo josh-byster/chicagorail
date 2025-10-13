@@ -29,9 +29,10 @@ export const generateTrainCacheKey = (
   originId: string,
   destinationId: string,
   limit?: number,
-  time?: string
+  time?: string,
+  date?: string
 ): string => {
-  return `trains:${originId}:${destinationId}:${limit || 'all'}:${time || 'now'}`;
+  return `trains:${originId}:${destinationId}:${limit || 'all'}:${time || 'now'}:${date || 'today'}`;
 };
 
 /**
@@ -41,11 +42,11 @@ export const generateTrainCacheKey = (
  */
 export const getCachedData = <T>(key: string): T | null => {
   const entry = cacheStore.get(key);
-  
+
   if (!entry) {
     return null;
   }
-  
+
   // Check if cache entry is expired
   const now = Date.now();
   if (now - entry.timestamp > entry.ttl) {
@@ -53,7 +54,7 @@ export const getCachedData = <T>(key: string): T | null => {
     cacheStore.delete(key);
     return null;
   }
-  
+
   return entry.data as T;
 };
 
@@ -90,7 +91,7 @@ export const getCacheStats = (): { size: number; entries: number } => {
   return {
     size: cacheStore.size,
     entries: Array.from(cacheStore.values()).filter(
-      entry => Date.now() - entry.timestamp <= entry.ttl
+      (entry) => Date.now() - entry.timestamp <= entry.ttl
     ).length,
   };
 };
