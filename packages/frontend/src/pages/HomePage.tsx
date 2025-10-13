@@ -11,10 +11,13 @@ import {
 import { useStations } from '@/hooks/useStations';
 import { SavedRoute } from '@metra/shared';
 import { Separator } from '@/components/ui/separator';
+import { useRouteSearchStore } from '@/stores/routeSearchStore';
+import { useUrlSync } from '@/hooks/useUrlSync';
+
 export default function HomePage() {
-  const [origin, setOrigin] = useState<string>('');
-  const [destination, setDestination] = useState<string>('');
-  const [hasSearched, setHasSearched] = useState(false);
+  useUrlSync(); // Sync URL params with Zustand store
+
+  const { origin, destination, hasSearched, setRoute } = useRouteSearchStore();
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
 
   useStations();
@@ -35,8 +38,12 @@ export default function HomePage() {
         const routes = await getSavedRoutes();
         setSavedRoutes(routes);
 
-        // Auto-display last-used route if user has saved routes
-        if (routes.length > 0) {
+        // Auto-display last-used route if user has saved routes and no route is currently selected
+        // Only check on initial mount (when origin and destination are empty)
+        const currentOrigin = useRouteSearchStore.getState().origin;
+        const currentDestination = useRouteSearchStore.getState().destination;
+
+        if (routes.length > 0 && !currentOrigin && !currentDestination) {
           // Sort routes by last_used_at (most recent first)
           const sortedRoutes = [...routes].sort(
             (a, b) =>
@@ -45,7 +52,7 @@ export default function HomePage() {
           );
 
           const lastUsedRoute = sortedRoutes[0];
-          handleSearch(
+          setRoute(
             lastUsedRoute.origin_station_id,
             lastUsedRoute.destination_station_id
           );
@@ -56,13 +63,7 @@ export default function HomePage() {
     };
 
     loadSavedRoutes();
-  }, []);
-
-  const handleSearch = (newOrigin: string, newDestination: string) => {
-    setOrigin(newOrigin);
-    setDestination(newDestination);
-    setHasSearched(true);
-  };
+  }, []); // Only run once on mount
 
   const handleSavedRouteClick = async (route: SavedRoute) => {
     // Update last used timestamp and use count
@@ -78,7 +79,7 @@ export default function HomePage() {
     }
 
     // Perform search with saved route
-    handleSearch(route.origin_station_id, route.destination_station_id);
+    setRoute(route.origin_station_id, route.destination_station_id);
   };
 
   const handleSavedRouteDelete = async (route: SavedRoute) => {
@@ -136,7 +137,7 @@ export default function HomePage() {
           )}
 
           {/* Route Search */}
-          <RouteSearch onSearch={handleSearch} />
+          <RouteSearch />
 
           {/* Train Results */}
           {hasSearched && (

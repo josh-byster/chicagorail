@@ -18,18 +18,18 @@ import {
 } from '@/components/ui/command';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-interface RouteSearchProps {
-  onSearch: (origin: string, destination: string) => void;
-}
+import { useRouteSearchStore } from '@/stores/routeSearchStore';
 
 type Step = 'origin' | 'destination';
 
-export function RouteSearch({ onSearch }: RouteSearchProps) {
-  const [origin, setOrigin] = useState<string>('');
-  const [destination, setDestination] = useState<string>('');
-  const [step, setStep] = useState<Step>('origin');
-  const [isDestinationSearchOpen, setIsDestinationSearchOpen] = useState(true);
+export function RouteSearch() {
+  const { origin, destination, setRoute } = useRouteSearchStore();
+
+  const [step, setStep] = useState<Step>(
+    origin && destination ? 'destination' : 'origin'
+  );
+  const [isDestinationSearchOpen, setIsDestinationSearchOpen] =
+    useState(!destination);
 
   // Fetch all stations for origin selection
   const {
@@ -46,36 +46,42 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
   } = useReachableStations(origin || null);
 
   const handleOriginSelect = (stationId: string) => {
-    setOrigin(stationId);
-    setDestination('');
+    setRoute(stationId, ''); // Clear destination when changing origin
     setStep('destination');
     setIsDestinationSearchOpen(true);
   };
 
   const handleDestinationSelect = (stationId: string) => {
-    setDestination(stationId);
+    setRoute(origin, stationId); // Set complete route
     setIsDestinationSearchOpen(false);
   };
 
   const handleBack = () => {
     setStep('origin');
-    setDestination('');
+    setRoute('', ''); // Clear both
     setIsDestinationSearchOpen(true);
   };
 
   const handleChangeDestination = () => {
-    setDestination('');
+    setRoute(origin, ''); // Keep origin, clear destination
     setIsDestinationSearchOpen(true);
   };
 
-  const isValid = origin && destination && origin !== destination;
-
-  // Auto-trigger search when both stations are selected
+  // Update step and search state when store values change
   useEffect(() => {
-    if (isValid) {
-      onSearch(origin, destination);
+    if (origin && destination) {
+      setStep('destination');
+      setIsDestinationSearchOpen(false);
+    } else if (origin) {
+      setStep('destination');
+      setIsDestinationSearchOpen(true);
+    } else {
+      setStep('origin');
+      setIsDestinationSearchOpen(true);
     }
-  }, [origin, destination, isValid, onSearch]);
+  }, [origin, destination]);
+
+  const isValid = origin && destination && origin !== destination;
 
   const getStationName = (stationId: string) => {
     if (!allStations) return stationId;
