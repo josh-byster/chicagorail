@@ -15,7 +15,10 @@
  * @param fallback - Fallback color if invalid (default: '000000' black)
  * @returns Normalized hex color with # prefix (e.g., '#008000')
  */
-export const normalizeHexColor = (color: string | null | undefined, fallback: string = '000000'): string => {
+export const normalizeHexColor = (
+  color: string | null | undefined,
+  fallback: string = '000000'
+): string => {
   // Handle null/undefined
   if (!color) {
     return `#${fallback}`;
@@ -40,9 +43,9 @@ export const normalizeHexColor = (color: string | null | undefined, fallback: st
     // Short form like "F00" -> "FF0000"
     return `#${cleaned[0]}${cleaned[0]}${cleaned[1]}${cleaned[1]}${cleaned[2]}${cleaned[2]}`.toUpperCase();
   } else if (cleaned.length === 4) {
-    // Pad 4-char codes by adding zeros to the end
+    // Pad 4-char codes by adding zeros to the beginning
     // "8000" -> "008000" (common for green)
-    return `#${cleaned.padEnd(6, '0').toUpperCase()}`;
+    return `#${cleaned.padStart(6, '0').toUpperCase()}`;
   } else if (cleaned.length < 6) {
     // Pad short codes with leading zeros
     return `#${cleaned.padStart(6, '0').toUpperCase()}`;
@@ -60,7 +63,10 @@ export const normalizeHexColor = (color: string | null | undefined, fallback: st
  * @param fallback - Fallback color (default: 'FFFFFF' white)
  * @returns Normalized hex color with # prefix
  */
-export const normalizeTextColor = (textColor: string | number | null | undefined, fallback: string = 'FFFFFF'): string => {
+export const normalizeTextColor = (
+  textColor: string | number | null | undefined,
+  fallback: string = 'FFFFFF'
+): string => {
   // Handle null/undefined
   if (textColor === null || textColor === undefined) {
     return `#${fallback}`;

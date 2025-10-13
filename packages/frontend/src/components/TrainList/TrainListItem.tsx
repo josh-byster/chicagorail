@@ -82,16 +82,16 @@ export function TrainListItem({ train }: TrainListItemProps) {
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <Card className="hover:shadow-lg hover:border-primary/50 transition-all duration-200 overflow-hidden">
         <CardContent className="p-0">
-          <CollapsibleTrigger className="w-full text-left">
-            <div className="flex items-stretch">
-              {/* Line indicator with color */}
-              <div
-                className="w-2 flex-shrink-0"
-                style={{ backgroundColor: train.line_color || '#000000' }}
-                aria-label={`${train.line_name} line`}
-              />
+          <div className="flex items-stretch">
+            {/* Line indicator with color - extends through entire card */}
+            <div
+              className="w-2 flex-shrink-0"
+              style={{ backgroundColor: train.line_color || '#000000' }}
+              aria-label={`${train.line_name} line`}
+            />
 
-              <div className="flex-1 p-5">
+            <div className="flex-1">
+              <CollapsibleTrigger className="w-full text-left p-5">
                 {/* Header with time and status */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -147,186 +147,190 @@ export function TrainListItem({ train }: TrainListItemProps) {
                     </>
                   )}
                 </div>
-              </div>
-            </div>
-          </CollapsibleTrigger>
+              </CollapsibleTrigger>
 
-          <CollapsibleContent>
-            <div className="border-t bg-muted/20">
-              {isLoadingDetail ? (
-                <div className="p-5 space-y-4">
-                  <Skeleton className="h-32 w-full" />
-                  <Skeleton className="h-48 w-full" />
-                </div>
-              ) : trainDetail ? (
-                <div className="p-5 space-y-6">
-                  {/* Journey Details */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Your Journey</h3>
-                    <div className="grid sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                          Departure
-                        </p>
-                        <div className="flex items-center gap-2.5">
-                          <Clock className="h-5 w-5 text-primary" />
-                          <span className="font-bold text-2xl">
-                            {departureTime}
-                          </span>
-                        </div>
-                        {originStop && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {originStop.station_name || originStop.station_id}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                          Arrival
-                        </p>
-                        <div className="flex items-center gap-2.5">
-                          <Clock className="h-5 w-5 text-primary" />
-                          <span className="font-bold text-2xl">
-                            {arrivalTime}
-                          </span>
-                        </div>
-                        {destinationStop && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {destinationStop.station_name ||
-                                destinationStop.station_id}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+              <CollapsibleContent>
+                <div className="border-t bg-muted/20 p-5">
+                  {isLoadingDetail ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-48 w-full" />
                     </div>
-
-                    {train.delay_minutes > 0 && (
-                      <>
-                        <Separator className="my-4" />
-                        <Alert variant="destructive" className="border-2">
-                          <AlertCircle className="h-5 w-5" />
-                          <AlertTitle className="text-base">Delayed</AlertTitle>
-                          <AlertDescription>
-                            This train is running {train.delay_minutes} minutes
-                            late
-                          </AlertDescription>
-                        </Alert>
-                      </>
-                    )}
-                  </div>
-
-                  {/* All Stops */}
-                  <div>
-                    <Separator className="mb-4" />
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">All Stops</h3>
-                      <Badge
-                        variant="secondary"
-                        className="text-base px-3 py-1"
-                      >
-                        {trainDetail.stops?.length || 0} stops
-                      </Badge>
-                    </div>
-                    {trainDetail.stops && trainDetail.stops.length > 0 ? (
-                      <div className="space-y-1 max-h-96 overflow-y-auto">
-                        {trainDetail.stops.map((stop, index) => {
-                          const isOrigin =
-                            stop.station_id === train.origin_station_id;
-                          const isDestination =
-                            stop.station_id === train.destination_station_id;
-                          const isUserJourney = isOrigin || isDestination;
-
-                          return (
-                            <div
-                              key={`${stop.station_id}-${stop.stop_sequence}`}
-                              className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
-                                isUserJourney
-                                  ? 'bg-primary/10 border-2 border-primary/30'
-                                  : 'hover:bg-accent/50'
-                              }`}
-                            >
-                              <div
-                                className={`flex items-center justify-center w-7 h-7 rounded-full font-semibold text-sm ${
-                                  isUserJourney
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-primary/10 text-primary'
-                                }`}
-                              >
-                                {index + 1}
+                  ) : trainDetail ? (
+                    <div className="space-y-6">
+                      {/* Journey Details */}
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">
+                          Your Journey
+                        </h3>
+                        <div className="grid sm:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                              Departure
+                            </p>
+                            <div className="flex items-center gap-2.5">
+                              <Clock className="h-5 w-5 text-primary" />
+                              <span className="font-bold text-2xl">
+                                {departureTime}
+                              </span>
+                            </div>
+                            {originStop && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                  {originStop.station_name ||
+                                    originStop.station_id}
+                                </span>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p
-                                    className={`font-semibold text-sm ${isUserJourney ? 'text-foreground' : ''}`}
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                              Arrival
+                            </p>
+                            <div className="flex items-center gap-2.5">
+                              <Clock className="h-5 w-5 text-primary" />
+                              <span className="font-bold text-2xl">
+                                {arrivalTime}
+                              </span>
+                            </div>
+                            {destinationStop && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                  {destinationStop.station_name ||
+                                    destinationStop.station_id}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {train.delay_minutes > 0 && (
+                          <>
+                            <Separator className="my-4" />
+                            <Alert variant="destructive" className="border-2">
+                              <AlertCircle className="h-5 w-5" />
+                              <AlertTitle className="text-base">
+                                Delayed
+                              </AlertTitle>
+                              <AlertDescription>
+                                This train is running {train.delay_minutes}{' '}
+                                minutes late
+                              </AlertDescription>
+                            </Alert>
+                          </>
+                        )}
+                      </div>
+
+                      {/* All Stops */}
+                      <div>
+                        <Separator className="mb-4" />
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">All Stops</h3>
+                          <Badge
+                            variant="secondary"
+                            className="text-base px-3 py-1"
+                          >
+                            {trainDetail.stops?.length || 0} stops
+                          </Badge>
+                        </div>
+                        {trainDetail.stops && trainDetail.stops.length > 0 ? (
+                          <div className="space-y-1 max-h-96 overflow-y-auto">
+                            {trainDetail.stops.map((stop, index) => {
+                              const isOrigin =
+                                stop.station_id === train.origin_station_id;
+                              const isDestination =
+                                stop.station_id ===
+                                train.destination_station_id;
+                              const isUserJourney = isOrigin || isDestination;
+
+                              return (
+                                <div
+                                  key={`${stop.station_id}-${stop.stop_sequence}`}
+                                  className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+                                    isUserJourney
+                                      ? 'bg-primary/10 border-2 border-primary/30'
+                                      : 'hover:bg-accent/50'
+                                  }`}
+                                >
+                                  <div
+                                    className={`flex items-center justify-center w-7 h-7 rounded-full font-semibold text-sm ${
+                                      isUserJourney
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-primary/10 text-primary'
+                                    }`}
                                   >
-                                    {stop.station_name || stop.station_id}
-                                  </p>
-                                  {isOrigin && (
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p
+                                        className={`font-semibold text-sm ${isUserJourney ? 'text-foreground' : ''}`}
+                                      >
+                                        {stop.station_name || stop.station_id}
+                                      </p>
+                                      {isOrigin && (
+                                        <Badge
+                                          variant="default"
+                                          className="text-xs"
+                                        >
+                                          Your Origin
+                                        </Badge>
+                                      )}
+                                      {isDestination && (
+                                        <Badge
+                                          variant="default"
+                                          className="text-xs"
+                                        >
+                                          Your Destination
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {new Date(
+                                        stop.arrival_time
+                                      ).toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                      })}
+                                    </p>
+                                  </div>
+                                  {stop.delay_minutes > 0 && (
                                     <Badge
-                                      variant="default"
-                                      className="text-xs"
+                                      variant="warning"
+                                      className="flex-shrink-0 text-xs"
                                     >
-                                      Your Origin
-                                    </Badge>
-                                  )}
-                                  {isDestination && (
-                                    <Badge
-                                      variant="default"
-                                      className="text-xs"
-                                    >
-                                      Your Destination
+                                      +{stop.delay_minutes} min
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {new Date(
-                                    stop.arrival_time
-                                  ).toLocaleTimeString('en-US', {
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                  })}
-                                </p>
-                              </div>
-                              {stop.delay_minutes > 0 && (
-                                <Badge
-                                  variant="warning"
-                                  className="flex-shrink-0 text-xs"
-                                >
-                                  +{stop.delay_minutes} min
-                                </Badge>
-                              )}
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center text-muted-foreground py-8">
+                            <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm font-medium">
+                              No stop information available
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        <AlertCircle className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm font-medium">
-                          No stop information available
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>
+                        Failed to load train details
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
-              ) : (
-                <div className="p-5">
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>
-                      Failed to load train details
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
+              </CollapsibleContent>
             </div>
-          </CollapsibleContent>
+          </div>
         </CardContent>
       </Card>
     </Collapsible>
