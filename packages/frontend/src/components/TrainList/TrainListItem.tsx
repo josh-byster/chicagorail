@@ -9,17 +9,22 @@ interface TrainListItemProps {
 }
 
 export function TrainListItem({ train }: TrainListItemProps) {
-  const departureTime = new Date(train.departure_time).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  const departureTime = new Date(train.departure_time).toLocaleTimeString(
+    'en-US',
+    {
+      hour: 'numeric',
+      minute: '2-digit',
+    }
+  );
 
   const arrivalTime = new Date(train.arrival_time).toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
   });
 
-  const getStatusVariant = (status: string): 'success' | 'warning' | 'destructive' | 'secondary' => {
+  const getStatusVariant = (
+    status: string
+  ): 'success' | 'warning' | 'destructive' | 'secondary' => {
     switch (status) {
       case 'on_time':
         return 'success';
@@ -42,7 +47,10 @@ export function TrainListItem({ train }: TrainListItemProps) {
   };
 
   return (
-    <Link to={`/train/${train.trip_id}`} className="block">
+    <Link
+      to={`/train/${train.trip_id}?origin=${train.origin_station_id}&destination=${train.destination_station_id}`}
+      className="block"
+    >
       <Card className="hover:shadow-lg hover:border-primary/50 transition-all duration-200 cursor-pointer group overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-stretch">
@@ -59,12 +67,19 @@ export function TrainListItem({ train }: TrainListItemProps) {
                 <div className="flex items-center gap-3">
                   <Clock className="h-5 w-5 text-primary flex-shrink-0" />
                   <div className="flex items-center gap-2.5">
-                    <span className="font-bold text-2xl tracking-tight">{departureTime}</span>
+                    <span className="font-bold text-2xl tracking-tight">
+                      {departureTime}
+                    </span>
                     <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                    <span className="font-bold text-2xl tracking-tight text-muted-foreground">{arrivalTime}</span>
+                    <span className="font-bold text-2xl tracking-tight text-muted-foreground">
+                      {arrivalTime}
+                    </span>
                   </div>
                 </div>
-                <Badge variant={getStatusVariant(train.status)} className="ml-3 flex-shrink-0">
+                <Badge
+                  variant={getStatusVariant(train.status)}
+                  className="ml-3 flex-shrink-0"
+                >
                   {getStatusText(train.status, train.delay_minutes)}
                 </Badge>
               </div>
@@ -79,7 +94,9 @@ export function TrainListItem({ train }: TrainListItemProps) {
                 {train.train_number && (
                   <>
                     <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">Train #{train.train_number}</span>
+                    <span className="text-muted-foreground">
+                      Train #{train.train_number}
+                    </span>
                   </>
                 )}
 
