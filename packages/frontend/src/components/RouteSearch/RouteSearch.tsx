@@ -136,6 +136,7 @@ export function RouteSearch() {
                 <CommandInput
                   placeholder="Search for your station..."
                   className="text-base md:text-lg h-12"
+                  autoFocus
                 />
                 <CommandList className="max-h-[400px]">
                   <CommandEmpty>No station found.</CommandEmpty>
@@ -221,6 +222,7 @@ export function RouteSearch() {
                       <CommandInput
                         placeholder="Search for your destination..."
                         className="text-base md:text-lg h-12"
+                        autoFocus
                       />
                       <CommandList className="max-h-[400px]">
                         <CommandEmpty>No station found.</CommandEmpty>
