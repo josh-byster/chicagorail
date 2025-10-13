@@ -12,13 +12,26 @@ interface UseTrainsParams {
   enabled?: boolean;
 }
 
-export function useTrains({ origin, destination, limit, time, enabled = true }: UseTrainsParams) {
+export function useTrains({
+  origin,
+  destination,
+  limit,
+  time,
+  date,
+  enabled = true,
+}: UseTrainsParams) {
   return useQuery({
-    queryKey: ['trains', origin, destination, limit, time],
+    queryKey: ['trains', origin, destination, limit, time, date],
     queryFn: async (): Promise<Train[]> => {
       try {
         // Try to fetch from API
-        const trains = await fetchTrains({ origin, destination, limit, time });
+        const trains = await fetchTrains({
+          origin,
+          destination,
+          limit,
+          time,
+          date,
+        });
 
         // Cache in IndexedDB
         await cacheTrains(trains);

@@ -17,7 +17,8 @@ import { useUrlSync } from '@/hooks/useUrlSync';
 export default function HomePage() {
   useUrlSync(); // Sync URL params with Zustand store
 
-  const { origin, destination, hasSearched, setRoute } = useRouteSearchStore();
+  const { origin, destination, date, time, hasSearched, setRoute } =
+    useRouteSearchStore();
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
 
   useStations();
@@ -28,6 +29,8 @@ export default function HomePage() {
   } = useTrains({
     origin,
     destination,
+    date: date ? date.toISOString().split('T')[0] : undefined,
+    time,
     enabled: hasSearched && !!origin && !!destination,
   });
 

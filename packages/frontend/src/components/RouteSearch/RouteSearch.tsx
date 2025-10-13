@@ -1,8 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Check, Bookmark, ChevronDown } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  ArrowLeft,
+  Check,
+  Bookmark,
+  ChevronDown,
+  CalendarIcon,
+  X,
+} from 'lucide-react';
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
@@ -24,8 +39,10 @@ import { useRouteSearchStore } from '@/stores/routeSearchStore';
 type Step = 'origin' | 'destination';
 
 export function RouteSearch() {
-  const { origin, destination, setRoute } = useRouteSearchStore();
+  const { origin, destination, date, time, setRoute, setDate, setTime } =
+    useRouteSearchStore();
   const [searchParams] = useSearchParams();
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   // Check URL params to determine initial collapsed state
   const urlOrigin = searchParams.get('origin');
@@ -118,7 +135,7 @@ export function RouteSearch() {
   if (isCollapsed && isValid) {
     return (
       <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div className="h-8 w-1 bg-gradient-to-b from-primary to-blue-600 rounded-full shrink-0"></div>
@@ -168,6 +185,74 @@ export function RouteSearch() {
                 <span className="text-sm">Change</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
+            </div>
+          </div>
+
+          {/* Date and Time Filters */}
+          <div className="flex gap-3 flex-wrap">
+            {/* Date Picker */}
+            <div className="flex-1 min-w-[140px]">
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    size="sm"
+                  >
+                    {date ? format(date, 'MMM dd, yyyy') : 'Today'}
+                    {date ? (
+                      <X
+                        className="h-3.5 w-3.5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDate(undefined);
+                        }}
+                      />
+                    ) : (
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(newDate) => {
+                      setDate(newDate);
+                      setDatePickerOpen(false);
+                    }}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Time Input */}
+            <div className="flex-1 min-w-[120px]">
+              <div className="relative">
+                <Input
+                  type="time"
+                  value={time || ''}
+                  onChange={(e) => setTime(e.target.value || undefined)}
+                  placeholder="Any time"
+                  className="pr-8 h-9"
+                />
+                {time && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => setTime(undefined)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
