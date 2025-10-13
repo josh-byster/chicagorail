@@ -1,22 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StationCombobox } from '@/components/StationCombobox/StationCombobox';
-import { ArrowLeftRight, Bookmark } from 'lucide-react';
+import { ArrowLeft, Check, Bookmark } from 'lucide-react';
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
 import { saveRoute } from '@/services/saved-routes';
 import { SavedRoute } from '@metra/shared';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface RouteSearchProps {
   onSearch: (origin: string, destination: string) => void;
 }
 
+type Step = 'origin' | 'destination';
+
 export function RouteSearch({ onSearch }: RouteSearchProps) {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
+  const [step, setStep] = useState<Step>('origin');
+  const [isDestinationSearchOpen, setIsDestinationSearchOpen] = useState(true);
 
   // Fetch all stations for origin selection
   const {
@@ -32,17 +45,27 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
     error: errorReachable,
   } = useReachableStations(origin || null);
 
-  const handleSwap = () => {
-    const tempOrigin = origin;
-    const tempDest = destination;
-    setOrigin(tempDest);
-    setDestination(tempOrigin);
+  const handleOriginSelect = (stationId: string) => {
+    setOrigin(stationId);
+    setDestination('');
+    setStep('destination');
+    setIsDestinationSearchOpen(true);
   };
 
-  const handleOriginChange = (value: string) => {
-    setOrigin(value);
-    // Clear destination when origin changes since reachable stations will change
+  const handleDestinationSelect = (stationId: string) => {
+    setDestination(stationId);
+    setIsDestinationSearchOpen(false);
+  };
+
+  const handleBack = () => {
+    setStep('origin');
     setDestination('');
+    setIsDestinationSearchOpen(true);
+  };
+
+  const handleChangeDestination = () => {
+    setDestination('');
+    setIsDestinationSearchOpen(true);
   };
 
   const isValid = origin && destination && origin !== destination;
@@ -60,6 +83,11 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
     return station ? station.station_name : stationId;
   };
 
+  const originStation = allStations?.find((s) => s.station_id === origin);
+  const destinationStation = reachableStations?.find(
+    (s) => s.station_id === destination
+  );
+
   return (
     <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-300">
       <CardHeader className="pb-6 border-b bg-gradient-to-r from-primary/5 to-transparent">
@@ -68,85 +96,212 @@ export function RouteSearch({ onSearch }: RouteSearchProps) {
           Find Your Train
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5 pt-6">
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground">From</label>
-          <StationCombobox
-            value={origin}
-            onChange={handleOriginChange}
-            placeholder="Search for origin station..."
-            stations={allStations}
-            isLoading={isLoadingAll}
-            error={errorAll}
-          />
-        </div>
+      <CardContent className="pt-6">
+        {step === 'origin' ? (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                Where are you starting?
+              </h3>
+              {originStation && (
+                <p className="text-sm text-muted-foreground">
+                  Currently selected:{' '}
+                  <span className="font-semibold text-foreground">
+                    {originStation.station_name}
+                  </span>
+                </p>
+              )}
+            </div>
 
-        <div className="flex justify-center -my-2 relative">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent"></div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={handleSwap}
-            disabled={!origin && !destination}
-            aria-label="Swap stations"
-            className="relative z-10 rounded-full border-2 bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-110 transition-all shadow-md"
-          >
-            <ArrowLeftRight className="h-5 w-5" />
-          </Button>
-        </div>
+            {isLoadingAll && (
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            )}
 
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground">To</label>
-          <StationCombobox
-            value={destination}
-            onChange={setDestination}
-            placeholder={
-              origin ? 'Search for destination...' : 'Select origin first'
-            }
-            stations={origin ? reachableStations : []}
-            isLoading={isLoadingReachable}
-            error={errorReachable}
-            disabled={!origin}
-          />
-        </div>
+            {errorAll && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Error loading stations. Please try again.
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {origin === destination && origin && (
-          <Alert variant="destructive" className="py-2">
-            <AlertDescription className="text-sm">
-              Origin and destination must be different
-            </AlertDescription>
-          </Alert>
-        )}
+            {!isLoadingAll && !errorAll && allStations && (
+              <Command className="rounded-lg border shadow-md">
+                <CommandInput
+                  placeholder="Search for your station..."
+                  className="text-base md:text-lg h-12"
+                />
+                <CommandList className="max-h-[400px]">
+                  <CommandEmpty>No station found.</CommandEmpty>
+                  <CommandGroup>
+                    {allStations.map((station) => (
+                      <CommandItem
+                        key={station.station_id}
+                        value={station.station_name}
+                        onSelect={() => handleOriginSelect(station.station_id)}
+                        className="cursor-pointer py-4 px-4 text-base md:text-lg aria-selected:bg-primary/10"
+                      >
+                        <Check
+                          className={cn(
+                            'mr-3 h-5 w-5',
+                            origin === station.station_id
+                              ? 'opacity-100'
+                              : 'opacity-0'
+                          )}
+                        />
+                        {station.station_name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            )}
 
-        {isValid && (
-          <div className="flex justify-end pt-2">
-            <SaveRouteDialog
-              originStationId={origin}
-              destinationStationId={destination}
-              originStationName={getStationName(origin)}
-              destinationStationName={getStationName(destination)}
-              onSave={async (route: SavedRoute) => {
-                try {
-                  await saveRoute(route);
-                } catch (err) {
-                  console.error('Failed to save route:', err);
-                }
-              }}
-            >
+            {originStation && (
               <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Save route"
-                className="gap-2"
+                onClick={() => setStep('destination')}
+                className="w-full h-12 text-base md:text-lg"
+                size="lg"
               >
-                <Bookmark className="h-4 w-4" />
-                Save Route
+                Continue to Destination
               </Button>
-            </SaveRouteDialog>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                aria-label="Go back"
+                className="shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">From</p>
+                <p className="font-semibold text-foreground">
+                  {originStation?.station_name}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                And where are you headed?
+              </h3>
+            </div>
+
+            {isLoadingReachable && (
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            )}
+
+            {errorReachable && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Error loading destinations. Please try again.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!isLoadingReachable &&
+              !errorReachable &&
+              reachableStations &&
+              reachableStations.length > 0 && (
+                <>
+                  {isDestinationSearchOpen ? (
+                    <Command className="rounded-lg border shadow-md">
+                      <CommandInput
+                        placeholder="Search for your destination..."
+                        className="text-base md:text-lg h-12"
+                      />
+                      <CommandList className="max-h-[400px]">
+                        <CommandEmpty>No station found.</CommandEmpty>
+                        <CommandGroup>
+                          {reachableStations.map((station) => (
+                            <CommandItem
+                              key={station.station_id}
+                              value={station.station_name}
+                              onSelect={() =>
+                                handleDestinationSelect(station.station_id)
+                              }
+                              className="cursor-pointer py-4 px-4 text-base md:text-lg aria-selected:bg-primary/10"
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-3 h-5 w-5',
+                                  destination === station.station_id
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                              {station.station_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  ) : (
+                    destinationStation && (
+                      <div className="space-y-3">
+                        <div className="p-6 rounded-lg border-2 border-primary/20 bg-primary/5">
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Destination
+                          </p>
+                          <p className="text-xl md:text-2xl font-bold text-foreground">
+                            {destinationStation.station_name}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleChangeDestination}
+                          variant="outline"
+                          className="w-full h-11 text-base"
+                        >
+                          Change Destination
+                        </Button>
+                      </div>
+                    )
+                  )}
+                </>
+              )}
+
+            {origin === destination && destination && (
+              <Alert variant="destructive" className="py-2">
+                <AlertDescription className="text-sm">
+                  Origin and destination must be different
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isValid && (
+              <div className="flex justify-end pt-2">
+                <SaveRouteDialog
+                  originStationId={origin}
+                  destinationStationId={destination}
+                  originStationName={getStationName(origin)}
+                  destinationStationName={getStationName(destination)}
+                  onSave={async (route: SavedRoute) => {
+                    try {
+                      await saveRoute(route);
+                    } catch (err) {
+                      console.error('Failed to save route:', err);
+                    }
+                  }}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    aria-label="Save route"
+                    className="gap-2"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    Save Route
+                  </Button>
+                </SaveRouteDialog>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
