@@ -49,9 +49,9 @@ async function startServer() {
 
     // Start Express server
     app.listen(PORT, () => {
-      console.log(`🚆 Metra Train Tracker API running on port ${PORT}`);
-      console.log(`📍 Environment: ${env.NODE_ENV}`);
-      console.log(`🔗 Database: ${env.DATABASE_PATH}`);
+      console.log(`Metra Train Tracker API running on port ${PORT}`);
+      console.log(`Environment: ${env.NODE_ENV}`);
+      console.log(`Database: ${env.DATABASE_PATH}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
