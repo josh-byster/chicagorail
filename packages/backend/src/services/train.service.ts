@@ -88,7 +88,8 @@ export const getUpcomingTrains = (
     })();
 
   // Get day of week for the search date (0 = Sunday, 1 = Monday, etc.)
-  const searchDay = new Date(searchDate).getDay();
+  // Use noon time to avoid timezone parsing issues (YYYY-MM-DD is parsed as UTC midnight)
+  const searchDay = new Date(searchDate + 'T12:00:00').getDay();
   const dayColumn = [
     'sunday',
     'monday',
