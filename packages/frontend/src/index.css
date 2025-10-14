@@ -122,6 +122,22 @@
     animation-delay: 1s;
   }
   
+  .animate-delay-2000 {
+    animation-delay: 2s;
+  }
+  
+  .animate-delay-3000 {
+    animation-delay: 3s;
+  }
+  
+  .animate-delay-4000 {
+    animation-delay: 4s;
+  }
+  
+  .animate-delay-5000 {
+    animation-delay: 5s;
+  }
+  
   /* Prevent reanimation on subsequent renders */
   .animated {
     animation-fill-mode: both !important;

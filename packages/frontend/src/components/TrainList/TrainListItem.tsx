@@ -80,28 +80,28 @@ export function TrainListItem({ train }: TrainListItemProps) {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="hover:shadow-lg hover:border-primary/50 transition-all duration-200 overflow-hidden animate-fade-in animated">
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="flex items-stretch">
             {/* Line indicator with color - extends through entire card */}
             <div
-              className="w-2 flex-shrink-0 animate-fade-in"
+              className="w-2 flex-shrink-0"
               style={{ backgroundColor: train.line_color || '#000000' }}
               aria-label={`${train.line_name} line`}
             />
 
             <div className="flex-1">
-              <CollapsibleTrigger className="w-full text-left p-5 animate-fade-in">
+              <CollapsibleTrigger className="w-full text-left p-5">
                 {/* Header with time and status */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-primary flex-shrink-0 animate-fade-in" />
-                    <div className="flex items-center gap-2.5 animate-slide-in-left">
-                      <span className="font-bold text-2xl tracking-tight animate-fade-in">
+                    <Clock className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-bold text-2xl tracking-tight">
                         {departureTime}
                       </span>
-                      <ArrowRight className="h-5 w-5 text-muted-foreground animate-fade-in" />
-                      <span className="font-bold text-2xl tracking-tight text-muted-foreground animate-slide-in-right">
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-bold text-2xl tracking-tight text-muted-foreground">
                         {arrivalTime}
                       </span>
                     </div>
@@ -109,31 +109,29 @@ export function TrainListItem({ train }: TrainListItemProps) {
                   <div className="flex items-center gap-2">
                     <Badge
                       variant={getStatusVariant(train.status)}
-                      className="ml-3 flex-shrink-0 animate-scale-in"
+                      className="ml-3 flex-shrink-0"
                     >
                       {getStatusText(train.status, train.delay_minutes)}
                     </Badge>
                     <ChevronDown
                       className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${
                         isOpen ? 'rotate-180' : ''
-                      } animate-fade-in`}
+                      }`}
                     />
                   </div>
                 </div>
 
                 {/* Train details */}
-                <div className="flex flex-wrap items-center gap-3 text-sm animate-fade-in">
-                  <div className="flex items-center gap-1.5 font-medium text-foreground animate-slide-in-left">
-                    <TrainIcon className="h-4 w-4 animate-fade-in" />
-                    <span className="animate-fade-in">{train.line_name}</span>
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <TrainIcon className="h-4 w-4" />
+                    <span>{train.line_name}</span>
                   </div>
 
                   {train.train_number && (
                     <>
-                      <span className="text-muted-foreground animate-fade-in">
-                        •
-                      </span>
-                      <span className="text-muted-foreground animate-fade-in">
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-muted-foreground">
                         Train #{train.train_number}
                       </span>
                     </>
@@ -141,14 +139,10 @@ export function TrainListItem({ train }: TrainListItemProps) {
 
                   {train.platform && (
                     <>
-                      <span className="text-muted-foreground animate-fade-in">
-                        •
-                      </span>
-                      <div className="flex items-center gap-1.5 text-muted-foreground animate-slide-in-right">
-                        <MapPin className="h-3.5 w-3.5 animate-fade-in" />
-                        <span className="animate-fade-in">
-                          Platform {train.platform}
-                        </span>
+                      <span className="text-muted-foreground">•</span>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span>Platform {train.platform}</span>
                       </div>
                     </>
                   )}
@@ -158,53 +152,53 @@ export function TrainListItem({ train }: TrainListItemProps) {
               <CollapsibleContent className="collapsible-content">
                 <div className="border-t bg-muted/20 p-5">
                   {isLoadingDetail ? (
-                    <div className="space-y-4 animate-fade-in">
-                      <Skeleton className="h-32 w-full animate-pulse" />
-                      <Skeleton className="h-48 w-full animate-pulse" />
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-48 w-full" />
                     </div>
                   ) : trainDetail ? (
-                    <div className="space-y-6 animate-fade-in">
+                    <div className="space-y-6">
                       {/* Journey Details */}
-                      <div className="animate-fade-in">
-                        <h3 className="text-lg font-semibold mb-4 animate-slide-in-left">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">
                           Your Journey
                         </h3>
                         <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1 animate-fade-in">
-                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide animate-fade-in">
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                               Departure
                             </p>
-                            <div className="flex items-center gap-2.5 animate-scale-in">
-                              <Clock className="h-5 w-5 text-primary animate-fade-in" />
-                              <span className="font-bold text-2xl animate-fade-in">
+                            <div className="flex items-center gap-2.5">
+                              <Clock className="h-5 w-5 text-primary" />
+                              <span className="font-bold text-2xl">
                                 {departureTime}
                               </span>
                             </div>
                             {originStop && (
-                              <div className="flex items-center gap-2 mt-2 animate-slide-in-left">
-                                <MapPin className="h-4 w-4 text-muted-foreground animate-fade-in" />
-                                <span className="text-sm font-medium animate-fade-in">
+                              <div className="flex items-center gap-2 mt-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
                                   {originStop.station_name ||
                                     originStop.station_id}
                                 </span>
                               </div>
                             )}
                           </div>
-                          <ArrowRight className="h-6 w-6 text-muted-foreground flex-shrink-0 animate-fade-in" />
-                          <div className="flex-1 animate-fade-in">
-                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide animate-fade-in">
+                          <ArrowRight className="h-6 w-6 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                               Arrival
                             </p>
-                            <div className="flex items-center gap-2.5 animate-scale-in">
-                              <Clock className="h-5 w-5 text-primary animate-fade-in" />
-                              <span className="font-bold text-2xl animate-fade-in">
+                            <div className="flex items-center gap-2.5">
+                              <Clock className="h-5 w-5 text-primary" />
+                              <span className="font-bold text-2xl">
                                 {arrivalTime}
                               </span>
                             </div>
                             {destinationStop && (
-                              <div className="flex items-center gap-2 mt-2 animate-slide-in-right">
-                                <MapPin className="h-4 w-4 text-muted-foreground animate-fade-in" />
-                                <span className="text-sm font-medium animate-fade-in">
+                              <div className="flex items-center gap-2 mt-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
                                   {destinationStop.station_name ||
                                     destinationStop.station_id}
                                 </span>
@@ -215,16 +209,13 @@ export function TrainListItem({ train }: TrainListItemProps) {
 
                         {train.delay_minutes > 0 && (
                           <>
-                            <Separator className="my-4 animate-fade-in" />
-                            <Alert
-                              variant="destructive"
-                              className="border-2 animate-fade-in-up"
-                            >
-                              <AlertCircle className="h-5 w-5 animate-fade-in" />
-                              <AlertTitle className="text-base animate-fade-in">
+                            <Separator className="my-4" />
+                            <Alert variant="destructive" className="border-2">
+                              <AlertCircle className="h-5 w-5" />
+                              <AlertTitle className="text-base">
                                 Delayed
                               </AlertTitle>
-                              <AlertDescription className="animate-fade-in">
+                              <AlertDescription>
                                 This train is running {train.delay_minutes}{' '}
                                 minutes late
                               </AlertDescription>
@@ -234,21 +225,19 @@ export function TrainListItem({ train }: TrainListItemProps) {
                       </div>
 
                       {/* All Stops */}
-                      <div className="animate-fade-in">
-                        <Separator className="mb-4 animate-fade-in" />
-                        <div className="flex items-center justify-between mb-4 animate-slide-in-left">
-                          <h3 className="text-lg font-semibold animate-fade-in">
-                            All Stops
-                          </h3>
+                      <div>
+                        <Separator className="mb-4" />
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">All Stops</h3>
                           <Badge
                             variant="secondary"
-                            className="text-base px-3 py-1 animate-scale-in"
+                            className="text-base px-3 py-1"
                           >
                             {trainDetail.stops?.length || 0} stops
                           </Badge>
                         </div>
                         {trainDetail.stops && trainDetail.stops.length > 0 ? (
-                          <div className="space-y-3 max-h-64 overflow-y-auto animate-fade-in">
+                          <div className="space-y-3 max-h-64 overflow-y-auto">
                             {trainDetail.stops.map((stop, index) => {
                               const isOrigin =
                                 stop.station_id === train.origin_station_id;
@@ -264,42 +253,36 @@ export function TrainListItem({ train }: TrainListItemProps) {
                                     isUserJourney
                                       ? 'bg-primary/10 border-2 border-primary/30'
                                       : 'hover:bg-accent/50'
-                                  } animate-fade-in hover:animate-pulse-slow`}
+                                  }`}
                                 >
                                   <div
                                     className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-lg ${
                                       isUserJourney
                                         ? 'bg-primary text-primary-foreground'
                                         : 'bg-primary/10 text-primary'
-                                    } animate-scale-in`}
+                                    }`}
                                   >
                                     {index + 1}
                                   </div>
-                                  <div className="flex-1 min-w-0 animate-fade-in">
+                                  <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 flex-wrap">
                                       <p
-                                        className={`font-bold text-base ${isUserJourney ? 'text-foreground' : 'text-muted-foreground'} animate-fade-in`}
+                                        className={`font-bold text-base ${isUserJourney ? 'text-foreground' : 'text-muted-foreground'}`}
                                       >
                                         {stop.station_name || stop.station_id}
                                       </p>
                                       {isOrigin && (
-                                        <Badge
-                                          variant="default"
-                                          className="animate-scale-in"
-                                        >
+                                        <Badge variant="default" className="">
                                           Your Origin
                                         </Badge>
                                       )}
                                       {isDestination && (
-                                        <Badge
-                                          variant="default"
-                                          className="animate-scale-in"
-                                        >
+                                        <Badge variant="default" className="">
                                           Your Destination
                                         </Badge>
                                       )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground mt-1 animate-fade-in">
+                                    <p className="text-sm text-muted-foreground mt-1">
                                       {new Date(
                                         stop.arrival_time
                                       ).toLocaleTimeString('en-US', {
@@ -311,7 +294,7 @@ export function TrainListItem({ train }: TrainListItemProps) {
                                   {stop.delay_minutes > 0 && (
                                     <Badge
                                       variant="warning"
-                                      className="flex-shrink-0 animate-scale-in"
+                                      className="flex-shrink-0"
                                     >
                                       +{stop.delay_minutes} min
                                     </Badge>
@@ -321,9 +304,9 @@ export function TrainListItem({ train }: TrainListItemProps) {
                             })}
                           </div>
                         ) : (
-                          <div className="text-center text-muted-foreground py-8 animate-fade-in">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 animate-bounce-slow" />
-                            <p className="text-base font-medium animate-fade-in">
+                          <div className="text-center text-muted-foreground py-8">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p className="text-base font-medium">
                               No stop information available
                             </p>
                           </div>
@@ -331,13 +314,10 @@ export function TrainListItem({ train }: TrainListItemProps) {
                       </div>
                     </div>
                   ) : (
-                    <Alert
-                      variant="destructive"
-                      className="animate-fade-in-up animated"
-                    >
-                      <AlertCircle className="h-4 w-4 animate-fade-in" />
-                      <AlertTitle className="animate-fade-in">Error</AlertTitle>
-                      <AlertDescription className="animate-fade-in">
+                    <Alert variant="destructive" className="">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>
                         Failed to load train details
                       </AlertDescription>
                     </Alert>
