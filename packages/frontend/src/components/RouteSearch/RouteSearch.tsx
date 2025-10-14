@@ -43,6 +43,15 @@ export function RouteSearch() {
     useRouteSearchStore();
   const [searchParams] = useSearchParams();
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    // Use a small delay to ensure initial state is stable before enabling animations
+    const timer = setTimeout(() => {
+      setHasAnimated(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Check URL params to determine initial collapsed state
   const urlOrigin = searchParams.get('origin');
@@ -134,7 +143,9 @@ export function RouteSearch() {
   // Collapsed view when route is complete (don't wait for station data to load)
   if (isCollapsed && isValid) {
     return (
-      <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
+      <Card
+        className={`border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500 ${hasAnimated ? 'animate-fade-in-up animated' : ''}`}
+      >
         <CardContent className="p-4 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -262,7 +273,9 @@ export function RouteSearch() {
 
   // Expanded view
   return (
-    <Card className="border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500">
+    <Card
+      className={`border-2 shadow-xl bg-card/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-500 ${hasAnimated ? 'animate-fade-in-up animated' : ''}`}
+    >
       <CardHeader className="pb-6 border-b bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-2xl font-bold flex items-center gap-2">
           <div className="h-8 w-1 bg-gradient-to-b from-primary to-blue-600 rounded-full"></div>
@@ -317,10 +330,10 @@ export function RouteSearch() {
                       >
                         <Check
                           className={cn(
-                            'mr-3 h-5 w-5',
+                            'mr-3 h-5 w-5 transition-all duration-200',
                             origin === station.station_id
-                              ? 'opacity-100'
-                              : 'opacity-0'
+                              ? 'opacity-100 scale-100'
+                              : 'opacity-0 scale-75'
                           )}
                         />
                         {station.station_name}
@@ -405,10 +418,10 @@ export function RouteSearch() {
                             >
                               <Check
                                 className={cn(
-                                  'mr-3 h-5 w-5',
+                                  'mr-3 h-5 w-5 transition-all duration-200',
                                   destination === station.station_id
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
+                                    ? 'opacity-100 scale-100'
+                                    : 'opacity-0 scale-75'
                                 )}
                               />
                               {station.station_name}
