@@ -36,18 +36,3 @@ jobs:
         run: |
           git remote add dokku dokku@$DOKKU_HOST:$DOKKU_APP_NAME || true
           GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git push dokku main:master -f
-
-      - name: Create persistent storage for database
-        env:
-          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
-          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
-        run: |
-          ssh dokku@$DOKKU_HOST storage:ensure-directory $DOKKU_APP_NAME || true
-          ssh dokku@$DOKKU_HOST storage:mount $DOKKU_APP_NAME /var/lib/dokku/data/storage/$DOKKU_APP_NAME:/app/data || true
-
-      - name: Check deployment status
-        env:
-          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
-          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
-        run: |
-          ssh dokku@$DOKKU_HOST ps:report $DOKKU_APP_NAME
