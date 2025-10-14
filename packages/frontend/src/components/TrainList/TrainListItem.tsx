@@ -16,12 +16,148 @@ import {
   Train as TrainIcon,
   ChevronDown,
   AlertCircle,
+  Navigation,
 } from 'lucide-react';
 import { useTrainDetail } from '@/hooks/useTrains';
-import type { Train } from '@metra/shared';
+import { MapVisualization } from './MapVisualization';
+import type { Train, StopTime } from '@metra/shared';
 
 interface TrainListItemProps {
   train: Train;
+}
+
+interface TrainProgressVisualizationProps {
+  train: Train;
+  stops: StopTime[];
+}
+
+function TrainProgressVisualization({
+  train,
+  stops,
+}: TrainProgressVisualizationProps) {
+  // Find current station and next station based on current_station_id
+  const currentStationIndex = stops.findIndex(
+    (stop) => stop.station_id === train.current_station_id
+  );
+  const currentStation =
+    currentStationIndex >= 0 ? stops[currentStationIndex] : null;
+  const nextStation =
+    currentStationIndex >= 0 && currentStationIndex < stops.length - 1
+      ? stops[currentStationIndex + 1]
+      : null;
+
+  // Determine if train is in route (has passed origin but not reached destination)
+  const originIndex = stops.findIndex(
+    (stop) => stop.station_id === train.origin_station_id
+  );
+  const destinationIndex = stops.findIndex(
+    (stop) => stop.station_id === train.destination_station_id
+  );
+  const isInRoute =
+    currentStationIndex > originIndex && currentStationIndex < destinationIndex;
+
+  return (
+    <div className="space-y-4">
+      {/* Current Position Info */}
+      {train.current_position && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Navigation className="h-4 w-4" />
+          <span>
+            Current position:{' '}
+            {train.current_position.latitude?.toFixed(6) || 'N/A'},{' '}
+            {train.current_position.longitude?.toFixed(6) || 'N/A'}
+          </span>
+          {train.current_position.speed !== undefined &&
+            train.current_position.speed !== null && (
+              <span>
+                • Speed: {train.current_position.speed.toFixed(1)} mph
+              </span>
+            )}
+        </div>
+      )}
+
+      {/* Current Stop and Next Stop */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Current Stop - Flashing Animation */}
+        <div className="flex flex-col gap-2 p-3 rounded-lg border bg-background animate-flash">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Current Stop
+          </p>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            <span className="font-medium">
+              {currentStation?.station_name ||
+                currentStation?.station_id ||
+                'Unknown'}
+            </span>
+          </div>
+          {currentStation && (
+            <p className="text-xs text-muted-foreground">
+              {new Date(currentStation.arrival_time).toLocaleTimeString(
+                'en-US',
+                {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                }
+              )}
+            </p>
+          )}
+        </div>
+
+        {/* Next Stop - Flashing Animation */}
+        <div className="flex flex-col gap-2 p-3 rounded-lg border bg-background animate-flash">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Next Stop
+          </p>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            <span className="font-medium">
+              {nextStation?.station_name ||
+                nextStation?.station_id ||
+                'Unknown'}
+            </span>
+          </div>
+          {nextStation && (
+            <p className="text-xs text-muted-foreground">
+              {new Date(nextStation.arrival_time).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Map Visualization */}
+      {train.current_position && (
+        <div className="mt-4">
+          <MapVisualization
+            currentPosition={train.current_position}
+            stops={stops}
+            currentStationId={train.current_station_id}
+          />
+        </div>
+      )}
+
+      {/* Route Progress Bar */}
+      {isInRoute && currentStation && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>
+              {currentStation.station_name || currentStation.station_id}
+            </span>
+            <span>In Route</span>
+          </div>
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full animate-pulse"
+              style={{ width: '50%' }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TrainListItem({ train }: TrainListItemProps) {
@@ -222,6 +358,25 @@ export function TrainListItem({ train }: TrainListItemProps) {
                             </Alert>
                           </>
                         )}
+
+                        {/* Train Progress Visualization */}
+                        {trainDetail.current_position &&
+                          trainDetail.stops &&
+                          trainDetail.stops.length > 0 && (
+                            <>
+                              <Separator className="my-4" />
+                              <div className="space-y-3">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                  <Navigation className="h-5 w-5 text-primary" />
+                                  Live Train Progress
+                                </h3>
+                                <TrainProgressVisualization
+                                  train={trainDetail}
+                                  stops={trainDetail.stops}
+                                />
+                              </div>
+                            </>
+                          )}
                       </div>
 
                       {/* All Stops */}
