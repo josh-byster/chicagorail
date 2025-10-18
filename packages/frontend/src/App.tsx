@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './lib/query-client';
 import HomePage from './pages/HomePage';
+import RoutePage from './pages/RoutePage';
 import HomePageMockup from './pages/HomePageMockup';
 import TrainDetailPage from './pages/TrainDetailPage';
 
@@ -13,6 +14,7 @@ function App() {
         <div className="min-h-screen bg-background">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/route" element={<RoutePage />} />
             <Route path="/mockup" element={<HomePageMockup />} />
             <Route path="/train/:tripId" element={<TrainDetailPage />} />
           </Routes>
