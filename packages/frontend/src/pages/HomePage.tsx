@@ -147,7 +147,7 @@ export default function HomePage() {
       <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-2xl space-y-12">
           {/* Header */}
-          <div className="text-center space-y-8">
+          <div className="text-center space-y-8 animate-fade-in-down">
             <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Metra Tracker
             </h1>
@@ -155,7 +155,7 @@ export default function HomePage() {
 
           {/* Saved Routes - only show when no origin selected */}
           {savedRoutes.length > 0 && !origin && (
-            <div className="max-w-lg mx-auto w-full">
+            <div className="max-w-lg mx-auto w-full animate-fade-in-up animate-delay-200">
               <SavedRoutesList
                 routes={savedRoutes}
                 onRouteClick={handleSavedRouteClick}
@@ -167,20 +167,23 @@ export default function HomePage() {
           {/* Origin Selection or Display */}
           {!origin ? (
             // Big search bar for origin selection
-            <div className="relative max-w-2xl mx-auto w-full">
-              <Command className="rounded-xl overflow-hidden bg-white/60 backdrop-blur-md shadow-lg hover:shadow-2xl focus-within:shadow-2xl transition-shadow duration-300">
+            <div className="relative max-w-2xl mx-auto w-full animate-fade-in-up animate-delay-300">
+              <Command className="rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 hover:shadow-[0_20px_60px_rgb(0,0,0,0.15)] hover:bg-white/80 focus-within:shadow-[0_20px_60px_rgb(0,0,0,0.15)] focus-within:bg-white/80 transition-all duration-500 hover:scale-[1.01] focus-within:scale-[1.01]">
                 <CommandInput
                   placeholder="Search for a station"
                   value={originQuery}
                   onValueChange={(value) => {
                     setOriginQuery(value);
-                    setOriginSearchOpen(true);
+                    if (value.length > 0) {
+                      setOriginSearchOpen(true);
+                    } else {
+                      setOriginSearchOpen(false);
+                    }
                   }}
-                  onFocus={() => setOriginSearchOpen(true)}
                   className="h-16 text-lg px-6"
                   autoFocus
                 />
-                {originSearchOpen && (
+                {originSearchOpen && originQuery.length > 0 && (
                   <CommandList className="max-h-80">
                     <CommandEmpty>No stations found.</CommandEmpty>
                     <CommandGroup>
@@ -190,7 +193,7 @@ export default function HomePage() {
                           value={station.station_id}
                           keywords={[station.station_name]}
                           onSelect={(value) => handleOriginSelect(value)}
-                          className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10"
+                          className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10 hover:bg-primary/5 transition-colors duration-200"
                         >
                           <Check
                             className={cn(
@@ -211,7 +214,7 @@ export default function HomePage() {
           ) : (
             // Selected origin with destination search
             <div className="space-y-6 animate-in fade-in duration-300 max-w-2xl mx-auto w-full">
-              <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg">
+              <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-md rounded-xl border border-white/30 shadow-md">
                 <span className="text-sm text-muted-foreground">From:</span>
                 <span className="font-semibold text-foreground text-lg flex-1">
                   {fromStationData?.station_name}
@@ -220,7 +223,7 @@ export default function HomePage() {
                   variant="ghost"
                   size="sm"
                   onClick={handleChangeRoute}
-                  className="text-xs"
+                  className="text-xs hover:bg-primary/10 transition-colors"
                 >
                   Change
                 </Button>
@@ -230,19 +233,22 @@ export default function HomePage() {
                 <div className="mb-3 text-sm font-medium text-muted-foreground">
                   Where to?
                 </div>
-                <Command className="rounded-xl overflow-hidden bg-white/60 backdrop-blur-md shadow-lg hover:shadow-2xl focus-within:shadow-2xl transition-shadow duration-300">
+                <Command className="rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 hover:shadow-[0_20px_60px_rgb(0,0,0,0.15)] hover:bg-white/80 focus-within:shadow-[0_20px_60px_rgb(0,0,0,0.15)] focus-within:bg-white/80 transition-all duration-500 hover:scale-[1.01] focus-within:scale-[1.01]">
                   <CommandInput
                     placeholder="Search destinations..."
                     value={destinationQuery}
                     onValueChange={(value) => {
                       setDestinationQuery(value);
-                      setDestinationSearchOpen(true);
+                      if (value.length > 0) {
+                        setDestinationSearchOpen(true);
+                      } else {
+                        setDestinationSearchOpen(false);
+                      }
                     }}
-                    onFocus={() => setDestinationSearchOpen(true)}
                     className="h-16 text-lg px-6"
                     autoFocus
                   />
-                  {destinationSearchOpen && (
+                  {destinationSearchOpen && destinationQuery.length > 0 && (
                     <CommandList className="max-h-80">
                       <CommandEmpty>No stations found.</CommandEmpty>
                       <CommandGroup>
@@ -252,7 +258,7 @@ export default function HomePage() {
                             value={station.station_id}
                             keywords={[station.station_name]}
                             onSelect={(value) => handleDestinationSelect(value)}
-                            className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10"
+                            className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10 hover:bg-primary/5 transition-colors duration-200"
                           >
                             <Check
                               className={cn(
