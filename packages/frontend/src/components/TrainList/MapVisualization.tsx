@@ -19,7 +19,7 @@ export function MapVisualization({
   const stopMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const trainMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
-  // Initialize map and stop markers only once
+  // Initialize map and stop markers
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -37,7 +37,8 @@ export function MapVisualization({
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      zoom: 10,
+      center: [currentPosition.longitude, currentPosition.latitude],
+      zoom: 12,
     });
 
     // Add navigation controls
@@ -64,7 +65,7 @@ export function MapVisualization({
           }
 
           // Add marker to map
-          const marker = new mapboxgl.Marker(markerElement)
+          const marker = new mapboxgl.Marker({ element: markerElement })
             .setLngLat([stationData.longitude, stationData.latitude])
             .addTo(map.current!);
 
@@ -83,7 +84,9 @@ export function MapVisualization({
     trainMarkerElement.className =
       'w-4 h-4 rounded-full border-2 border-white shadow-lg bg-red-500 animate-pulse-slow';
 
-    trainMarkerRef.current = new mapboxgl.Marker(trainMarkerElement)
+    trainMarkerRef.current = new mapboxgl.Marker({
+      element: trainMarkerElement,
+    })
       .setLngLat([currentPosition.longitude, currentPosition.latitude])
       .addTo(map.current!);
 
@@ -95,7 +98,7 @@ export function MapVisualization({
       trainMarkerRef.current = null;
       map.current?.remove();
     };
-  }, [stops, currentStationId]);
+  }, []);
 
   // Update train position only
   useEffect(() => {
