@@ -3,30 +3,27 @@ import { useSearchParams } from 'react-router-dom';
 import { useRouteSearchStore } from '@/stores/routeSearchStore';
 
 /**
- * Syncs the route search store with URL parameters
- * - Reads URL params on mount and updates store
- * - Updates URL when store changes
+ * ONE-WAY sync: URL is the ONLY source of truth
+ * - URL changes (navigation) -> update store
+ * - Store NEVER updates URL automatically
+ * - Components must update URL directly when user interacts
  */
 export function useUrlSync() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { origin, destination, setRoute } = useRouteSearchStore();
+  const [searchParams] = useSearchParams();
+  const { setRoute, clearRoute } = useRouteSearchStore();
 
-  // Sync URL params to store on mount
+  // Only sync FROM URL TO store
   useEffect(() => {
     const urlOrigin = searchParams.get('origin');
     const urlDestination = searchParams.get('destination');
 
+    // Update store to match URL
     if (urlOrigin && urlDestination) {
       setRoute(urlOrigin, urlDestination);
+    } else if (urlOrigin && !urlDestination) {
+      setRoute(urlOrigin, '');
+    } else {
+      clearRoute();
     }
-  }, []);
-
-  // Sync store to URL params when store changes
-  useEffect(() => {
-    if (origin && destination) {
-      setSearchParams({ origin, destination }, { replace: true });
-    } else if (!origin && !destination) {
-      setSearchParams({}, { replace: true });
-    }
-  }, [origin, destination, setSearchParams]);
+  }, [searchParams, setRoute, clearRoute]);
 }

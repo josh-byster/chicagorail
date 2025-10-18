@@ -14,6 +14,7 @@ import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
 import { useTrains } from '@/hooks/useTrains';
 import { useRouteSearchStore } from '@/stores/routeSearchStore';
+import { useUrlSync } from '@/hooks/useUrlSync';
 import { TrainList } from '@/components/TrainList/TrainList';
 import { SavedRoutesList } from '@/components/SavedRoutes/SavedRoutesList';
 import {
@@ -23,6 +24,7 @@ import {
 } from '@/services/saved-routes';
 import { SavedRoute } from '@metra/shared';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export default function HomePage() {
   const [showResults, setShowResults] = React.useState(false);
@@ -33,7 +35,11 @@ export default function HomePage() {
   const [destinationQuery, setDestinationQuery] = React.useState('');
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
 
-  const { origin, destination, setRoute, hasSearched } = useRouteSearchStore();
+  const { origin, destination, hasSearched } = useRouteSearchStore();
+  const [, setSearchParams] = useSearchParams();
+
+  // Sync URL parameters with search state (one-way: URL -> store)
+  useUrlSync();
 
   // Fetch all stations for origin selection
   const { data: allStations } = useStations();
@@ -57,24 +63,6 @@ export default function HomePage() {
       try {
         const routes = await getSavedRoutes();
         setSavedRoutes(routes);
-
-        // Auto-display last-used route if no route is selected
-        const currentOrigin = useRouteSearchStore.getState().origin;
-        const currentDestination = useRouteSearchStore.getState().destination;
-
-        if (routes.length > 0 && !currentOrigin && !currentDestination) {
-          const sortedRoutes = [...routes].sort(
-            (a, b) =>
-              new Date(b.last_used_at).getTime() -
-              new Date(a.last_used_at).getTime()
-          );
-          const lastUsedRoute = sortedRoutes[0];
-          setRoute(
-            lastUsedRoute.origin_station_id,
-            lastUsedRoute.destination_station_id
-          );
-          setShowResults(true);
-        }
       } catch (err) {
         console.error('Failed to load saved routes:', err);
       }
@@ -83,23 +71,35 @@ export default function HomePage() {
     loadSavedRoutes();
   }, []);
 
+  // Show results when both origin and destination are set
+  useEffect(() => {
+    if (origin && destination) {
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
+  }, [origin, destination]);
+
   const handleOriginSelect = (stationId: string) => {
-    setRoute(stationId, '');
+    // Update URL with origin only
+    setSearchParams({ origin: stationId });
     setOriginQuery('');
     setOriginSearchOpen(false);
     setDestinationQuery('');
   };
 
   const handleDestinationSelect = (stationId: string) => {
-    setRoute(origin, stationId);
+    // Update URL with both origin and destination
+    setSearchParams({ origin: origin!, destination: stationId });
     setDestinationQuery('');
     setDestinationSearchOpen(false);
     setShowResults(true);
   };
 
   const handleChangeRoute = () => {
+    // Clear URL to go back to search
+    setSearchParams({});
     setShowResults(false);
-    setRoute('', '');
     setOriginQuery('');
     setOriginSearchOpen(true);
     setDestinationQuery('');
@@ -118,7 +118,11 @@ export default function HomePage() {
       console.error('Failed to update saved route usage:', err);
     }
 
-    setRoute(route.origin_station_id, route.destination_station_id);
+    // Update URL with saved route
+    setSearchParams({
+      origin: route.origin_station_id,
+      destination: route.destination_station_id,
+    });
     setShowResults(true);
   };
 
@@ -212,10 +216,9 @@ export default function HomePage() {
                         {originStationsToShow?.map((station) => (
                           <CommandItem
                             key={station.station_id}
-                            value={station.station_name}
-                            onSelect={() =>
-                              handleOriginSelect(station.station_id)
-                            }
+                            value={station.station_id}
+                            keywords={[station.station_name]}
+                            onSelect={(value) => handleOriginSelect(value)}
                             className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10"
                           >
                             <Check
@@ -275,9 +278,10 @@ export default function HomePage() {
                           {destinationStationsToShow?.map((station) => (
                             <CommandItem
                               key={station.station_id}
-                              value={station.station_name}
-                              onSelect={() =>
-                                handleDestinationSelect(station.station_id)
+                              value={station.station_id}
+                              keywords={[station.station_name]}
+                              onSelect={(value) =>
+                                handleDestinationSelect(value)
                               }
                               className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10"
                             >
