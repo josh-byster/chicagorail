@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "gtfs:import": "tsx src/scripts/import-gtfs.ts",
+    "gtfs:snapshot": "tsx src/scripts/snapshot-api.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
