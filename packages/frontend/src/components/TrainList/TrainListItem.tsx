@@ -19,7 +19,6 @@ import {
   Navigation,
 } from 'lucide-react';
 import { useTrainDetail } from '@/hooks/useTrains';
-import { MapVisualization } from './MapVisualization';
 import type { Train, StopTime } from '@metra/shared';
 
 interface TrainListItemProps {
@@ -46,36 +45,8 @@ function TrainProgressVisualization({
       ? stops[currentStationIndex + 1]
       : null;
 
-  // Determine if train is in route (has passed origin but not reached destination)
-  const originIndex = stops.findIndex(
-    (stop) => stop.station_id === train.origin_station_id
-  );
-  const destinationIndex = stops.findIndex(
-    (stop) => stop.station_id === train.destination_station_id
-  );
-  const isInRoute =
-    currentStationIndex > originIndex && currentStationIndex < destinationIndex;
-
   return (
     <div className="space-y-4">
-      {/* Current Position Info */}
-      {train.current_position && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Navigation className="h-4 w-4" />
-          <span>
-            Current position:{' '}
-            {train.current_position.latitude?.toFixed(6) || 'N/A'},{' '}
-            {train.current_position.longitude?.toFixed(6) || 'N/A'}
-          </span>
-          {train.current_position.speed !== undefined &&
-            train.current_position.speed !== null && (
-              <span>
-                • Speed: {train.current_position.speed.toFixed(1)} mph
-              </span>
-            )}
-        </div>
-      )}
-
       {/* Current Stop and Next Stop */}
       <div className="grid grid-cols-2 gap-4">
         {/* Current Stop - Flashing Animation */}
@@ -127,35 +98,6 @@ function TrainProgressVisualization({
           )}
         </div>
       </div>
-
-      {/* Map Visualization */}
-      {train.current_position && (
-        <div className="mt-4">
-          <MapVisualization
-            currentPosition={train.current_position}
-            stops={stops}
-            currentStationId={train.current_station_id}
-          />
-        </div>
-      )}
-
-      {/* Route Progress Bar */}
-      {isInRoute && currentStation && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>
-              {currentStation.station_name || currentStation.station_id}
-            </span>
-            <span>In Route</span>
-          </div>
-          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full animate-pulse"
-              style={{ width: '50%' }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -286,16 +228,16 @@ export function TrainListItem({ train }: TrainListItemProps) {
               </CollapsibleTrigger>
 
               <CollapsibleContent className="collapsible-content">
-                <div className="border-t bg-muted/20 p-5">
+                <div className="bg-muted/20">
                   {isLoadingDetail ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 p-5">
                       <Skeleton className="h-32 w-full" />
                       <Skeleton className="h-48 w-full" />
                     </div>
                   ) : trainDetail ? (
-                    <div className="space-y-6">
+                    <div>
                       {/* Journey Details */}
-                      <div>
+                      <div className="p-5 pb-0">
                         <h3 className="text-lg font-semibold mb-4">
                           Your Journey
                         </h3>
@@ -363,26 +305,22 @@ export function TrainListItem({ train }: TrainListItemProps) {
                         {trainDetail.current_position &&
                           trainDetail.stops &&
                           trainDetail.stops.length > 0 && (
-                            <>
-                              <Separator className="my-4" />
-                              <div className="space-y-3">
-                                <h3 className="text-lg font-semibold flex items-center gap-2">
-                                  <Navigation className="h-5 w-5 text-primary" />
-                                  Live Train Progress
-                                </h3>
-                                <TrainProgressVisualization
-                                  train={trainDetail}
-                                  stops={trainDetail.stops}
-                                />
-                              </div>
-                            </>
+                            <div className="space-y-3 mt-6">
+                              <h3 className="text-lg font-semibold flex items-center gap-2">
+                                <Navigation className="h-5 w-5 text-primary" />
+                                Live Train Progress
+                              </h3>
+                              <TrainProgressVisualization
+                                train={trainDetail}
+                                stops={trainDetail.stops}
+                              />
+                            </div>
                           )}
                       </div>
 
                       {/* All Stops */}
-                      <div>
-                        <Separator className="mb-4" />
-                        <div className="flex items-center justify-between mb-4">
+                      <div className="p-5 pt-0">
+                        <div className="flex items-center justify-between mb-4 mt-6">
                           <h3 className="text-lg font-semibold">All Stops</h3>
                           <Badge
                             variant="secondary"
