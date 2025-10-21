@@ -125,37 +125,34 @@ export default function HomePage() {
   );
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-background via-blue-50/30 to-primary/5"
-      style={{
-        backgroundImage:
-          'url("https://www.transparenttextures.com/patterns/absurdity.png")',
-        backgroundBlendMode: 'multiply',
-      }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30">
       {/* Navigation Bar */}
-      <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <Train className="h-5 w-5" />
+      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center gap-2 font-semibold text-base text-gray-900">
+            <Train className="h-5 w-5 text-blue-600" />
             Metra Tracker
           </div>
         </div>
       </nav>
 
       {/* Main Content - Search Interface */}
-      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center px-4 py-8">
+      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center px-6 py-12">
         <div className="w-full max-w-2xl flex-1 flex flex-col">
           {/* Header - Fixed position */}
-          <div className="text-center pt-16 pb-12 animate-fade-in-down">
-            <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="text-center pt-20 pb-16">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 tracking-tight">
               Metra Tracker
             </h1>
+            <div className="mx-auto w-16 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mt-6"></div>
+            <p className="mt-6 text-gray-700 text-lg">
+              Find your train schedule
+            </p>
           </div>
 
           {/* Saved Routes - only show when no origin selected */}
           {savedRoutes.length > 0 && !origin && (
-            <div className="max-w-lg mx-auto w-full mb-8 animate-fade-in-up animate-delay-200">
+            <div className="max-w-lg mx-auto w-full mb-8">
               <SavedRoutesList
                 routes={savedRoutes}
                 onRouteClick={handleSavedRouteClick}
@@ -167,8 +164,8 @@ export default function HomePage() {
           {/* Origin Selection or Display */}
           {!origin ? (
             // Big search bar for origin selection
-            <div className="relative max-w-2xl mx-auto w-full animate-fade-in-up animate-delay-300">
-              <Command className="rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 hover:shadow-[0_20px_60px_rgb(0,0,0,0.15)] hover:bg-white/80 focus-within:shadow-[0_20px_60px_rgb(0,0,0,0.15)] focus-within:bg-white/80 transition-all duration-500 hover:scale-[1.01] focus-within:scale-[1.01]">
+            <div className="relative max-w-2xl mx-auto w-full">
+              <Command className="rounded-xl overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-200">
                 <CommandInput
                   placeholder="Search for a station"
                   value={originQuery}
@@ -180,7 +177,7 @@ export default function HomePage() {
                       setOriginSearchOpen(false);
                     }
                   }}
-                  className="h-16 text-lg px-6"
+                  className="h-16 text-lg px-6 placeholder:text-gray-400"
                   autoFocus
                 />
                 {originSearchOpen && originQuery.length > 0 && (
@@ -193,14 +190,14 @@ export default function HomePage() {
                           value={station.station_id}
                           keywords={[station.station_name]}
                           onSelect={(value) => handleOriginSelect(value)}
-                          className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10 hover:bg-primary/5 transition-colors duration-200"
+                          className="cursor-pointer py-3 px-4 text-base aria-selected:bg-blue-50 hover:bg-gray-50 transition-colors"
                         >
                           <Check
                             className={cn(
-                              'mr-3 h-5 w-5 transition-all duration-200',
+                              'mr-3 h-5 w-5 transition-opacity',
                               origin === station.station_id
-                                ? 'opacity-100 scale-100'
-                                : 'opacity-0 scale-75'
+                                ? 'opacity-100'
+                                : 'opacity-0'
                             )}
                           />
                           {station.station_name}
@@ -213,27 +210,27 @@ export default function HomePage() {
             </div>
           ) : (
             // Selected origin with destination search
-            <div className="space-y-6 animate-in fade-in duration-300 max-w-2xl mx-auto w-full">
-              <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-md rounded-xl border border-white/30 shadow-md">
-                <span className="text-sm text-muted-foreground">From:</span>
-                <span className="font-semibold text-foreground text-lg flex-1">
+            <div className="space-y-8 max-w-2xl mx-auto w-full">
+              <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-md">
+                <span className="text-sm text-gray-500">From:</span>
+                <span className="font-semibold text-gray-900 text-lg flex-1">
                   {fromStationData?.station_name}
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleChangeRoute}
-                  className="text-xs hover:bg-primary/10 transition-colors"
+                  className="text-sm hover:bg-gray-100 transition-colors"
                 >
                   Change
                 </Button>
               </div>
 
               <div className="relative">
-                <div className="mb-3 text-sm font-medium text-muted-foreground">
+                <div className="mb-4 text-sm font-medium text-gray-700">
                   Where to?
                 </div>
-                <Command className="rounded-2xl overflow-hidden bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 hover:shadow-[0_20px_60px_rgb(0,0,0,0.15)] hover:bg-white/80 focus-within:shadow-[0_20px_60px_rgb(0,0,0,0.15)] focus-within:bg-white/80 transition-all duration-500 hover:scale-[1.01] focus-within:scale-[1.01]">
+                <Command className="rounded-xl overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-200">
                   <CommandInput
                     placeholder="Search destinations..."
                     value={destinationQuery}
@@ -245,7 +242,7 @@ export default function HomePage() {
                         setDestinationSearchOpen(false);
                       }
                     }}
-                    className="h-16 text-lg px-6"
+                    className="h-16 text-lg px-6 placeholder:text-gray-400"
                     autoFocus
                   />
                   {destinationSearchOpen && destinationQuery.length > 0 && (
@@ -258,14 +255,14 @@ export default function HomePage() {
                             value={station.station_id}
                             keywords={[station.station_name]}
                             onSelect={(value) => handleDestinationSelect(value)}
-                            className="cursor-pointer py-3 px-4 text-base aria-selected:bg-primary/10 hover:bg-primary/5 transition-colors duration-200"
+                            className="cursor-pointer py-3 px-4 text-base aria-selected:bg-blue-50 hover:bg-gray-50 transition-colors"
                           >
                             <Check
                               className={cn(
-                                'mr-3 h-5 w-5 transition-all duration-200',
+                                'mr-3 h-5 w-5 transition-opacity',
                                 destination === station.station_id
-                                  ? 'opacity-100 scale-100'
-                                  : 'opacity-0 scale-75'
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
                               )}
                             />
                             {station.station_name}
