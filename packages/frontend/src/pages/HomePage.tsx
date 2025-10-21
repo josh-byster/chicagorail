@@ -144,10 +144,10 @@ export default function HomePage() {
       </nav>
 
       {/* Main Content - Search Interface */}
-      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-2xl space-y-12">
-          {/* Header */}
-          <div className="text-center space-y-8 animate-fade-in-down">
+      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center px-4 py-8">
+        <div className="w-full max-w-2xl flex-1 flex flex-col">
+          {/* Header - Fixed position */}
+          <div className="text-center pt-16 pb-12 animate-fade-in-down">
             <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Metra Tracker
             </h1>
@@ -155,7 +155,7 @@ export default function HomePage() {
 
           {/* Saved Routes - only show when no origin selected */}
           {savedRoutes.length > 0 && !origin && (
-            <div className="max-w-lg mx-auto w-full animate-fade-in-up animate-delay-200">
+            <div className="max-w-lg mx-auto w-full mb-8 animate-fade-in-up animate-delay-200">
               <SavedRoutesList
                 routes={savedRoutes}
                 onRouteClick={handleSavedRouteClick}
