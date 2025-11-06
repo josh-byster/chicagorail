@@ -2,8 +2,10 @@
 /**
  * API Snapshot Script
  *
- * Queries all Metra GTFS API endpoints and saves the responses
+ * Downloads Metra GTFS static and realtime data and saves them
  * to a samples directory for regression testing.
+ *
+ * Updated to work with new GTFS ZIP format and Protocol Buffer realtime feeds.
  */
 
 // IMPORTANT: Load dotenv FIRST, before any other imports that use env variables
@@ -24,34 +26,88 @@ console.log(`Loading .env from: ${envPath}`);
 // Now import modules that depend on env variables
 import { env } from '../config/env.js';
 import { mkdir, writeFile } from 'fs/promises';
+import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
 
 interface GTFSConfig {
-  username: string;
-  password: string;
-  baseUrl: string;
+  apiToken: string;
+  scheduleUrl: string;
+  publishedUrl: string;
   alertsUrl: string;
   tripUpdatesUrl: string;
   positionsUrl: string;
 }
 
 const getConfig = (): GTFSConfig => ({
-  username: env.METRA_API_USERNAME,
-  password: env.METRA_API_PASSWORD,
-  baseUrl: env.GTFS_STATIC_BASE_URL,
+  apiToken: env.METRA_API_TOKEN,
+  scheduleUrl: env.GTFS_STATIC_SCHEDULE_URL,
+  publishedUrl: env.GTFS_STATIC_PUBLISHED_URL,
   alertsUrl: env.GTFS_REALTIME_ALERTS_URL,
   tripUpdatesUrl: env.GTFS_REALTIME_TRIP_UPDATES_URL,
   positionsUrl: env.GTFS_REALTIME_POSITIONS_URL,
 });
 
 const getAuthHeader = (): { Authorization: string } => {
-  const config = getConfig();
-  const auth = Buffer.from(`${config.username}:${config.password}`).toString(
-    'base64'
-  );
-  return { Authorization: `Basic ${auth}` };
+  return { Authorization: `Bearer ${getConfig().apiToken}` };
 };
 
-const fetchAndSave = async (
+const fetchAndSaveText = async (
+  url: string,
+  filename: string,
+  samplesDir: string
+): Promise<void> => {
+  console.log(`  ⏳ Fetching ${filename}...`);
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${url}: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const text = await response.text();
+    const filepath = path.join(samplesDir, filename);
+
+    await writeFile(filepath, text, 'utf-8');
+    console.log(`  ✅ Saved ${filename} (${text.length} bytes)`);
+  } catch (error) {
+    console.error(`  ❌ Failed to fetch ${filename}:`, error);
+    throw error;
+  }
+};
+
+const fetchAndSaveBinary = async (
+  url: string,
+  filename: string,
+  samplesDir: string
+): Promise<void> => {
+  console.log(`  ⏳ Fetching ${filename}...`);
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${url}: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const filepath = path.join(samplesDir, filename);
+
+    await writeFile(filepath, buffer);
+    console.log(
+      `  ✅ Saved ${filename} (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`
+    );
+  } catch (error) {
+    console.error(`  ❌ Failed to fetch ${filename}:`, error);
+    throw error;
+  }
+};
+
+const fetchAndSaveProtobuf = async (
   url: string,
   filename: string,
   samplesDir: string
@@ -60,7 +116,10 @@ const fetchAndSave = async (
 
   try {
     const response = await fetch(url, {
-      headers: getAuthHeader(),
+      headers: {
+        ...getAuthHeader(),
+        Accept: 'application/x-protobuf',
+      },
     });
 
     if (!response.ok) {
@@ -69,11 +128,23 @@ const fetchAndSave = async (
       );
     }
 
-    const data = await response.json();
-    const filepath = path.join(samplesDir, filename);
+    // Parse protobuf and save as JSON for readability
+    const buffer = await response.arrayBuffer();
+    const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
+      new Uint8Array(buffer)
+    );
 
-    await writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
-    console.log(`  ✅ Saved ${filename}`);
+    // Convert to plain object for JSON serialization
+    const plainObject =
+      GtfsRealtimeBindings.transit_realtime.FeedMessage.toObject(feed, {
+        longs: String,
+        enums: String,
+        bytes: String,
+      });
+
+    const filepath = path.join(samplesDir, filename);
+    await writeFile(filepath, JSON.stringify(plainObject, null, 2), 'utf-8');
+    console.log(`  ✅ Saved ${filename} (${feed.entity.length} entities)`);
   } catch (error) {
     console.error(`  ❌ Failed to fetch ${filename}:`, error);
     throw error;
@@ -91,67 +162,37 @@ const main = async (): Promise<void> => {
   await mkdir(samplesDir, { recursive: true });
 
   try {
-    // GTFS Static Schedule Endpoints
-    console.log('\n📋 Fetching GTFS Static Schedule data...');
+    // GTFS Static Data
+    console.log('\n📋 Fetching GTFS Static data...');
 
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/agency`,
-      'gtfs_schedule_agency.json',
+    await fetchAndSaveText(
+      config.publishedUrl,
+      'gtfs_published.txt',
       samplesDir
     );
 
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/routes`,
-      'gtfs_schedule_routes.json',
+    await fetchAndSaveBinary(
+      config.scheduleUrl,
+      'gtfs_schedule.zip',
       samplesDir
     );
 
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/stops`,
-      'gtfs_schedule_stops.json',
-      samplesDir
-    );
+    // GTFS Realtime Endpoints (Protocol Buffer format)
+    console.log('\n📡 Fetching GTFS Realtime data (Protocol Buffers)...');
 
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/trips`,
-      'gtfs_schedule_trips.json',
-      samplesDir
-    );
-
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/stop_times`,
-      'gtfs_schedule_stop_times.json',
-      samplesDir
-    );
-
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/calendar`,
-      'gtfs_schedule_calendar.json',
-      samplesDir
-    );
-
-    await fetchAndSave(
-      `${config.baseUrl}/gtfs/schedule/calendar_dates`,
-      'gtfs_schedule_calendar_dates.json',
-      samplesDir
-    );
-
-    // GTFS Realtime Endpoints
-    console.log('\n📡 Fetching GTFS Realtime data...');
-
-    await fetchAndSave(
+    await fetchAndSaveProtobuf(
       config.alertsUrl,
       'gtfs_realtime_alerts.json',
       samplesDir
     );
 
-    await fetchAndSave(
+    await fetchAndSaveProtobuf(
       config.tripUpdatesUrl,
       'gtfs_realtime_trip_updates.json',
       samplesDir
     );
 
-    await fetchAndSave(
+    await fetchAndSaveProtobuf(
       config.positionsUrl,
       'gtfs_realtime_positions.json',
       samplesDir
@@ -162,15 +203,10 @@ const main = async (): Promise<void> => {
 
     // Print summary
     console.log('\n📊 Snapshot Summary:');
-    console.log('  Static Schedule:');
-    console.log('    - agency');
-    console.log('    - routes');
-    console.log('    - stops');
-    console.log('    - trips');
-    console.log('    - stop_times');
-    console.log('    - calendar');
-    console.log('    - calendar_dates');
-    console.log('  Realtime:');
+    console.log('  Static Data:');
+    console.log('    - published.txt (timestamp)');
+    console.log('    - schedule.zip (GTFS feed)');
+    console.log('  Realtime (Protocol Buffers converted to JSON):');
     console.log('    - alerts');
     console.log('    - trip_updates');
     console.log('    - positions');

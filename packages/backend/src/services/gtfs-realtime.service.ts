@@ -1,4 +1,5 @@
 import { env } from '../config/env.js';
+import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
 
 /**
  * GTFS Realtime Polling Service
@@ -6,11 +7,11 @@ import { env } from '../config/env.js';
  * Polls Metra's GTFS realtime endpoints every 30 seconds
  * Uses If-Modified-Since headers for efficient polling
  * Fetches alerts, trip updates, and vehicle positions
+ * Now uses Protocol Buffer format (GTFS-RT standard) instead of JSON
  */
 
 interface GTFSRealtimeConfig {
-  username: string;
-  password: string;
+  apiToken: string;
   alertsUrl: string;
   tripUpdatesUrl: string;
   positionsUrl: string;
@@ -19,30 +20,30 @@ interface GTFSRealtimeConfig {
 
 // Lazy config getter - only access env when needed
 const getConfig = (): GTFSRealtimeConfig => ({
-  username: env.METRA_API_USERNAME,
-  password: env.METRA_API_PASSWORD,
+  apiToken: env.METRA_API_TOKEN,
   alertsUrl: env.GTFS_REALTIME_ALERTS_URL,
   tripUpdatesUrl: env.GTFS_REALTIME_TRIP_UPDATES_URL,
   positionsUrl: env.GTFS_REALTIME_POSITIONS_URL,
   pollInterval: 30000, // 30 seconds
 });
 
-// Helper to create Basic Auth header
+// Helper to create Bearer token header
 const getAuthHeader = (): { Authorization: string } => {
-  const config = getConfig();
-  const auth = Buffer.from(`${config.username}:${config.password}`).toString(
-    'base64'
-  );
-  return { Authorization: `Basic ${auth}` };
+  return { Authorization: `Bearer ${getConfig().apiToken}` };
 };
 
 // Fetch GTFS realtime data with If-Modified-Since header
+// Now parses Protocol Buffer format instead of JSON
 const fetchRealtimeEndpoint = async (
   url: string,
   lastModified?: string | null
-): Promise<{ data: any; lastModified: string | null }> => {
+): Promise<{
+  data: GtfsRealtimeBindings.transit_realtime.FeedMessage | null;
+  lastModified: string | null;
+}> => {
   const headers: any = {
     ...getAuthHeader(),
+    Accept: 'application/x-protobuf', // Request protobuf format
   };
 
   // Add If-Modified-Since header if we have a previous timestamp
@@ -66,8 +67,13 @@ const fetchRealtimeEndpoint = async (
   // Get the Last-Modified header from response for next request
   const newLastModified = response.headers.get('Last-Modified');
 
-  const data = await response.json();
-  return { data, lastModified: newLastModified };
+  // Parse Protocol Buffer format
+  const buffer = await response.arrayBuffer();
+  const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
+    new Uint8Array(buffer)
+  );
+
+  return { data: feed, lastModified: newLastModified };
 };
 
 // Store last modified timestamps for each endpoint
@@ -76,6 +82,7 @@ let lastTripUpdatesModified: string | null = null;
 let lastPositionsModified: string | null = null;
 
 // Store realtime data in memory
+// Extract the actual data from GTFS-RT entity structure
 let realtimeAlerts: any[] = [];
 let realtimeTripUpdates: any[] = [];
 let realtimeVehiclePositions: any[] = [];
@@ -97,9 +104,13 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 
     if (alertsResponse.data) {
       console.log('  💾 Processing alerts data...');
-      // Process and store alerts data
-      realtimeAlerts = alertsResponse.data.alerts || alertsResponse.data;
+      // Extract alerts from protobuf structure
+      // FeedMessage.entity[] -> each entity has an alert field
+      realtimeAlerts = alertsResponse.data.entity
+        .filter((e) => e.alert)
+        .map((e) => e.alert);
       lastAlertsModified = alertsResponse.lastModified;
+      console.log(`    ✓ Processed ${realtimeAlerts.length} alerts`);
     } else {
       console.log('  ⏩ Alerts not modified since last fetch');
     }
@@ -113,10 +124,13 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 
     if (tripUpdatesResponse.data) {
       console.log('  💾 Processing trip updates data...');
-      // Process and store trip updates data
-      realtimeTripUpdates =
-        tripUpdatesResponse.data.tripUpdates || tripUpdatesResponse.data;
+      // Extract trip updates from protobuf structure
+      // FeedMessage.entity[] -> each entity has a tripUpdate field
+      realtimeTripUpdates = tripUpdatesResponse.data.entity
+        .filter((e) => e.tripUpdate)
+        .map((e) => e.tripUpdate);
       lastTripUpdatesModified = tripUpdatesResponse.lastModified;
+      console.log(`    ✓ Processed ${realtimeTripUpdates.length} trip updates`);
     } else {
       console.log('  ⏩ Trip updates not modified since last fetch');
     }
@@ -130,10 +144,15 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 
     if (positionsResponse.data) {
       console.log('  💾 Processing vehicle positions data...');
-      // Process and store vehicle positions data
-      realtimeVehiclePositions =
-        positionsResponse.data.vehiclePositions || positionsResponse.data;
+      // Extract vehicle positions from protobuf structure
+      // FeedMessage.entity[] -> each entity has a vehicle field
+      realtimeVehiclePositions = positionsResponse.data.entity
+        .filter((e) => e.vehicle)
+        .map((e) => e.vehicle);
       lastPositionsModified = positionsResponse.lastModified;
+      console.log(
+        `    ✓ Processed ${realtimeVehiclePositions.length} vehicle positions`
+      );
     } else {
       console.log('  ⏩ Vehicle positions not modified since last fetch');
     }
@@ -141,7 +160,7 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
     console.log('✅ GTFS realtime polling cycle complete!');
   } catch (error) {
     console.error('❌ GTFS realtime polling failed:', error);
-    throw error;
+    // Don't throw - keep polling service running even if one cycle fails
   }
 };
 

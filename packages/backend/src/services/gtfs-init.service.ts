@@ -1,115 +1,279 @@
 import { env } from '../config/env.js';
 import { getDatabase } from './database.service.js';
+import AdmZip from 'adm-zip';
+import { parse } from 'csv-parse/sync';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 /**
  * GTFS Static Data Import Service
  *
- * Metra provides GTFS data via JSON endpoints (not traditional zip files)
- * per research.md. We fetch from these endpoints and store in SQLite.
+ * Metra now provides GTFS data via standard ZIP file format
+ * We download the schedule.zip, extract it, parse CSV files, and store in SQLite
  */
 
-interface GTFSConfig {
-  username: string;
-  password: string;
-  baseUrl: string;
+interface GTFSData {
+  agencies: any[];
+  routes: any[];
+  stops: any[];
+  trips: any[];
+  stopTimes: any[];
+  calendar: any[];
+  calendarDates: any[];
 }
 
-// Lazy config getter - only access env when needed
-const getConfig = (): GTFSConfig => ({
-  username: env.METRA_API_USERNAME,
-  password: env.METRA_API_PASSWORD,
-  baseUrl: env.GTFS_STATIC_BASE_URL,
-});
-
-// Helper to create Basic Auth header
-const getAuthHeader = (): { Authorization: string } => {
-  const config = getConfig();
-  const auth = Buffer.from(`${config.username}:${config.password}`).toString(
-    'base64'
-  );
-  return { Authorization: `Basic ${auth}` };
-};
-
-// Fetch GTFS data from Metra JSON endpoints
-const fetchGTFSEndpoint = async (endpoint: string): Promise<any> => {
-  const config = getConfig();
-  const url = `${config.baseUrl}${endpoint}`;
-  const response = await fetch(url, {
-    headers: getAuthHeader(),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch ${endpoint}: ${response.status} ${response.statusText}`
-    );
+/**
+ * Fetch the published timestamp from Metra
+ * Returns the timestamp string (e.g., "2025-01-15 03:00:00")
+ */
+const fetchPublishedTimestamp = async (): Promise<string> => {
+  try {
+    const response = await fetch(env.GTFS_STATIC_PUBLISHED_URL);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch published timestamp: ${response.status} ${response.statusText}`
+      );
+    }
+    const timestamp = (await response.text()).trim();
+    console.log(`  📅 Latest published timestamp: ${timestamp}`);
+    return timestamp;
+  } catch (error) {
+    console.error('❌ Failed to fetch published timestamp:', error);
+    throw error;
   }
-
-  return response.json();
 };
 
 /**
- * Import GTFS static data from Metra's JSON endpoints
- * Should be run weekly or on deployment (per research.md)
+ * Get the last imported timestamp from the database
+ */
+const getLastImportedTimestamp = (): string | null => {
+  const db = getDatabase();
+  try {
+    const result = db
+      .prepare('SELECT value FROM metadata WHERE key = ?')
+      .get('last_published_timestamp') as { value: string } | undefined;
+    return result?.value || null;
+  } catch {
+    // Table might not exist yet
+    return null;
+  }
+};
+
+/**
+ * Save the published timestamp to the database
+ */
+const saveLastImportedTimestamp = (timestamp: string): void => {
+  const db = getDatabase();
+  db.prepare('INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)').run(
+    'last_published_timestamp',
+    timestamp
+  );
+  console.log(`  💾 Saved published timestamp: ${timestamp}`);
+};
+
+/**
+ * Download the GTFS schedule ZIP file from Metra
+ */
+const downloadScheduleZip = async (): Promise<Buffer> => {
+  console.log('  ⬇️  Downloading schedule.zip...');
+  try {
+    const response = await fetch(env.GTFS_STATIC_SCHEDULE_URL);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download schedule.zip: ${response.status} ${response.statusText}`
+      );
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    console.log(
+      `  ✅ Downloaded ${(buffer.length / 1024 / 1024).toFixed(2)} MB`
+    );
+    return buffer;
+  } catch (error) {
+    console.error('❌ Failed to download schedule.zip:', error);
+    throw error;
+  }
+};
+
+/**
+ * Extract ZIP file to a temporary directory
+ */
+const extractZipToTemp = (zipBuffer: Buffer): string => {
+  console.log('  📦 Extracting ZIP file...');
+  try {
+    const zip = new AdmZip(zipBuffer);
+    const tempDir = path.join(os.tmpdir(), `gtfs-${Date.now()}`);
+    zip.extractAllTo(tempDir, true);
+    console.log(`  ✅ Extracted to ${tempDir}`);
+    return tempDir;
+  } catch (error) {
+    console.error('❌ Failed to extract ZIP:', error);
+    throw error;
+  }
+};
+
+/**
+ * Parse a GTFS CSV file
+ */
+const parseGTFSFile = <T>(filePath: string): T[] => {
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const records = parse(fileContent, {
+      columns: true, // Use first row as headers
+      skip_empty_lines: true,
+      trim: true,
+      cast: (value, context) => {
+        // Convert empty strings to null
+        if (value === '') return null;
+        // Convert numeric strings to numbers for specific columns
+        if (
+          context.column === 'stop_lat' ||
+          context.column === 'stop_lon' ||
+          context.column === 'route_type' ||
+          context.column === 'direction_id' ||
+          context.column === 'stop_sequence' ||
+          context.column === 'wheelchair_boarding' ||
+          context.column === 'exception_type' ||
+          context.column === 'monday' ||
+          context.column === 'tuesday' ||
+          context.column === 'wednesday' ||
+          context.column === 'thursday' ||
+          context.column === 'friday' ||
+          context.column === 'saturday' ||
+          context.column === 'sunday'
+        ) {
+          return value ? parseFloat(value) : null;
+        }
+        return value;
+      },
+    });
+    return records as T[];
+  } catch (error) {
+    console.error(`❌ Failed to parse ${filePath}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Parse all GTFS files from the extracted directory
+ */
+const parseGTFSFiles = (tempDir: string): GTFSData => {
+  console.log('  📄 Parsing GTFS files...');
+
+  const agencies = parseGTFSFile(path.join(tempDir, 'agency.txt'));
+  console.log(`    ✓ Parsed ${agencies.length} agencies`);
+
+  const routes = parseGTFSFile(path.join(tempDir, 'routes.txt'));
+  console.log(`    ✓ Parsed ${routes.length} routes`);
+
+  const stops = parseGTFSFile(path.join(tempDir, 'stops.txt'));
+  console.log(`    ✓ Parsed ${stops.length} stops`);
+
+  const trips = parseGTFSFile(path.join(tempDir, 'trips.txt'));
+  console.log(`    ✓ Parsed ${trips.length} trips`);
+
+  const stopTimes = parseGTFSFile(path.join(tempDir, 'stop_times.txt'));
+  console.log(`    ✓ Parsed ${stopTimes.length} stop times`);
+
+  const calendar = parseGTFSFile(path.join(tempDir, 'calendar.txt'));
+  console.log(`    ✓ Parsed ${calendar.length} calendar entries`);
+
+  const calendarDates = parseGTFSFile(path.join(tempDir, 'calendar_dates.txt'));
+  console.log(`    ✓ Parsed ${calendarDates.length} calendar date exceptions`);
+
+  return {
+    agencies,
+    routes,
+    stops,
+    trips,
+    stopTimes,
+    calendar,
+    calendarDates,
+  };
+};
+
+/**
+ * Clean up temporary directory
+ */
+const cleanupTempDir = (tempDir: string): void => {
+  try {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    console.log(`  🧹 Cleaned up temp directory`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to cleanup temp directory: ${error}`);
+  }
+};
+
+/**
+ * Import GTFS static data from Metra's ZIP file
+ * Checks published timestamp before downloading to avoid unnecessary work
  */
 export const importGTFSStaticData = async (): Promise<void> => {
-  console.log('📥 Importing GTFS static data from Metra API...');
+  console.log('📥 Importing GTFS static data from Metra...');
+
+  let tempDir: string | null = null;
 
   try {
-    const db = getDatabase();
+    // Step 1: Check published timestamp
+    const publishedTimestamp = await fetchPublishedTimestamp();
+    const lastImportedTimestamp = getLastImportedTimestamp();
 
-    // Create tables if they don't exist
-    createTables(db);
+    if (publishedTimestamp === lastImportedTimestamp) {
+      console.log('✅ GTFS data is up to date, skipping import');
+      return;
+    }
 
-    // Fetch data from Metra JSON endpoints
-    console.log('  ⏳ Fetching agencies...');
-    const agencies = await fetchGTFSEndpoint('/gtfs/schedule/agency');
+    console.log(`  🆕 New data available (published: ${publishedTimestamp})`);
+    if (lastImportedTimestamp) {
+      console.log(`     Last imported: ${lastImportedTimestamp}`);
+    }
 
-    console.log('  ⏳ Fetching routes...');
-    const routes = await fetchGTFSEndpoint('/gtfs/schedule/routes');
+    // Step 2: Download schedule.zip
+    const zipBuffer = await downloadScheduleZip();
 
-    console.log('  ⏳ Fetching stops...');
-    const stops = await fetchGTFSEndpoint('/gtfs/schedule/stops');
+    // Step 3: Extract ZIP
+    tempDir = extractZipToTemp(zipBuffer);
 
-    console.log('  ⏳ Fetching trips...');
-    const trips = await fetchGTFSEndpoint('/gtfs/schedule/trips');
+    // Step 4: Parse GTFS files
+    const gtfsData = parseGTFSFiles(tempDir);
 
-    console.log('  ⏳ Fetching stop times...');
-    const stopTimes = await fetchGTFSEndpoint('/gtfs/schedule/stop_times');
-
-    console.log('  ⏳ Fetching calendar...');
-    const calendar = await fetchGTFSEndpoint('/gtfs/schedule/calendar');
-
-    console.log('  ⏳ Fetching calendar_dates...');
-    const calendarDates = await fetchGTFSEndpoint(
-      '/gtfs/schedule/calendar_dates'
-    );
-
-    // Insert data into database
+    // Step 5: Insert into database
     console.log('  💾 Inserting data into database...');
-    insertAgencies(db, agencies);
-    insertRoutes(db, routes);
-    insertStops(db, stops);
-    insertTrips(db, trips);
-    insertStopTimes(db, stopTimes);
-    insertCalendar(db, calendar);
-    insertCalendarDates(db, calendarDates);
-
-    // Create indexes for performance (per research.md)
+    const db = getDatabase();
+    createTables(db);
+    insertAgencies(db, gtfsData.agencies);
+    insertRoutes(db, gtfsData.routes);
+    insertStops(db, gtfsData.stops);
+    insertTrips(db, gtfsData.trips);
+    insertStopTimes(db, gtfsData.stopTimes);
+    insertCalendar(db, gtfsData.calendar);
+    insertCalendarDates(db, gtfsData.calendarDates);
     createIndexes(db);
-
-    // TRANSFORMATION (Option B): Derive lines_served for each station
-    console.log('  🔄 Deriving lines_served for stations...');
     deriveLinesServed(db);
+
+    // Step 6: Save published timestamp
+    saveLastImportedTimestamp(publishedTimestamp);
 
     console.log('✅ GTFS static data import complete!');
   } catch (error) {
     console.error('❌ GTFS import failed:', error);
     throw error;
+  } finally {
+    // Step 7: Cleanup
+    if (tempDir) {
+      cleanupTempDir(tempDir);
+    }
   }
 };
 
 const createTables = (db: any) => {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS metadata (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS agency (
       agency_id TEXT PRIMARY KEY,
       agency_name TEXT NOT NULL,
