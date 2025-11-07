@@ -15,10 +15,14 @@ import { useReachableStations } from '@/hooks/useReachableStations';
 import { useRouteSearchStore } from '@/stores/routeSearchStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 import { SavedRoutesList } from '@/components/SavedRoutes/SavedRoutesList';
+import { RecentSearches } from '@/components/RecentSearches';
+import { QuickStats } from '@/components/QuickStats';
+import { LineStatusOverview } from '@/components/LineStatusOverview';
 import {
   getSavedRoutes,
   updateLastUsed,
   deleteRoute,
+  addRecentSearch,
   type SavedRoute,
 } from '@/services/storage';
 import { useEffect, useState } from 'react';
@@ -70,7 +74,25 @@ export default function HomePage() {
     setDestinationQuery('');
   };
 
-  const handleDestinationSelect = (stationId: string) => {
+  const handleDestinationSelect = async (stationId: string) => {
+    if (origin && allStations) {
+      const originStation = allStations.find((s) => s.station_id === origin);
+      const destStation = allStations.find((s) => s.station_id === stationId);
+
+      if (originStation && destStation) {
+        try {
+          await addRecentSearch(
+            origin,
+            originStation.station_name,
+            stationId,
+            destStation.station_name
+          );
+        } catch (err) {
+          console.error('Failed to add recent search:', err);
+        }
+      }
+    }
+
     // Navigate to /route with both origin and destination
     navigate(`/route?origin=${origin}&destination=${stationId}`);
     setDestinationQuery('');
@@ -153,14 +175,38 @@ export default function HomePage() {
 
           {/* Content area */}
           <div className="flex flex-col pb-8">
+            {/* Quick Stats - only show when no origin selected */}
+            {!origin && (
+              <div className="max-w-4xl mx-auto w-full mb-8 flex-shrink-0">
+                <QuickStats />
+              </div>
+            )}
+
+            {/* Line Status Overview - only show when no origin selected */}
+            {!origin && (
+              <div className="max-w-lg mx-auto w-full mb-8 flex-shrink-0">
+                <LineStatusOverview />
+              </div>
+            )}
+
             {/* Saved Routes - only show when no origin selected */}
             {savedRoutes.length > 0 && !origin && (
-              <div className="max-w-lg mx-auto w-full mb-8 flex-shrink-0">
+              <div
+                id="saved-routes"
+                className="max-w-lg mx-auto w-full mb-8 flex-shrink-0"
+              >
                 <SavedRoutesList
                   routes={savedRoutes}
                   onRouteClick={handleSavedRouteClick}
                   onRouteDelete={handleSavedRouteDelete}
                 />
+              </div>
+            )}
+
+            {/* Recent Searches - only show when no origin selected */}
+            {!origin && (
+              <div className="max-w-lg mx-auto w-full mb-8 flex-shrink-0">
+                <RecentSearches />
               </div>
             )}
 

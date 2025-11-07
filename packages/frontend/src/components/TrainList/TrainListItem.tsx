@@ -17,10 +17,12 @@ import {
   ChevronDown,
   AlertCircle,
   Navigation,
+  Timer,
 } from 'lucide-react';
 import { useTrainDetail } from '@/hooks/useTrains';
 import type { Train, StopTime } from '@metra/shared';
 import { formatTime } from '@/lib/date-utils';
+import { useCountdown, calculateTripDuration } from '@/hooks/useCountdown';
 
 interface TrainListItemProps {
   train: Train;
@@ -106,6 +108,15 @@ export function TrainListItem({ train }: TrainListItemProps) {
   const departureTime = formatTime(train.departure_time);
   const arrivalTime = formatTime(train.arrival_time);
 
+  // Countdown timer for departure
+  const countdown = useCountdown(train.departure_time);
+
+  // Trip duration calculation
+  const tripDuration = calculateTripDuration(
+    train.departure_time,
+    train.arrival_time
+  );
+
   const getStatusVariant = (
     status: string
   ): 'success' | 'warning' | 'destructive' | 'secondary' => {
@@ -152,6 +163,36 @@ export function TrainListItem({ train }: TrainListItemProps) {
 
             <div className="flex-1">
               <CollapsibleTrigger className="w-full text-left p-5">
+                {/* Countdown and Trip Duration */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {countdown && !countdown.isExpired && (
+                      <div
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${
+                          countdown.isImminent
+                            ? 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 animate-pulse-slow'
+                            : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                        }`}
+                      >
+                        <Timer className="h-3.5 w-3.5" />
+                        <span>Departs in {countdown.formatted}</span>
+                      </div>
+                    )}
+                    {countdown?.isExpired && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>Departed</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="font-medium">
+                      {tripDuration.formatted} trip
+                    </span>
+                  </div>
+                </div>
+
                 {/* Header with time and status */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
