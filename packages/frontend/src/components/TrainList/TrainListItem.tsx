@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useTrainDetail } from '@/hooks/useTrains';
 import type { Train, StopTime } from '@metra/shared';
+import { formatTime } from '@/lib/date-utils';
 
 interface TrainListItemProps {
   train: Train;
@@ -64,13 +65,7 @@ function TrainProgressVisualization({
           </div>
           {currentStation && (
             <p className="text-xs text-muted-foreground">
-              {new Date(currentStation.arrival_time).toLocaleTimeString(
-                'en-US',
-                {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                }
-              )}
+              {formatTime(currentStation.arrival_time)}
             </p>
           )}
         </div>
@@ -90,10 +85,7 @@ function TrainProgressVisualization({
           </div>
           {nextStation && (
             <p className="text-xs text-muted-foreground">
-              {new Date(nextStation.arrival_time).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
+              {formatTime(nextStation.arrival_time)}
             </p>
           )}
         </div>
@@ -111,18 +103,8 @@ export function TrainListItem({ train }: TrainListItemProps) {
     isOpen
   );
 
-  const departureTime = new Date(train.departure_time).toLocaleTimeString(
-    'en-US',
-    {
-      hour: 'numeric',
-      minute: '2-digit',
-    }
-  );
-
-  const arrivalTime = new Date(train.arrival_time).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  const departureTime = formatTime(train.departure_time);
+  const arrivalTime = formatTime(train.arrival_time);
 
   const getStatusVariant = (
     status: string
@@ -376,12 +358,7 @@ export function TrainListItem({ train }: TrainListItemProps) {
                                       )}
                                     </div>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                      {new Date(
-                                        stop.arrival_time
-                                      ).toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                      })}
+                                      {formatTime(stop.arrival_time)}
                                     </p>
                                   </div>
                                   {stop.delay_minutes > 0 && (

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchTrains, fetchTrainDetail } from '@/services/api';
 import { cacheTrains, getCachedTrains } from '@/services/storage';
+import { CACHE_DURATION, INDEXEDDB_TTL, API_CONFIG } from '@/lib/constants';
 import type { Train } from '@metra/shared';
 
 interface UseTrainsParams {
@@ -38,8 +39,12 @@ export function useTrains({
 
         return trains;
       } catch (error) {
-        // If API fails, try to get from cache (30s TTL)
-        const cached = await getCachedTrains(origin, destination, 30000);
+        // If API fails, try to get from cache
+        const cached = await getCachedTrains(
+          origin,
+          destination,
+          INDEXEDDB_TTL.TRAINS
+        );
 
         if (cached) {
           return cached;
@@ -50,9 +55,9 @@ export function useTrains({
       }
     },
     enabled: enabled && !!origin && !!destination,
-    staleTime: 30 * 1000, // 30 seconds - matches realtime update interval
+    staleTime: CACHE_DURATION.TRAINS,
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 30 * 1000, // Auto-refresh every 30 seconds
+    refetchInterval: API_CONFIG.REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
   });
 }
@@ -62,8 +67,8 @@ export function useTrainDetail(tripId: string, enabled = true) {
     queryKey: ['train', tripId],
     queryFn: () => fetchTrainDetail(tripId),
     enabled: enabled && !!tripId,
-    staleTime: 30 * 1000,
+    staleTime: CACHE_DURATION.TRAINS,
     gcTime: 5 * 60 * 1000,
-    refetchInterval: 30 * 1000,
+    refetchInterval: API_CONFIG.REFETCH_INTERVAL,
   });
 }

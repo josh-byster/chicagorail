@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchStations } from '@/services/api';
 import { cacheStations, getCachedStations } from '@/services/storage';
+import { CACHE_DURATION } from '@/lib/constants';
 import type { Station } from '@metra/shared';
 
 export function useStations(lineId?: string) {
@@ -25,7 +26,7 @@ export function useStations(lineId?: string) {
         if (cached.length > 0) {
           // Filter by line if needed
           if (lineId) {
-            return cached.filter(s => s.lines_served.includes(lineId));
+            return cached.filter((s) => s.lines_served.includes(lineId));
           }
           return cached;
         }
@@ -34,7 +35,7 @@ export function useStations(lineId?: string) {
         throw error;
       }
     },
-    staleTime: 7 * 24 * 60 * 60 * 1000, // 1 week - stations rarely change
-    gcTime: 30 * 24 * 60 * 60 * 1000, // 30 days
+    staleTime: CACHE_DURATION.STATIONS,
+    gcTime: CACHE_DURATION.GC_TIME,
   });
 }

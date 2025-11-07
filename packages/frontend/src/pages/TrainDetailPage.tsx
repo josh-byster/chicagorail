@@ -13,6 +13,7 @@ import {
   Train as TrainIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatTime } from '@/lib/date-utils';
 
 export default function TrainDetailPage() {
   const { tripId } = useParams<{ tripId: string }>();
@@ -61,19 +62,13 @@ export default function TrainDetailPage() {
     : null;
 
   // Use user's journey times if available, otherwise use train's full journey
-  const departureTime = new Date(
+  const departureTime = formatTime(
     originStop?.departure_time || train.departure_time
-  ).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  );
 
-  const arrivalTime = new Date(
+  const arrivalTime = formatTime(
     destinationStop?.arrival_time || train.arrival_time
-  ).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  );
 
   const getStatusVariant = (
     status: string
@@ -263,13 +258,7 @@ export default function TrainDetailPage() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-0.5">
-                            {new Date(stop.arrival_time).toLocaleTimeString(
-                              'en-US',
-                              {
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              }
-                            )}
+                            {formatTime(stop.arrival_time)}
                           </p>
                         </div>
                         {stop.delay_minutes > 0 && (

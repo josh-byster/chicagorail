@@ -21,8 +21,7 @@ import {
 import { SaveRouteDialog } from '@/components/SavedRoutes/SaveRouteDialog';
 import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
-import { saveRoute } from '@/services/saved-routes';
-import { SavedRoute } from '@metra/shared';
+import { saveRoute, type SavedRoute } from '@/services/storage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Command,
