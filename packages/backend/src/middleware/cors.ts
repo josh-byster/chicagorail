@@ -3,7 +3,7 @@ import { env } from '../config/env.js';
 
 /**
  * Get allowed origins from environment variable or use defaults for development
- * Format: CORS_ORIGIN="https://example.com,https://www.example.com"
+ * Format: CORS_ORIGIN="https://example.com,https://www.example.com" or "*" for all
  */
 const getAllowedOrigins = (): string[] => {
   const corsOrigin = env.CORS_ORIGIN;
@@ -20,19 +20,51 @@ const getAllowedOrigins = (): string[] => {
   return ['http://localhost:5173', 'http://localhost:3000'];
 };
 
-const allowedOrigins = getAllowedOrigins();
+/**
+ * Check if origin is allowed
+ * Allows all Vercel.app subdomains and explicitly configured origins
+ */
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true; // Allow requests with no origin (mobile apps, Postman, etc.)
+
+  const allowedOrigins = getAllowedOrigins();
+
+  // Check if "*" is in allowed origins (allow all)
+  if (allowedOrigins.includes('*')) return true;
+
+  // Check if origin is in explicit allow list
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Allow all Vercel.app subdomains
+  if (origin.endsWith('.vercel.app')) return true;
+
+  // In development mode, allow all localhost/127.0.0.1 origins
+  if (env.NODE_ENV === 'development') {
+    try {
+      const url = new URL(origin);
+      if (
+        url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1' ||
+        url.hostname.endsWith('.local')
+      ) {
+        return true;
+      }
+    } catch {
+      // Invalid URL, reject
+      return false;
+    }
+  }
+
+  return false;
+};
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       const error = new Error(
-        `CORS: Origin '${origin}' not allowed. Allowed origins: ${allowedOrigins.join(', ')}`
+        `CORS: Origin '${origin}' not allowed. Configure CORS_ORIGIN environment variable.`
       );
       console.error(error.message);
       callback(error);
