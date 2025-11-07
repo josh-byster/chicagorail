@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Check, Train } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +23,10 @@ import {
 } from '@/services/storage';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Navigation } from '@/components/Navigation';
+import { QuickActions } from '@/components/QuickActions';
+import { NearbyStations } from '@/components/NearbyStations';
+import { AlertBanner } from '@/components/AlertBanner';
 
 export default function HomePage() {
   const [originSearchOpen, setOriginSearchOpen] = React.useState(false);
@@ -124,17 +128,15 @@ export default function HomePage() {
       s.station_name.toLowerCase().includes(destinationQuery.toLowerCase())
   );
 
+  const handleNearbyStationSelect = (stationId: string) => {
+    handleOriginSelect(stationId);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Navigation Bar */}
-      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-2 font-semibold text-base text-gray-900">
-            <Train className="h-5 w-5 text-blue-600" />
-            Metra Tracker
-          </div>
-        </div>
-      </nav>
+      <Navigation />
+      <AlertBanner />
 
       {/* Main Content - Search Interface */}
       <div className="h-[calc(100vh-80px)] flex flex-col items-center px-6 py-12 overflow-y-auto">
@@ -152,6 +154,13 @@ export default function HomePage() {
 
           {/* Content area */}
           <div className="flex flex-col pb-8">
+            {/* Quick Actions - only show when no origin selected */}
+            {!origin && (
+              <div className="max-w-2xl mx-auto w-full mb-8 flex-shrink-0">
+                <QuickActions />
+              </div>
+            )}
+
             {/* Saved Routes - only show when no origin selected */}
             {savedRoutes.length > 0 && !origin && (
               <div className="max-w-lg mx-auto w-full mb-8 flex-shrink-0">
@@ -160,6 +169,16 @@ export default function HomePage() {
                   onRouteClick={handleSavedRouteClick}
                   onRouteDelete={handleSavedRouteDelete}
                 />
+              </div>
+            )}
+
+            {/* Nearby Stations - only show when no origin selected */}
+            {!origin && (
+              <div
+                id="nearby-stations"
+                className="max-w-lg mx-auto w-full mb-8 flex-shrink-0"
+              >
+                <NearbyStations onStationSelect={handleNearbyStationSelect} />
               </div>
             )}
 

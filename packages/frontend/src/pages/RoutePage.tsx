@@ -1,4 +1,4 @@
-import { Train, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStations } from '@/hooks/useStations';
 import { useReachableStations } from '@/hooks/useReachableStations';
@@ -7,6 +7,8 @@ import { useRouteSearchStore } from '@/stores/routeSearchStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 import { TrainList } from '@/components/TrainList/TrainList';
 import { useNavigate } from 'react-router-dom';
+import { Navigation } from '@/components/Navigation';
+import { AlertBanner } from '@/components/AlertBanner';
 
 export default function RoutePage() {
   const { origin, destination, hasSearched } = useRouteSearchStore();
@@ -42,16 +44,10 @@ export default function RoutePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Navigation Bar */}
-      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-2 font-semibold text-base text-gray-900">
-            <Train className="h-5 w-5 text-blue-600" />
-            Metra Tracker
-          </div>
-        </div>
-      </nav>
+      <Navigation />
+      <AlertBanner />
 
       {/* Results Section */}
       <div className="container mx-auto px-4 py-12 animate-in fade-in duration-300">

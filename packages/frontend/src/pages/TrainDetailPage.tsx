@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatTime } from '@/lib/date-utils';
+import { Navigation } from '@/components/Navigation';
+import { AlertBanner } from '@/components/AlertBanner';
 
 export default function TrainDetailPage() {
   const { tripId } = useParams<{ tripId: string }>();
@@ -87,6 +89,8 @@ export default function TrainDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <Navigation />
+      <AlertBanner />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Link to="/">
           <Button variant="ghost" className="mb-6 hover:bg-accent">
