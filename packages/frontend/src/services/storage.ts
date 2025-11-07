@@ -1,14 +1,13 @@
 import Dexie, { Table } from 'dexie';
-import type { Station, Line, Train } from '@metra/shared';
+import type { Station, Line, Train, SavedRoute } from '@metra/shared';
 import { INDEXEDDB_TTL } from '@/lib/constants';
 
 export interface CachedTrain extends Train {
   cached_at: number; // Timestamp
 }
 
-// Use the shared SavedRoute type from @metra/shared instead of duplicating it
-import type { SavedRoute as SharedSavedRoute } from '@metra/shared';
-export type SavedRoute = SharedSavedRoute;
+// Re-export SavedRoute for convenience
+export type { SavedRoute };
 
 class MetraDB extends Dexie {
   stations!: Table<Station, string>;

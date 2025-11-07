@@ -1,5 +1,10 @@
 import { getDatabase } from './database.service.js';
 import { Station } from '@metra/shared';
+import {
+  transformStationRow,
+  transformStationRows,
+  type StationRow,
+} from '../mappers/station.mapper.js';
 
 /**
  * Station Service
@@ -7,16 +12,6 @@ import { Station } from '@metra/shared';
  * Queries stations from SQLite database
  * Can filter stations by line
  */
-
-interface StopRow {
-  station_id: string;
-  station_name: string;
-  latitude: number;
-  longitude: number;
-  lines_served: string;
-  zone: string | null;
-  wheelchair_accessible: number;
-}
 
 /**
  * Get all stations
@@ -28,7 +23,7 @@ export const getAllStations = (): Station[] => {
   const stations = db
     .prepare(
       `
-    SELECT 
+    SELECT
       stop_id as station_id,
       stop_name as station_name,
       stop_lat as latitude,
@@ -40,18 +35,9 @@ export const getAllStations = (): Station[] => {
     ORDER BY stop_name
   `
     )
-    .all() as StopRow[];
+    .all() as StationRow[];
 
-  // Transform database rows to Station objects
-  return stations.map((row) => ({
-    station_id: row.station_id,
-    station_name: row.station_name,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    lines_served: JSON.parse(row.lines_served || '[]'),
-    zone: row.zone || undefined,
-    wheelchair_accessible: row.wheelchair_accessible === 1,
-  }));
+  return transformStationRows(stations);
 };
 
 /**
@@ -62,11 +48,10 @@ export const getAllStations = (): Station[] => {
 export const getStationsByLine = (lineId: string): Station[] => {
   const db = getDatabase();
 
-  // Query stations that serve the specified line
   const stations = db
     .prepare(
       `
-    SELECT 
+    SELECT
       stop_id as station_id,
       stop_name as station_name,
       stop_lat as latitude,
@@ -79,18 +64,9 @@ export const getStationsByLine = (lineId: string): Station[] => {
     ORDER BY stop_name
   `
     )
-    .all(`%${lineId}%`) as StopRow[];
+    .all(`%${lineId}%`) as StationRow[];
 
-  // Transform database rows to Station objects
-  return stations.map((row) => ({
-    station_id: row.station_id,
-    station_name: row.station_name,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    lines_served: JSON.parse(row.lines_served || '[]'),
-    zone: row.zone || undefined,
-    wheelchair_accessible: row.wheelchair_accessible === 1,
-  }));
+  return transformStationRows(stations);
 };
 
 /**
@@ -116,22 +92,13 @@ export const getStationById = (stationId: string): Station | null => {
     WHERE stop_id = ?
   `
     )
-    .get(stationId) as StopRow | undefined;
+    .get(stationId) as StationRow | undefined;
 
   if (!station) {
     return null;
   }
 
-  // Transform database row to Station object
-  return {
-    station_id: station.station_id,
-    station_name: station.station_name,
-    latitude: station.latitude,
-    longitude: station.longitude,
-    lines_served: JSON.parse(station.lines_served || '[]'),
-    zone: station.zone || undefined,
-    wheelchair_accessible: station.wheelchair_accessible === 1,
-  };
+  return transformStationRow(station);
 };
 
 /**
@@ -142,8 +109,6 @@ export const getStationById = (stationId: string): Station | null => {
 export const getReachableStations = (originId: string): Station[] => {
   const db = getDatabase();
 
-  // Query to find all destination stations that have at least one trip from the origin
-  // This looks at stop_times to find trips that include both stations
   const stations = db
     .prepare(
       `
@@ -167,16 +132,7 @@ export const getReachableStations = (originId: string): Station[] => {
     ORDER BY s.stop_name
   `
     )
-    .all(originId, originId) as StopRow[];
+    .all(originId, originId) as StationRow[];
 
-  // Transform database rows to Station objects
-  return stations.map((row) => ({
-    station_id: row.station_id,
-    station_name: row.station_name,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    lines_served: JSON.parse(row.lines_served || '[]'),
-    zone: row.zone || undefined,
-    wheelchair_accessible: row.wheelchair_accessible === 1,
-  }));
+  return transformStationRows(stations);
 };
