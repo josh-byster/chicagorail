@@ -1,0 +1,25 @@
+{
+  "extends": ["./.eslintrc.json"],
+  "rules": {
+    "max-lines": [
+      "error",
+      {
+        "max": 250,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "max-lines-per-function": [
+      "warn",
+      {
+        "max": 75,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "complexity": ["warn", 15],
+    "max-depth": ["warn", 3],
+    "max-nested-callbacks": ["warn", 3],
+    "max-params": ["warn", 4]
+  }
+}

@@ -12,9 +12,6 @@ export async function initializeOnStartup(): Promise<void> {
   try {
     // 1. Initialize database
     console.log('📦 Initializing database...');
-    initDatabase();
-
-    // 2. Check if database has data, if not import it
     const db = initDatabase();
 
     let needsImport = false;
