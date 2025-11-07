@@ -1,6 +1,7 @@
-import type { Station, Line, Train } from '@metra/shared';
+import type { Station, Line, Train, ServiceAlert } from '@metra/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 class ApiError extends Error {
   constructor(
@@ -13,7 +14,10 @@ class ApiError extends Error {
   }
 }
 
-async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function fetchApi<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   try {
@@ -58,8 +62,12 @@ export async function fetchStation(stationId: string): Promise<Station> {
   return fetchApi<Station>(`/stations/${encodeURIComponent(stationId)}`);
 }
 
-export async function fetchReachableStations(originId: string): Promise<Station[]> {
-  return fetchApi<Station[]>(`/stations/${encodeURIComponent(originId)}/reachable`);
+export async function fetchReachableStations(
+  originId: string
+): Promise<Station[]> {
+  return fetchApi<Station[]>(
+    `/stations/${encodeURIComponent(originId)}/reachable`
+  );
 }
 
 // Lines API
@@ -92,6 +100,19 @@ export async function fetchTrains(params: {
 
 export async function fetchTrainDetail(tripId: string): Promise<Train> {
   return fetchApi<Train>(`/trains/${encodeURIComponent(tripId)}`);
+}
+
+// Alerts API
+export async function fetchAlerts(params?: {
+  lineId?: string;
+  stationId?: string;
+}): Promise<ServiceAlert[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.lineId) searchParams.append('line_id', params.lineId);
+  if (params?.stationId) searchParams.append('station_id', params.stationId);
+
+  const query = searchParams.toString();
+  return fetchApi<ServiceAlert[]>(`/alerts${query ? `?${query}` : ''}`);
 }
 
 // Health API
