@@ -18,22 +18,22 @@ import { AlertSeverity } from '@metra/shared';
 
 export default function AlertsPage() {
   const navigate = useNavigate();
-  const [selectedLine, setSelectedLine] = useState<string>('');
-  const [selectedSeverity, setSelectedSeverity] = useState<string>('');
+  const [selectedLine, setSelectedLine] = useState<string>('all');
+  const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
 
   const {
     data: alerts,
     isLoading,
     error,
   } = useAlerts({
-    lineId: selectedLine || undefined,
+    lineId: selectedLine !== 'all' ? selectedLine : undefined,
   });
 
   const { data: lines } = useLines();
 
   // Filter by severity on client side
   const filteredAlerts = alerts?.filter((alert) => {
-    if (selectedSeverity && alert.severity !== selectedSeverity) {
+    if (selectedSeverity !== 'all' && alert.severity !== selectedSeverity) {
       return false;
     }
     return true;
@@ -83,7 +83,7 @@ export default function AlertsPage() {
                   <SelectValue placeholder="All Lines" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Lines</SelectItem>
+                  <SelectItem value="all">All Lines</SelectItem>
                   {lines?.map((line) => (
                     <SelectItem key={line.line_id} value={line.line_id}>
                       {line.line_name}
@@ -102,7 +102,7 @@ export default function AlertsPage() {
                   <SelectValue placeholder="All Severities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Severities</SelectItem>
+                  <SelectItem value="all">All Severities</SelectItem>
                   <SelectItem value={AlertSeverity.SEVERE}>Severe</SelectItem>
                   <SelectItem value={AlertSeverity.WARNING}>Warning</SelectItem>
                   <SelectItem value={AlertSeverity.INFO}>Info</SelectItem>
