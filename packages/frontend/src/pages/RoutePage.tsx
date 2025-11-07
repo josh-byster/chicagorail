@@ -6,6 +6,7 @@ import { useTrains } from '@/hooks/useTrains';
 import { useRouteSearchStore } from '@/stores/routeSearchStore';
 import { useUrlSync } from '@/hooks/useUrlSync';
 import { TrainList } from '@/components/TrainList/TrainList';
+import { ShareButton } from '@/components/ShareButton';
 import { useNavigate } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { AlertBanner } from '@/components/AlertBanner';
@@ -53,7 +54,7 @@ export default function RoutePage() {
       <div className="container mx-auto px-4 py-12 animate-in fade-in duration-300">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
             <div>
               <Button
                 variant="ghost"
@@ -67,6 +68,10 @@ export default function RoutePage() {
                 {fromStationData?.station_name} → {toStationData?.station_name}
               </h2>
             </div>
+            <ShareButton
+              title={`${fromStationData?.station_name} to ${toStationData?.station_name} - Metra Schedule`}
+              text={`Check out trains from ${fromStationData?.station_name} to ${toStationData?.station_name}`}
+            />
           </div>
 
           {/* Train Results */}

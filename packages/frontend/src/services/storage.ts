@@ -6,6 +6,15 @@ export interface CachedTrain extends Train {
   cached_at: number; // Timestamp
 }
 
+export interface RecentSearch {
+  search_id: string;
+  origin_station_id: string;
+  origin_station_name: string;
+  destination_station_id: string;
+  destination_station_name: string;
+  searched_at: string; // ISO timestamp
+}
+
 // Re-export SavedRoute for convenience
 export type { SavedRoute };
 
@@ -14,6 +23,7 @@ class MetraDB extends Dexie {
   lines!: Table<Line, string>;
   trains!: Table<CachedTrain, string>;
   savedRoutes!: Table<SavedRoute, string>;
+  recentSearches!: Table<RecentSearch, string>;
 
   constructor() {
     super('MetraDB');
@@ -25,6 +35,17 @@ class MetraDB extends Dexie {
         'trip_id, line_id, origin_station_id, destination_station_id, cached_at',
       savedRoutes:
         'route_id, origin_station_id, destination_station_id, last_used_at',
+    });
+
+    // Add recentSearches table in version 2
+    this.version(2).stores({
+      stations: 'station_id, station_name, *lines_served',
+      lines: 'line_id, line_short_name',
+      trains:
+        'trip_id, line_id, origin_station_id, destination_station_id, cached_at',
+      savedRoutes:
+        'route_id, origin_station_id, destination_station_id, last_used_at',
+      recentSearches: 'search_id, searched_at',
     });
   }
 }
@@ -194,4 +215,54 @@ export async function updateLastUsed(
   }
 
   return getSavedRoutes();
+}
+
+// Recent Searches helpers
+/**
+ * Add a search to recent searches history
+ * Keeps only the last 10 searches
+ */
+export async function addRecentSearch(
+  originId: string,
+  originName: string,
+  destinationId: string,
+  destinationName: string
+): Promise<void> {
+  const newSearch: RecentSearch = {
+    search_id: crypto.randomUUID(),
+    origin_station_id: originId,
+    origin_station_name: originName,
+    destination_station_id: destinationId,
+    destination_station_name: destinationName,
+    searched_at: new Date().toISOString(),
+  };
+
+  await db.recentSearches.add(newSearch);
+
+  // Keep only last 10 searches
+  const allSearches = await db.recentSearches
+    .orderBy('searched_at')
+    .reverse()
+    .toArray();
+
+  if (allSearches.length > 10) {
+    const toDelete = allSearches.slice(10);
+    await Promise.all(
+      toDelete.map((search) => db.recentSearches.delete(search.search_id))
+    );
+  }
+}
+
+/**
+ * Get recent searches (last 10, newest first)
+ */
+export async function getRecentSearches(): Promise<RecentSearch[]> {
+  return db.recentSearches.orderBy('searched_at').reverse().limit(10).toArray();
+}
+
+/**
+ * Clear all recent searches
+ */
+export async function clearRecentSearches(): Promise<void> {
+  await db.recentSearches.clear();
 }
