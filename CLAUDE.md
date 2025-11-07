@@ -3,9 +3,11 @@
 Auto-generated from all feature plans. Last updated: 2025-10-11
 
 ## Active Technologies
+
 - TypeScript 5.x (both frontend and backend) (001-i-want-to)
 
 ## Project Structure
+
 ```
 packages/
 ├── shared/          # Shared TypeScript types & Zod schemas
@@ -21,12 +23,15 @@ packages/
 **Monorepo**: This project uses pnpm workspaces. Always run `pnpm install` from the root.
 
 ## Commands
+
 npm test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLOGIES] npm run lint
 
 ## Code Style
+
 TypeScript 5.x (both frontend and backend): Follow standard conventions
 
 ## Recent Changes
+
 - 001-i-want-to: Added TypeScript 5.x (both frontend and backend)
 
 <!-- MANUAL ADDITIONS START -->
@@ -52,6 +57,7 @@ mcp__Ref__ref_read_url url="https://example.com/docs/page"
 ```
 
 **Usage**:
+
 - Search for ShadCN UI, React, TypeScript, Express, node-gtfs, TanStack Query, Workbox, Vite documentation
 - Get up-to-date API references and best practices
 - ALWAYS use Ref MCP for all documentation lookups - do not search the web
@@ -74,6 +80,7 @@ mcp__Ref__ref_read_url url="https://example.com/docs/page"
 ## Technology Stack
 
 ### Frontend
+
 - **Framework**: React 18+ with TypeScript 5.x
 - **Build Tool**: Vite
 - **UI Library**: ShadCN UI + Tailwind CSS (use Ref MCP for component docs)
@@ -82,13 +89,16 @@ mcp__Ref__ref_read_url url="https://example.com/docs/page"
 - **Testing**: Vitest, React Testing Library, Playwright
 
 ### Backend
+
 - **Runtime**: Node.js 20 LTS
 - **Framework**: Express
 - **Database**: SQLite with WAL mode
-- **GTFS Integration**: node-gtfs library (use Ref MCP for docs)
+- **GTFS Integration**: Custom implementation using standard GTFS ZIP format and Protocol Buffers
+- **GTFS Parsing**: adm-zip (ZIP extraction), csv-parse (GTFS files), gtfs-realtime-bindings (Protocol Buffers)
 - **Validation**: Zod (shared with frontend)
 
 ### Shared
+
 - **Language**: TypeScript 5.x
 - **Package Manager**: pnpm (monorepo workspaces)
 - **Schema Validation**: Zod
@@ -100,9 +110,11 @@ mcp__Ref__ref_read_url url="https://example.com/docs/page"
 **⚠️ DO NOT commit .env to version control**
 
 Key environment variables (see `.env.example` for full list):
-- `METRA_API_USERNAME` & `METRA_API_PASSWORD`: GTFS API authentication
-- `GTFS_STATIC_BASE_URL`: Base URL for static GTFS endpoints (https://gtfsapi.metrarail.com)
-- `GTFS_REALTIME_*_URL`: Realtime endpoints (alerts, tripUpdates, positions)
+
+- `METRA_API_TOKEN`: API token for GTFS realtime data authentication
+- `GTFS_STATIC_SCHEDULE_URL`: Static GTFS feed URL (https://schedules.metrarail.com/gtfs/schedule.zip)
+- `GTFS_STATIC_PUBLISHED_URL`: Published timestamp URL (https://schedules.metrarail.com/gtfs/published.txt)
+- `GTFS_REALTIME_*_URL`: Realtime endpoints (alerts, tripUpdates, positions) at https://gtfspublic.metrarr.com
 - `PORT`: Backend server port (3000)
 - `DATABASE_PATH`: SQLite database location (./data/gtfs.db)
 - `VITE_API_URL`: Frontend connects to backend via this URL
@@ -118,7 +130,9 @@ pnpm test                 # Run all tests
 
 # Backend-specific
 cd packages/backend
-pnpm gtfs:import          # Import GTFS static data from JSON endpoints (required first time)
+pnpm gtfs:import          # Import GTFS static data from schedule.zip (required first time)
+pnpm gtfs:snapshot        # Download and save API snapshots for testing
+pnpm gtfs:validate        # Validate API endpoints are accessible
 pnpm dev                  # Start backend only (port 3000)
 
 # Frontend-specific
