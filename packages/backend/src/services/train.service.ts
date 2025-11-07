@@ -4,6 +4,7 @@ import { StopTime } from '@metra/shared';
 import {
   getRealtimeTripUpdates,
   getRealtimeVehiclePositions,
+  RealtimeVehiclePosition,
 } from './gtfs-realtime.service.js';
 import {
   getCachedData,
@@ -11,6 +12,7 @@ import {
   generateTrainCacheKey,
 } from './cache.service.js';
 import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils.js';
+import { constructDateTime } from '../utils/datetime.utils.js';
 
 /**
  * Train Service
@@ -18,6 +20,38 @@ import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils.js';
  * Queries trains by origin/destination from SQLite database
  * Applies realtime delays (stub implementation - will be enhanced with US2)
  */
+
+/**
+ * Database row types for query results
+ */
+interface TripRow {
+  trip_id: string;
+  line_id: string;
+  line_name: string;
+  route_color: string;
+  route_text_color: string;
+  origin_station_id: string;
+  destination_station_id: string;
+  departure_time: string;
+  arrival_time: string;
+  service_id: string;
+  direction_id: number;
+}
+
+interface StopTimeRow {
+  trip_id: string;
+  station_id: string;
+  station_name: string;
+  arrival_time: string;
+  departure_time: string;
+  stop_sequence: number;
+}
+
+interface StationRow {
+  stop_id: string;
+  stop_lat: number;
+  stop_lon: number;
+}
 
 /**
  * Get upcoming trains between origin and destination stations
@@ -93,7 +127,9 @@ export const getUpcomingTrains = (
   // Get day of week for the search date (0 = Sunday, 1 = Monday, etc.)
   // Use noon time to avoid timezone parsing issues (YYYY-MM-DD is parsed as UTC midnight)
   const searchDay = new Date(searchDate + 'T12:00:00').getDay();
-  const dayColumn = [
+
+  // Map day of week to calendar column name (safe - from hardcoded array, not user input)
+  const dayColumns = [
     'sunday',
     'monday',
     'tuesday',
@@ -101,14 +137,12 @@ export const getUpcomingTrains = (
     'thursday',
     'friday',
     'saturday',
-  ][searchDay];
+  ];
+  const dayColumn = dayColumns[searchDay];
 
-  // Query to find trips that go from origin to destination
-  // This query properly handles calendar_dates exceptions per GTFS spec:
-  // - exception_type = 1: service added for this date (overrides calendar)
-  // - exception_type = 2: service removed for this date (overrides calendar)
-  // Note: Metra uses YYYY-MM-DD format for dates (not standard YYYYMMDD)
-  const query = `
+  // Build query with proper parameterization to prevent SQL injection
+  // Note: dayColumn is safe as it comes from hardcoded array based on Date.getDay()
+  let query = `
     SELECT
       t.trip_id,
       t.route_id as line_id,
@@ -126,7 +160,7 @@ export const getUpcomingTrains = (
     JOIN stop_times st1 ON t.trip_id = st1.trip_id AND st1.stop_id = ?
     JOIN stop_times st2 ON t.trip_id = st2.trip_id AND st2.stop_id = ?
     LEFT JOIN calendar c ON t.service_id = c.service_id
-    LEFT JOIN calendar_dates cd ON t.service_id = cd.service_id AND cd.date = '${searchDate}'
+    LEFT JOIN calendar_dates cd ON t.service_id = cd.service_id AND cd.date = ?
     WHERE st1.stop_sequence < st2.stop_sequence
       AND st1.departure_time >= ?
       AND (
@@ -137,54 +171,37 @@ export const getUpcomingTrains = (
         (
           cd.service_id IS NULL
           AND c.${dayColumn} = 1
-          AND c.start_date <= '${searchDate}'
-          AND c.end_date >= '${searchDate}'
+          AND c.start_date <= ?
+          AND c.end_date >= ?
         )
       )
     ORDER BY st1.departure_time
-    ${limit ? `LIMIT ${limit}` : ''}
   `;
 
-  const trips = db
-    .prepare(query)
-    .all(originId, destinationId, searchTime) as any[];
+  // Prepare parameters array
+  const params: (string | number)[] = [
+    originId,
+    destinationId,
+    searchDate,
+    searchTime,
+    searchDate,
+    searchDate,
+  ];
+
+  // Add LIMIT clause if specified (validated as number, safe to concatenate)
+  if (limit && typeof limit === 'number') {
+    query += ` LIMIT ?`;
+    params.push(limit);
+  }
+
+  const trips = db.prepare(query).all(...params) as TripRow[];
 
   // Get realtime data
   const tripUpdates = getRealtimeTripUpdates();
   const vehiclePositions = getRealtimeVehiclePositions();
 
-  // Helper to get Chicago timezone offset for a given date
-  const getChicagoOffset = (dateStr: string): string => {
-    // Create a specific moment in UTC (noon to avoid edge cases)
-    const utcDate = new Date(`${dateStr}T12:00:00Z`);
-
-    // Format in Chicago timezone to see what hour it is there
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      hour: '2-digit',
-      hour12: false,
-    });
-
-    const chicagoHourStr = formatter.format(utcDate);
-    const chicagoHour = parseInt(chicagoHourStr);
-
-    // Calculate offset: Chicago time - UTC time
-    const utcHour = 12;
-    let offsetHours = chicagoHour - utcHour;
-
-    // Handle day boundary crossing
-    if (offsetHours > 12) offsetHours -= 24;
-    if (offsetHours < -12) offsetHours += 24;
-
-    // Format as ±HH:MM
-    const sign = offsetHours >= 0 ? '+' : '-';
-    const absHours = Math.abs(offsetHours);
-
-    return `${sign}${String(absHours).padStart(2, '0')}:00`;
-  };
-
   // Transform trips to Train objects and deduplicate
-  const trainMap = new Map<string, any>();
+  const trainMap = new Map<string, Train>();
 
   for (const trip of trips) {
     // Get all stops for this trip
@@ -197,7 +214,8 @@ export const getUpcomingTrains = (
 
     // Find vehicle position for this trip
     const vehiclePosition = vehiclePositions.find(
-      (position: any) => position.vehicle?.trip?.trip_id === trip.trip_id
+      (position: RealtimeVehiclePosition) =>
+        position.trip?.tripId === trip.trip_id
     );
 
     // Add debugging to see what data we're working with
@@ -226,42 +244,17 @@ export const getUpcomingTrains = (
     }
 
     // Set position data if available
-    if (vehiclePosition?.vehicle?.position) {
+    if (vehiclePosition?.position) {
       currentPosition = {
-        latitude: vehiclePosition.vehicle.position.latitude,
-        longitude: vehiclePosition.vehicle.position.longitude,
-        bearing: vehiclePosition.vehicle.position.bearing,
-        speed: vehiclePosition.vehicle.position.speed,
+        latitude: vehiclePosition.position.latitude,
+        longitude: vehiclePosition.position.longitude,
+        bearing: vehiclePosition.position.bearing,
+        speed: vehiclePosition.position.speed,
       };
 
       // Determine current station based on position data
       currentStationId = findCurrentStation(vehiclePosition, stops);
     }
-
-    // Construct proper datetime strings by combining date with time in Chicago timezone
-    const constructDateTime = (timeStr: string): string => {
-      if (!timeStr) return '';
-
-      // Handle GTFS times that go past midnight (e.g., "25:30:00" for 1:30 AM next day)
-      const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-      let adjustedDate = searchDate;
-      let adjustedHours = hours;
-
-      if (hours >= 24) {
-        // Calculate how many days to add
-        const daysToAdd = Math.floor(hours / 24);
-        adjustedHours = hours % 24;
-
-        // Add days to the date
-        const date = new Date(searchDate);
-        date.setDate(date.getDate() + daysToAdd);
-        adjustedDate = date.toISOString().split('T')[0];
-      }
-
-      const normalizedTime = `${String(adjustedHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      const offset = getChicagoOffset(adjustedDate);
-      return `${adjustedDate}T${normalizedTime}${offset}`;
-    };
 
     const train = {
       trip_id: trip.trip_id,
@@ -271,8 +264,8 @@ export const getUpcomingTrains = (
       line_text_color: normalizeTextColor(trip.route_text_color),
       origin_station_id: originId,
       destination_station_id: destinationId,
-      departure_time: constructDateTime(trip.departure_time),
-      arrival_time: constructDateTime(trip.arrival_time),
+      departure_time: constructDateTime(trip.departure_time, searchDate),
+      arrival_time: constructDateTime(trip.arrival_time, searchDate),
       status: status,
       delay_minutes: delayMinutes,
       current_station_id: currentStationId,
@@ -318,7 +311,7 @@ export const getTrainDetail = (tripId: string): Train | null => {
     WHERE t.trip_id = ?
   `;
 
-  const trip = db.prepare(query).get(tripId) as any | undefined;
+  const trip = db.prepare(query).get(tripId) as TripRow | undefined;
 
   if (!trip) {
     return null;
@@ -432,74 +425,19 @@ const getStopsForTrip = (tripId: string, dateString?: string): StopTime[] => {
     ORDER BY st.stop_sequence
   `
     )
-    .all(tripId) as any[];
+    .all(tripId) as StopTimeRow[];
 
   // Get current date for constructing datetime strings
   const today = new Date();
   const dateStr = dateString || today.toISOString().split('T')[0]; // YYYY-MM-DD format
-
-  // Helper to get Chicago timezone offset for a given date
-  const getChicagoOffset = (dateStr: string): string => {
-    // Create a specific moment in UTC (noon to avoid edge cases)
-    const utcDate = new Date(`${dateStr}T12:00:00Z`);
-
-    // Format in Chicago timezone to see what hour it is there
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago',
-      hour: '2-digit',
-      hour12: false,
-    });
-
-    const chicagoHourStr = formatter.format(utcDate);
-    const chicagoHour = parseInt(chicagoHourStr);
-
-    // Calculate offset: Chicago time - UTC time
-    const utcHour = 12;
-    let offsetHours = chicagoHour - utcHour;
-
-    // Handle day boundary crossing
-    if (offsetHours > 12) offsetHours -= 24;
-    if (offsetHours < -12) offsetHours += 24;
-
-    // Format as ±HH:MM
-    const sign = offsetHours >= 0 ? '+' : '-';
-    const absHours = Math.abs(offsetHours);
-
-    return `${sign}${String(absHours).padStart(2, '0')}:00`;
-  };
-
-  // Construct proper datetime strings for stops in Chicago timezone
-  const constructDateTime = (timeStr: string): string => {
-    if (!timeStr) return '';
-
-    // Handle GTFS times that go past midnight (e.g., "25:30:00" for 1:30 AM next day)
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    let adjustedDate = dateStr;
-    let adjustedHours = hours;
-
-    if (hours >= 24) {
-      // Calculate how many days to add
-      const daysToAdd = Math.floor(hours / 24);
-      adjustedHours = hours % 24;
-
-      // Add days to the date
-      const date = new Date(dateStr);
-      date.setDate(date.getDate() + daysToAdd);
-      adjustedDate = date.toISOString().split('T')[0];
-    }
-
-    const normalizedTime = `${String(adjustedHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    const offset = getChicagoOffset(adjustedDate);
-    return `${adjustedDate}T${normalizedTime}${offset}`;
-  };
 
   // Transform stop times to StopTime objects with proper datetime strings
   return stopTimes.map((stopTime) => ({
     trip_id: stopTime.trip_id,
     station_id: stopTime.station_id,
     station_name: stopTime.station_name,
-    arrival_time: constructDateTime(stopTime.arrival_time),
-    departure_time: constructDateTime(stopTime.departure_time),
+    arrival_time: constructDateTime(stopTime.arrival_time, dateStr),
+    departure_time: constructDateTime(stopTime.departure_time, dateStr),
     stop_sequence: stopTime.stop_sequence,
     delay_minutes: 0, // Default delay - will be enhanced with realtime data
     headsign: '', // Will be populated from trip data
@@ -536,7 +474,9 @@ const findClosestStation = (
 
   const stationIds = stops.map((stop) => stop.station_id);
   console.log('Looking up stations:', stationIds);
-  const stationRows = db.prepare(stationQuery).all(...stationIds) as any[];
+  const stationRows = db
+    .prepare(stationQuery)
+    .all(...stationIds) as StationRow[];
   console.log('Found station rows:', stationRows);
 
   if (stationRows.length === 0) {
@@ -578,14 +518,18 @@ const findClosestStation = (
  * @returns The most likely current station_id, or undefined if unable to determine
  */
 const findCurrentStation = (
-  position: any,
+  position: RealtimeVehiclePosition,
   stops: StopTime[]
 ): string | undefined => {
-  const lat = position.vehicle.position.latitude;
-  const lon = position.vehicle.position.longitude;
-  const bearing = position.vehicle.position.bearing;
-  const currentStopSequence = position.vehicle.current_stop_sequence;
-  const stopId = position.vehicle.stop_id;
+  if (!position.position) {
+    return undefined;
+  }
+
+  const lat = position.position.latitude;
+  const lon = position.position.longitude;
+  const bearing = position.position.bearing;
+  const currentStopSequence = position.currentStopSequence;
+  const stopId = position.stopId;
 
   // If exact stop_id is provided, use it
   if (stopId) {
@@ -600,8 +544,12 @@ const findCurrentStation = (
     }
   }
 
-  // Fall back to enhanced geospatial estimation that considers bearing
-  return findCurrentStationEnhanced(lat, lon, bearing, stops);
+  // Fall back to enhanced geospatial estimation that considers bearing (if we have coordinates)
+  if (lat !== undefined && lon !== undefined) {
+    return findCurrentStationEnhanced(lat, lon, bearing ?? null, stops);
+  }
+
+  return undefined;
 };
 
 /**
@@ -633,7 +581,9 @@ const findCurrentStationEnhanced = (
 
   const stationIds = stops.map((stop) => stop.station_id);
   console.log('Looking up stations for enhanced estimation:', stationIds);
-  const stationRows = db.prepare(stationQuery).all(...stationIds) as any[];
+  const stationRows = db
+    .prepare(stationQuery)
+    .all(...stationIds) as StationRow[];
   console.log('Found station rows for enhanced estimation:', stationRows);
 
   if (stationRows.length === 0) {

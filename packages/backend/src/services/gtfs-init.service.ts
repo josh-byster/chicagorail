@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { getDatabase } from './database.service.js';
+import Database from 'better-sqlite3';
 import AdmZip from 'adm-zip';
 import { parse } from 'csv-parse/sync';
 import fs from 'fs';
@@ -13,14 +14,84 @@ import os from 'os';
  * We download the schedule.zip, extract it, parse CSV files, and store in SQLite
  */
 
+/**
+ * GTFS CSV record types based on GTFS specification
+ * Using Record<string, string | number> to represent parsed CSV data
+ * where keys are column names and values can be strings or numbers
+ */
+interface GTFSAgency {
+  agency_id: string;
+  agency_name: string;
+  agency_url?: string;
+  agency_timezone?: string;
+}
+
+interface GTFSRoute {
+  route_id: string;
+  route_short_name?: string;
+  route_long_name?: string;
+  route_type: number;
+  route_color?: string;
+  route_text_color?: string;
+}
+
+interface GTFSStop {
+  stop_id: string;
+  stop_name: string;
+  stop_lat: number;
+  stop_lon: number;
+  stop_desc?: string;
+  zone_id?: string;
+  parent_station?: string;
+}
+
+interface GTFSTrip {
+  trip_id: string;
+  route_id: string;
+  service_id: string;
+  trip_headsign?: string;
+  direction_id?: number;
+  block_id?: string;
+  shape_id?: string;
+}
+
+interface GTFSStopTime {
+  trip_id: string;
+  stop_id: string;
+  arrival_time: string;
+  departure_time: string;
+  stop_sequence: number;
+  pickup_type?: number;
+  drop_off_type?: number;
+}
+
+interface GTFSCalendar {
+  service_id: string;
+  monday: number;
+  tuesday: number;
+  wednesday: number;
+  thursday: number;
+  friday: number;
+  saturday: number;
+  sunday: number;
+  start_date: string;
+  end_date: string;
+}
+
+interface GTFSCalendarDate {
+  service_id: string;
+  date: string;
+  exception_type: number;
+}
+
 interface GTFSData {
-  agencies: any[];
-  routes: any[];
-  stops: any[];
-  trips: any[];
-  stopTimes: any[];
-  calendar: any[];
-  calendarDates: any[];
+  agencies: GTFSAgency[];
+  routes: GTFSRoute[];
+  stops: GTFSStop[];
+  trips: GTFSTrip[];
+  stopTimes: GTFSStopTime[];
+  calendar: GTFSCalendar[];
+  calendarDates: GTFSCalendarDate[];
 }
 
 /**
@@ -161,25 +232,31 @@ const parseGTFSFile = <T>(filePath: string): T[] => {
 const parseGTFSFiles = (tempDir: string): GTFSData => {
   console.log('  📄 Parsing GTFS files...');
 
-  const agencies = parseGTFSFile(path.join(tempDir, 'agency.txt'));
+  const agencies = parseGTFSFile<GTFSAgency>(path.join(tempDir, 'agency.txt'));
   console.log(`    ✓ Parsed ${agencies.length} agencies`);
 
-  const routes = parseGTFSFile(path.join(tempDir, 'routes.txt'));
+  const routes = parseGTFSFile<GTFSRoute>(path.join(tempDir, 'routes.txt'));
   console.log(`    ✓ Parsed ${routes.length} routes`);
 
-  const stops = parseGTFSFile(path.join(tempDir, 'stops.txt'));
+  const stops = parseGTFSFile<GTFSStop>(path.join(tempDir, 'stops.txt'));
   console.log(`    ✓ Parsed ${stops.length} stops`);
 
-  const trips = parseGTFSFile(path.join(tempDir, 'trips.txt'));
+  const trips = parseGTFSFile<GTFSTrip>(path.join(tempDir, 'trips.txt'));
   console.log(`    ✓ Parsed ${trips.length} trips`);
 
-  const stopTimes = parseGTFSFile(path.join(tempDir, 'stop_times.txt'));
+  const stopTimes = parseGTFSFile<GTFSStopTime>(
+    path.join(tempDir, 'stop_times.txt')
+  );
   console.log(`    ✓ Parsed ${stopTimes.length} stop times`);
 
-  const calendar = parseGTFSFile(path.join(tempDir, 'calendar.txt'));
+  const calendar = parseGTFSFile<GTFSCalendar>(
+    path.join(tempDir, 'calendar.txt')
+  );
   console.log(`    ✓ Parsed ${calendar.length} calendar entries`);
 
-  const calendarDates = parseGTFSFile(path.join(tempDir, 'calendar_dates.txt'));
+  const calendarDates = parseGTFSFile<GTFSCalendarDate>(
+    path.join(tempDir, 'calendar_dates.txt')
+  );
   console.log(`    ✓ Parsed ${calendarDates.length} calendar date exceptions`);
 
   return {
@@ -267,7 +344,7 @@ export const importGTFSStaticData = async (): Promise<void> => {
   }
 };
 
-const createTables = (db: any) => {
+const createTables = (db: Database.Database): void => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS metadata (
       key TEXT PRIMARY KEY,
@@ -477,7 +554,7 @@ const insertCalendarDates = (db: any, calendarDates: any[]) => {
   }
 };
 
-const createIndexes = (db: any) => {
+const createIndexes = (db: Database.Database): void => {
   console.log('  🔍 Creating performance indexes...');
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_stops_name ON stops(stop_name);
@@ -494,7 +571,7 @@ const createIndexes = (db: any) => {
  * TRANSFORMATION (Option B): Derive lines_served for each station
  * Analyzes which routes stop at each station by joining trips and stop_times
  */
-const deriveLinesServed = (db: any) => {
+const deriveLinesServed = (db: Database.Database): void => {
   // Add lines_served column if it doesn't exist
   try {
     db.exec(`ALTER TABLE stops ADD COLUMN lines_served TEXT`);
@@ -503,7 +580,9 @@ const deriveLinesServed = (db: any) => {
   }
 
   // Find all routes that serve each station
-  const stations = db.prepare('SELECT stop_id FROM stops').all();
+  const stations = db.prepare('SELECT stop_id FROM stops').all() as {
+    stop_id: string;
+  }[];
 
   const updateStmt = db.prepare(`
     UPDATE stops SET lines_served = ? WHERE stop_id = ?
@@ -521,11 +600,13 @@ const deriveLinesServed = (db: any) => {
       ORDER BY t.route_id
     `
       )
-      .all(station.stop_id)
-      .map((row: any) => row.route_id);
+      .all(station.stop_id) as { route_id: string }[];
 
     // Store as JSON array for easy querying
-    updateStmt.run(JSON.stringify(lines), station.stop_id);
+    updateStmt.run(
+      JSON.stringify(lines.map((row) => row.route_id)),
+      station.stop_id
+    );
   }
 
   console.log(`  ✅ Derived lines_served for ${stations.length} stations`);

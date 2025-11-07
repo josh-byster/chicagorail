@@ -41,7 +41,7 @@ const fetchRealtimeEndpoint = async (
   data: GtfsRealtimeBindings.transit_realtime.FeedMessage | null;
   lastModified: string | null;
 }> => {
-  const headers: any = {
+  const headers: Record<string, string> = {
     ...getAuthHeader(),
     Accept: 'application/x-protobuf', // Request protobuf format
   };
@@ -81,11 +81,32 @@ let lastAlertsModified: string | null = null;
 let lastTripUpdatesModified: string | null = null;
 let lastPositionsModified: string | null = null;
 
+/**
+ * Simplified interfaces for realtime data extraction
+ * These represent the processed data from GTFS-RT entities
+ */
+export interface RealtimeAlert {
+  id: string;
+  alert: GtfsRealtimeBindings.transit_realtime.IAlert;
+}
+
+export interface RealtimeTripUpdate {
+  tripId: string;
+  delay?: number | null;
+  stopTimeUpdates?:
+    | GtfsRealtimeBindings.transit_realtime.TripUpdate.IStopTimeUpdate[]
+    | null;
+}
+
+// Use the actual GTFS-RT VehiclePosition type from the protobuf library
+export type RealtimeVehiclePosition =
+  GtfsRealtimeBindings.transit_realtime.IVehiclePosition;
+
 // Store realtime data in memory
 // Extract the actual data from GTFS-RT entity structure
-let realtimeAlerts: any[] = [];
-let realtimeTripUpdates: any[] = [];
-let realtimeVehiclePositions: any[] = [];
+let realtimeAlerts: RealtimeAlert[] = [];
+let realtimeTripUpdates: RealtimeTripUpdate[] = [];
+let realtimeVehiclePositions: RealtimeVehiclePosition[] = [];
 
 /**
  * Poll GTFS realtime data
@@ -107,8 +128,8 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
       // Extract alerts from protobuf structure
       // FeedMessage.entity[] -> each entity has an alert field
       realtimeAlerts = alertsResponse.data.entity
-        .filter((e) => e.alert)
-        .map((e) => e.alert);
+        .filter((e) => e.alert != null)
+        .map((e) => ({ id: e.id || '', alert: e.alert! }));
       lastAlertsModified = alertsResponse.lastModified;
       console.log(`    ✓ Processed ${realtimeAlerts.length} alerts`);
     } else {
@@ -127,8 +148,12 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
       // Extract trip updates from protobuf structure
       // FeedMessage.entity[] -> each entity has a tripUpdate field
       realtimeTripUpdates = tripUpdatesResponse.data.entity
-        .filter((e) => e.tripUpdate)
-        .map((e) => e.tripUpdate);
+        .filter((e) => e.tripUpdate != null)
+        .map((e) => ({
+          tripId: e.tripUpdate?.trip?.tripId || '',
+          delay: e.tripUpdate?.delay,
+          stopTimeUpdates: e.tripUpdate?.stopTimeUpdate,
+        }));
       lastTripUpdatesModified = tripUpdatesResponse.lastModified;
       console.log(`    ✓ Processed ${realtimeTripUpdates.length} trip updates`);
     } else {
@@ -147,8 +172,8 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
       // Extract vehicle positions from protobuf structure
       // FeedMessage.entity[] -> each entity has a vehicle field
       realtimeVehiclePositions = positionsResponse.data.entity
-        .filter((e) => e.vehicle)
-        .map((e) => e.vehicle);
+        .filter((e) => e.vehicle != null)
+        .map((e) => e.vehicle!);
       lastPositionsModified = positionsResponse.lastModified;
       console.log(
         `    ✓ Processed ${realtimeVehiclePositions.length} vehicle positions`

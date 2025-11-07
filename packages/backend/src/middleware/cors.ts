@@ -1,11 +1,26 @@
 import type { CorsOptions } from 'cors';
+import { env } from '../config/env.js';
 
-const allowedOrigins = [
-  'https://chicagorail.app',
-  'https://www.chicagorail.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
+/**
+ * Get allowed origins from environment variable or use defaults for development
+ * Format: CORS_ORIGIN="https://example.com,https://www.example.com"
+ */
+const getAllowedOrigins = (): string[] => {
+  const corsOrigin = env.CORS_ORIGIN;
+
+  if (corsOrigin) {
+    // Parse comma-separated origins from environment
+    return corsOrigin
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+  }
+
+  // Default origins for development
+  return ['http://localhost:5173', 'http://localhost:3000'];
+};
+
+const allowedOrigins = getAllowedOrigins();
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {

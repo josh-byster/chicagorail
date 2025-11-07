@@ -27,7 +27,7 @@ export const getAllLines = (): Line[] => {
   const routes = db
     .prepare(
       `
-    SELECT 
+    SELECT
       route_id,
       route_short_name,
       route_long_name,
@@ -40,25 +40,26 @@ export const getAllLines = (): Line[] => {
     )
     .all() as RouteRow[];
 
-  // Get stations for each line
+  // Get all route-station mappings in a single query (fixes N+1 problem)
+  const routeStationMappings = db
+    .prepare(
+      `
+    SELECT DISTINCT t.route_id, st.stop_id
+    FROM stop_times st
+    JOIN trips t ON st.trip_id = t.trip_id
+    ORDER BY t.route_id, st.stop_id
+  `
+    )
+    .all() as { route_id: string; stop_id: string }[];
+
+  // Group stations by route
   const lineStations: Record<string, string[]> = {};
-
-  // For each route, get unique stations
-  routes.forEach((route) => {
-    const stations = db
-      .prepare(
-        `
-      SELECT DISTINCT st.stop_id
-      FROM stop_times st
-      JOIN trips t ON st.trip_id = t.trip_id
-      WHERE t.route_id = ?
-      ORDER BY st.stop_id
-    `
-      )
-      .all(route.route_id) as { stop_id: string }[];
-
-    lineStations[route.route_id] = stations.map((s) => s.stop_id);
-  });
+  for (const mapping of routeStationMappings) {
+    if (!lineStations[mapping.route_id]) {
+      lineStations[mapping.route_id] = [];
+    }
+    lineStations[mapping.route_id].push(mapping.stop_id);
+  }
 
   // Transform routes to Line objects
   return routes.map((route) => ({
