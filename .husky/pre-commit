@@ -4,3 +4,27 @@ pnpm exec lint-staged
 # Run type checking
 echo "🔍 Running type check..."
 pnpm type-check
+
+# Check file sizes (SOLID principle: files should be focused and small)
+# Currently enforced for backend services only (frontend refactoring separate effort)
+echo "📏 Checking file sizes (backend services)..."
+max_lines=250
+large_files=$(find packages/backend/src/services -name "*.ts" | \
+  grep -v "gtfs-init.service.ts" | \
+  while read file; do
+    lines=$(wc -l < "$file" | tr -d ' ')
+    if [ "$lines" -gt "$max_lines" ]; then
+      echo "$file ($lines lines)"
+    fi
+  done)
+
+if [ -n "$large_files" ]; then
+  echo "❌ ERROR: The following files exceed $max_lines lines (violates Single Responsibility Principle):"
+  echo "$large_files"
+  echo ""
+  echo "Please refactor these files into smaller, focused modules."
+  echo "Each file should have a single, well-defined responsibility."
+  exit 1
+fi
+
+echo "✅ All files are appropriately sized"
