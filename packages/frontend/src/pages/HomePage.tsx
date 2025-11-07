@@ -19,8 +19,8 @@ import {
   getSavedRoutes,
   updateLastUsed,
   deleteRoute,
-} from '@/services/saved-routes';
-import { SavedRoute } from '@metra/shared';
+  type SavedRoute,
+} from '@/services/storage';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
