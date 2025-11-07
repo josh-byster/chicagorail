@@ -195,7 +195,7 @@ export default function HomePage() {
                   />
                   {originSearchOpen && originQuery.length > 0 && (
                     <CommandList className="max-h-[35vh]">
-                      <CommandEmpty className="text-gray-500 dark:text-gray-400">
+                      <CommandEmpty className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                         No stations found.
                       </CommandEmpty>
                       <CommandGroup>
@@ -264,7 +264,7 @@ export default function HomePage() {
                     />
                     {destinationSearchOpen && destinationQuery.length > 0 && (
                       <CommandList className="max-h-[28vh]">
-                        <CommandEmpty className="text-gray-500 dark:text-gray-400">
+                        <CommandEmpty className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                           No stations found.
                         </CommandEmpty>
                         <CommandGroup>
