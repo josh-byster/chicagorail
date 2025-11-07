@@ -18,7 +18,12 @@ import {
   generateTrainCacheKey,
 } from './cache.service.js';
 import { normalizeHexColor, normalizeTextColor } from '../utils/color.utils.js';
-import { constructDateTime } from '../utils/datetime.utils.js';
+import {
+  constructDateTime,
+  getCurrentChicagoTime,
+  getCurrentChicagoDate,
+  getDayColumn,
+} from '../utils/datetime.utils.js';
 import {
   findTrips,
   findTripById,
@@ -182,62 +187,4 @@ export const getStopsForTrip = (
     pickup_type: 0,
     drop_off_type: 0,
   }));
-};
-
-/**
- * Get current time in Chicago timezone (HH:MM:SS format)
- */
-const getCurrentChicagoTime = (): string => {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Chicago',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
-
-  const parts = formatter.formatToParts(now);
-  const hour = parts.find((p) => p.type === 'hour')?.value || '00';
-  const minute = parts.find((p) => p.type === 'minute')?.value || '00';
-  const second = parts.find((p) => p.type === 'second')?.value || '00';
-
-  return `${hour}:${minute}:${second}`;
-};
-
-/**
- * Get current date in Chicago timezone (YYYY-MM-DD format)
- */
-const getCurrentChicagoDate = (): string => {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Chicago',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  const parts = formatter.formatToParts(now);
-  const year = parts.find((p) => p.type === 'year')?.value || '';
-  const month = parts.find((p) => p.type === 'month')?.value || '';
-  const day = parts.find((p) => p.type === 'day')?.value || '';
-
-  return `${year}-${month}-${day}`;
-};
-
-/**
- * Get day column name for calendar query
- */
-const getDayColumn = (dateStr: string): string => {
-  const searchDay = new Date(dateStr + 'T12:00:00').getDay();
-  const dayColumns = [
-    'sunday',
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-  ];
-  return dayColumns[searchDay];
 };

@@ -193,7 +193,7 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
  * Get realtime alerts data
  * @returns Array of realtime alerts
  */
-export const getRealtimeAlerts = (): any[] => {
+export const getRealtimeAlerts = (): RealtimeAlert[] => {
   return realtimeAlerts;
 };
 
@@ -201,7 +201,7 @@ export const getRealtimeAlerts = (): any[] => {
  * Get realtime trip updates data
  * @returns Array of realtime trip updates
  */
-export const getRealtimeTripUpdates = (): any[] => {
+export const getRealtimeTripUpdates = (): RealtimeTripUpdate[] => {
   return realtimeTripUpdates;
 };
 
@@ -209,7 +209,7 @@ export const getRealtimeTripUpdates = (): any[] => {
  * Get realtime vehicle positions data
  * @returns Array of realtime vehicle positions
  */
-export const getRealtimeVehiclePositions = (): any[] => {
+export const getRealtimeVehiclePositions = (): RealtimeVehiclePosition[] => {
   return realtimeVehiclePositions;
 };
 

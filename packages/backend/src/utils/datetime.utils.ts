@@ -82,3 +82,77 @@ export const constructDateTime = (timeStr: string, dateStr: string): string => {
   const offset = getChicagoOffset(adjustedDate);
   return `${adjustedDate}T${normalizedTime}${offset}`;
 };
+
+/**
+ * Get current time in Chicago timezone (HH:MM:SS format)
+ *
+ * @returns Time string in HH:MM:SS format (24-hour)
+ *
+ * @example
+ * getCurrentChicagoTime() // "14:30:00"
+ */
+export const getCurrentChicagoTime = (): string => {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(now);
+  const hour = parts.find((p) => p.type === 'hour')?.value || '00';
+  const minute = parts.find((p) => p.type === 'minute')?.value || '00';
+  const second = parts.find((p) => p.type === 'second')?.value || '00';
+
+  return `${hour}:${minute}:${second}`;
+};
+
+/**
+ * Get current date in Chicago timezone (YYYY-MM-DD format)
+ *
+ * @returns Date string in ISO format (YYYY-MM-DD)
+ *
+ * @example
+ * getCurrentChicagoDate() // "2025-01-15"
+ */
+export const getCurrentChicagoDate = (): string => {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const parts = formatter.formatToParts(now);
+  const year = parts.find((p) => p.type === 'year')?.value || '';
+  const month = parts.find((p) => p.type === 'month')?.value || '';
+  const day = parts.find((p) => p.type === 'day')?.value || '';
+
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Get day column name for calendar query
+ *
+ * @param dateStr - Date string in ISO format (YYYY-MM-DD)
+ * @returns Day name in lowercase (e.g., 'monday', 'tuesday')
+ *
+ * @example
+ * getDayColumn('2025-01-15') // "wednesday" (if Jan 15 is a Wednesday)
+ */
+export const getDayColumn = (dateStr: string): string => {
+  const searchDay = new Date(dateStr + 'T12:00:00').getDay();
+  const dayColumns = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+  ];
+  return dayColumns[searchDay];
+};

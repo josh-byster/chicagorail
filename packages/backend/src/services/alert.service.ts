@@ -1,5 +1,6 @@
-import { ServiceAlert, AlertType, AlertSeverity } from '@metra/shared';
+import type { ServiceAlert } from '@metra/shared';
 import { getRealtimeAlerts } from './gtfs-realtime.service.js';
+import { transformRealtimeAlerts } from '../mappers/alert.mapper.js';
 
 /**
  * Alert Service
@@ -10,8 +11,8 @@ import { getRealtimeAlerts } from './gtfs-realtime.service.js';
 
 /**
  * Get all active service alerts
- * @param lineId - Optional line ID to filter alerts (optional)
- * @param stationId - Optional station ID to filter alerts (optional)
+ * @param lineId - Optional line ID to filter alerts
+ * @param stationId - Optional station ID to filter alerts
  * @returns Array of active service alerts
  */
 export const getActiveAlerts = (
@@ -20,38 +21,20 @@ export const getActiveAlerts = (
 ): ServiceAlert[] => {
   const realtimeAlerts = getRealtimeAlerts();
 
-  // Filter and transform alerts
-  let filteredAlerts = realtimeAlerts;
+  // Transform to ServiceAlert objects first
+  let alerts = transformRealtimeAlerts(realtimeAlerts);
 
+  // Filter by line if specified
   if (lineId) {
-    filteredAlerts = filteredAlerts.filter(
-      (alert) =>
-        alert.affectedLines?.includes(lineId) || alert.routeId === lineId
-    );
+    alerts = alerts.filter((alert) => alert.affected_lines?.includes(lineId));
   }
 
+  // Filter by station if specified
   if (stationId) {
-    filteredAlerts = filteredAlerts.filter(
-      (alert) =>
-        alert.affectedStations?.includes(stationId) ||
-        alert.stopId === stationId
+    alerts = alerts.filter((alert) =>
+      alert.affected_stations?.includes(stationId)
     );
   }
 
-  // Transform to ServiceAlert objects
-  return filteredAlerts.map((alert) => {
-    return {
-      alert_id: alert.id || alert.alertId || '',
-      affected_lines: alert.affectedLines || alert.routeIds || [],
-      affected_stations: alert.affectedStations || alert.stopIds || [],
-      affected_trips: alert.affectedTrips || alert.tripIds || [],
-      alert_type: alert.alertType || AlertType.INFORMATION,
-      severity: alert.severity || AlertSeverity.INFO,
-      header: alert.header || alert.title || '',
-      description: alert.description || alert.body || '',
-      start_time: alert.startTime || new Date().toISOString(),
-      end_time: alert.endTime || undefined,
-      url: alert.url || undefined,
-    } as ServiceAlert;
-  });
+  return alerts;
 };
