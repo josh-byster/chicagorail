@@ -24,7 +24,6 @@ import {
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
-import { QuickActions } from '@/components/QuickActions';
 import { NearbyStations } from '@/components/NearbyStations';
 import { AlertBanner } from '@/components/AlertBanner';
 
@@ -143,24 +142,17 @@ export default function HomePage() {
         <div className="w-full max-w-2xl flex flex-col">
           {/* Header - Fixed position */}
           <div className="text-center pt-8 pb-10 flex-shrink-0">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
               Metra Tracker
             </h1>
             <div className="mx-auto w-16 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mt-5"></div>
-            <p className="mt-5 text-gray-700 text-lg">
+            <p className="mt-5 text-gray-700 dark:text-gray-300 text-lg">
               Find your train schedule
             </p>
           </div>
 
           {/* Content area */}
           <div className="flex flex-col pb-8">
-            {/* Quick Actions - only show when no origin selected */}
-            {!origin && (
-              <div className="max-w-2xl mx-auto w-full mb-8 flex-shrink-0">
-                <QuickActions />
-              </div>
-            )}
-
             {/* Saved Routes - only show when no origin selected */}
             {savedRoutes.length > 0 && !origin && (
               <div className="max-w-lg mx-auto w-full mb-8 flex-shrink-0">
@@ -186,7 +178,7 @@ export default function HomePage() {
             {!origin ? (
               // Big search bar for origin selection
               <div className="relative max-w-2xl mx-auto w-full flex-shrink-0">
-                <Command className="rounded-xl overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-200">
+                <Command className="rounded-xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-200">
                   <CommandInput
                     placeholder="Search for a station"
                     value={originQuery}
@@ -198,12 +190,14 @@ export default function HomePage() {
                         setOriginSearchOpen(false);
                       }
                     }}
-                    className="h-16 text-lg px-6 placeholder:text-gray-400"
+                    className="h-16 text-lg px-6 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
                     autoFocus
                   />
                   {originSearchOpen && originQuery.length > 0 && (
                     <CommandList className="max-h-[35vh]">
-                      <CommandEmpty>No stations found.</CommandEmpty>
+                      <CommandEmpty className="text-gray-500 dark:text-gray-400">
+                        No stations found.
+                      </CommandEmpty>
                       <CommandGroup>
                         {originStationsToShow?.map((station) => (
                           <CommandItem
@@ -211,7 +205,7 @@ export default function HomePage() {
                             value={station.station_id}
                             keywords={[station.station_name]}
                             onSelect={(value) => handleOriginSelect(value)}
-                            className="cursor-pointer py-3 px-4 text-base aria-selected:bg-blue-50 hover:bg-gray-50 transition-colors"
+                            className="cursor-pointer py-3 px-4 text-base text-gray-900 dark:text-gray-100 aria-selected:bg-blue-50 dark:aria-selected:bg-blue-900 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <Check
                               className={cn(
@@ -232,26 +226,28 @@ export default function HomePage() {
             ) : (
               // Selected origin with destination search
               <div className="space-y-8 max-w-2xl mx-auto w-full flex-shrink-0">
-                <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-md">
-                  <span className="text-sm text-gray-500">From:</span>
-                  <span className="font-semibold text-gray-900 text-lg flex-1">
+                <div className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    From:
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100 text-lg flex-1">
                     {fromStationData?.station_name}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleChangeRoute}
-                    className="text-sm hover:bg-gray-100 transition-colors"
+                    className="text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     Change
                   </Button>
                 </div>
 
                 <div className="relative">
-                  <div className="mb-4 text-sm font-medium text-gray-700">
+                  <div className="mb-4 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Where to?
                   </div>
-                  <Command className="rounded-xl overflow-hidden bg-white border border-gray-200 shadow-lg hover:shadow-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-200">
+                  <Command className="rounded-xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all duration-200">
                     <CommandInput
                       placeholder="Search destinations..."
                       value={destinationQuery}
@@ -263,12 +259,14 @@ export default function HomePage() {
                           setDestinationSearchOpen(false);
                         }
                       }}
-                      className="h-16 text-lg px-6 placeholder:text-gray-400"
+                      className="h-16 text-lg px-6 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
                       autoFocus
                     />
                     {destinationSearchOpen && destinationQuery.length > 0 && (
                       <CommandList className="max-h-[28vh]">
-                        <CommandEmpty>No stations found.</CommandEmpty>
+                        <CommandEmpty className="text-gray-500 dark:text-gray-400">
+                          No stations found.
+                        </CommandEmpty>
                         <CommandGroup>
                           {destinationStationsToShow?.map((station) => (
                             <CommandItem
@@ -278,7 +276,7 @@ export default function HomePage() {
                               onSelect={(value) =>
                                 handleDestinationSelect(value)
                               }
-                              className="cursor-pointer py-3 px-4 text-base aria-selected:bg-blue-50 hover:bg-gray-50 transition-colors"
+                              className="cursor-pointer py-3 px-4 text-base text-gray-900 dark:text-gray-100 aria-selected:bg-blue-50 dark:aria-selected:bg-blue-900 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                             >
                               <Check
                                 className={cn(
