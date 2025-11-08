@@ -19,12 +19,31 @@ interface CacheEntry<T> {
 // In-memory cache store
 const cacheStore: Map<string, CacheEntry<unknown>> = new Map();
 
-// Configuration
-const DEFAULT_TTL = 30000; // 30 seconds
-const MAX_CACHE_SIZE = 1000; // Maximum number of entries
-const CLEANUP_INTERVAL = 60000; // Cleanup every 60 seconds
+// Configuration (exported for testing)
+export const DEFAULT_TTL = 30000; // 30 seconds
+export const MAX_CACHE_SIZE = 1000; // Maximum number of entries
+export const CLEANUP_INTERVAL = 60000; // Cleanup every 60 seconds
 
 let cleanupTimer: NodeJS.Timeout | null = null;
+
+// Time provider (can be mocked for testing)
+let timeProvider = (): number => Date.now();
+
+/**
+ * Set custom time provider (for testing)
+ * @internal
+ */
+export const setTimeProvider = (provider: () => number): void => {
+  timeProvider = provider;
+};
+
+/**
+ * Reset time provider to default (for testing)
+ * @internal
+ */
+export const resetTimeProvider = (): void => {
+  timeProvider = () => Date.now();
+};
 
 /**
  * Generate cache key for train queries
@@ -58,7 +77,7 @@ export const getCachedData = <T>(key: string): T | null => {
   }
 
   // Check if cache entry is expired
-  const now = Date.now();
+  const now = timeProvider();
   if (now - entry.timestamp > entry.ttl) {
     // Remove expired entry
     cacheStore.delete(key);
@@ -83,7 +102,7 @@ export const setCachedData = <T>(
   data: T,
   ttl: number = DEFAULT_TTL
 ): void => {
-  const now = Date.now();
+  const now = timeProvider();
 
   // Check if we need to evict entries (LRU)
   if (cacheStore.size >= MAX_CACHE_SIZE && !cacheStore.has(key)) {
@@ -124,9 +143,10 @@ const evictLRU = (): void => {
 
 /**
  * Clean up expired cache entries
+ * Exported for testing
  */
-const cleanupExpired = (): void => {
-  const now = Date.now();
+export const cleanupExpired = (): void => {
+  const now = timeProvider();
   const keysToDelete: string[] = [];
 
   for (const [key, entry] of cacheStore.entries()) {
@@ -179,7 +199,7 @@ export const getCacheStats = (): {
   validEntries: number;
   expiredEntries: number;
 } => {
-  const now = Date.now();
+  const now = timeProvider();
   let validCount = 0;
   let expiredCount = 0;
 
