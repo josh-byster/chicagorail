@@ -71,12 +71,7 @@ jobs:
         run: pnpm --filter shared build
 
       - name: Run backend tests
-        run: pnpm --filter backend test
-        env:
-          CI: true
-
-      - name: Run backend tests with coverage
-        run: pnpm --filter backend test:coverage
+        run: pnpm --filter backend test run
         env:
           CI: true
 
@@ -106,12 +101,7 @@ jobs:
         run: pnpm --filter shared build
 
       - name: Run frontend unit tests
-        run: pnpm --filter frontend test
-        env:
-          CI: true
-
-      - name: Run frontend tests with coverage
-        run: pnpm --filter frontend test:coverage
+        run: pnpm --filter frontend test run
         env:
           CI: true
 
