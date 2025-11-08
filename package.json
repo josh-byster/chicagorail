@@ -22,7 +22,7 @@
     "deploy:backend": "git push dokku main:master",
     "deploy:frontend": "vercel --prod",
     "prepare": "husky",
-    "heroku-prebuild": "npm install -g pnpm@10.18.2"
+    "heroku-prebuild": "npm install -g pnpm@10.18.2 --force"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
