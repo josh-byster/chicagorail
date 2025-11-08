@@ -24,6 +24,14 @@ export const getActiveAlerts = (
   // Transform to ServiceAlert objects first
   let alerts = transformRealtimeAlerts(realtimeAlerts);
 
+  // Filter out alerts with no meaningful content (empty header AND description)
+  alerts = alerts.filter((alert) => {
+    const hasHeader = alert.header && alert.header.trim().length > 0;
+    const hasDescription =
+      alert.description && alert.description.trim().length > 0;
+    return hasHeader || hasDescription;
+  });
+
   // Filter by line if specified
   if (lineId) {
     alerts = alerts.filter((alert) => alert.affected_lines?.includes(lineId));
