@@ -24,15 +24,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
-
       - name: Deploy to Dokku
-        env:
-          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
-          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
-        run: |
-          git remote add dokku dokku@$DOKKU_HOST:$DOKKU_APP_NAME || true
-          GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git push dokku main:master -f
+        uses: dokku/github-action@master
+        with:
+          git_remote_url: ssh://dokku@${{ secrets.DOKKU_HOST }}:22/${{ secrets.DOKKU_APP_NAME }}
+          ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+          branch: main
