@@ -21,7 +21,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "deploy:backend": "git push dokku main:master",
     "deploy:frontend": "vercel --prod",
-    "prepare": "husky"
+    "prepare": "husky",
+    "heroku-prebuild": "npm install -g pnpm@10.18.2"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",
