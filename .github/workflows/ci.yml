@@ -105,23 +105,75 @@ jobs:
         env:
           CI: true
 
-      # E2E tests disabled - no Playwright tests exist yet
-      # Uncomment when E2E tests are added:
-      # - name: Install Playwright browsers
-      #   run: pnpm --filter frontend exec playwright install --with-deps chromium
-      #
-      # - name: Run E2E tests
-      #   run: pnpm --filter frontend test:e2e
-      #   env:
-      #     CI: true
-      #
-      # - name: Upload E2E test results
-      #   uses: actions/upload-artifact@v4
-      #   if: failure()
-      #   with:
-      #     name: playwright-report
-      #     path: packages/frontend/playwright-report/
-      #     retention-days: 7
+  test-e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.18.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Cache GTFS test database
+        id: cache-gtfs-db
+        uses: actions/cache@v4
+        with:
+          path: packages/backend/data/gtfs.test.db
+          key: gtfs-test-db-${{ hashFiles('.env.test') }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter shared build
+
+      - name: Build frontend
+        run: pnpm --filter frontend build
+        env:
+          VITE_API_URL: http://localhost:3001/api
+
+      - name: Import GTFS data (if not cached)
+        if: steps.cache-gtfs-db.outputs.cache-hit != 'true'
+        run: pnpm --filter backend gtfs:import
+        env:
+          DATABASE_PATH: ./data/gtfs.test.db
+          NODE_ENV: test
+          GTFS_STATIC_SCHEDULE_URL: https://schedules.metrarail.com/gtfs/schedule.zip
+
+      - name: Install Playwright browsers
+        run: pnpm --filter frontend exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm --filter frontend test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: packages/frontend/playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results
+          path: packages/frontend/test-results/
+          retention-days: 30
 
   build-check:
     name: Build Check
