@@ -14,8 +14,14 @@ import os from 'os';
 
 /**
  * Fetch the published timestamp from Metra
+ * Returns null if published URL is not configured
  */
-export const fetchPublishedTimestamp = async (): Promise<string> => {
+export const fetchPublishedTimestamp = async (): Promise<string | null> => {
+  if (!env.GTFS_STATIC_PUBLISHED_URL) {
+    console.log('  ⏩ Published timestamp URL not configured, skipping check');
+    return null;
+  }
+
   try {
     const response = await fetch(env.GTFS_STATIC_PUBLISHED_URL);
     if (!response.ok) {

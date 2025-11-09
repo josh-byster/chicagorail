@@ -37,14 +37,29 @@ interface GTFSConfig {
   positionsUrl: string;
 }
 
-const getConfig = (): GTFSConfig => ({
-  apiToken: env.METRA_API_TOKEN,
-  scheduleUrl: env.GTFS_STATIC_SCHEDULE_URL,
-  publishedUrl: env.GTFS_STATIC_PUBLISHED_URL,
-  alertsUrl: env.GTFS_REALTIME_ALERTS_URL,
-  tripUpdatesUrl: env.GTFS_REALTIME_TRIP_UPDATES_URL,
-  positionsUrl: env.GTFS_REALTIME_POSITIONS_URL,
-});
+const getConfig = (): GTFSConfig => {
+  // This script requires API credentials to create snapshots
+  if (
+    !env.METRA_API_TOKEN ||
+    !env.GTFS_STATIC_PUBLISHED_URL ||
+    !env.GTFS_REALTIME_ALERTS_URL ||
+    !env.GTFS_REALTIME_TRIP_UPDATES_URL ||
+    !env.GTFS_REALTIME_POSITIONS_URL
+  ) {
+    throw new Error(
+      'This script requires API credentials. Please set METRA_API_TOKEN and all GTFS URLs in .env'
+    );
+  }
+
+  return {
+    apiToken: env.METRA_API_TOKEN,
+    scheduleUrl: env.GTFS_STATIC_SCHEDULE_URL,
+    publishedUrl: env.GTFS_STATIC_PUBLISHED_URL,
+    alertsUrl: env.GTFS_REALTIME_ALERTS_URL,
+    tripUpdatesUrl: env.GTFS_REALTIME_TRIP_UPDATES_URL,
+    positionsUrl: env.GTFS_REALTIME_POSITIONS_URL,
+  };
+};
 
 const getAuthHeader = (): { Authorization: string } => {
   return { Authorization: `Bearer ${getConfig().apiToken}` };

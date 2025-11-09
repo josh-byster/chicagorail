@@ -6,12 +6,16 @@ const envSchema = z.object({
     .default('development'),
   PORT: z.string().transform(Number).default('3000'),
   DATABASE_PATH: z.string().default('./data/gtfs.db'),
-  METRA_API_TOKEN: z.string(),
-  GTFS_STATIC_SCHEDULE_URL: z.string().url(),
-  GTFS_STATIC_PUBLISHED_URL: z.string().url(),
-  GTFS_REALTIME_ALERTS_URL: z.string().url(),
-  GTFS_REALTIME_TRIP_UPDATES_URL: z.string().url(),
-  GTFS_REALTIME_POSITIONS_URL: z.string().url(),
+  // Realtime features are optional - only needed if you have an API key
+  METRA_API_TOKEN: z.string().optional(),
+  GTFS_STATIC_SCHEDULE_URL: z
+    .string()
+    .url()
+    .default('https://schedules.metrarail.com/gtfs/schedule.zip'),
+  GTFS_STATIC_PUBLISHED_URL: z.string().url().optional(),
+  GTFS_REALTIME_ALERTS_URL: z.string().url().optional(),
+  GTFS_REALTIME_TRIP_UPDATES_URL: z.string().url().optional(),
+  GTFS_REALTIME_POSITIONS_URL: z.string().url().optional(),
   CORS_ORIGIN: z.string().optional(),
 });
 
