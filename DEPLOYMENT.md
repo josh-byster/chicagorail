@@ -145,18 +145,21 @@ Check workflow runs at: https://github.com/josh-byster/chicagorail/actions
 ### Backend Issues
 
 **Database not persisting:**
+
 ```bash
 # Verify storage is mounted
 ssh dokku@your-droplet-ip storage:list metra-backend
 ```
 
 **Build failures:**
+
 ```bash
 # Check build logs
 ssh dokku@your-droplet-ip logs metra-backend --tail
 ```
 
 **Environment variables not set:**
+
 ```bash
 # List current config
 ssh dokku@your-droplet-ip config metra-backend
@@ -165,10 +168,12 @@ ssh dokku@your-droplet-ip config metra-backend
 ### Frontend Issues
 
 **API connection errors:**
+
 - Verify `VITE_API_URL` is set correctly in Vercel
 - Check CORS settings in backend (`packages/backend/src/middleware/cors.ts`)
 
 **Build failures:**
+
 - Check GitHub Actions logs
 - Ensure shared package builds successfully
 

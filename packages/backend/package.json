@@ -38,9 +38,10 @@
     "@types/node": "^20.11.16",
     "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
+    "@vitest/coverage-v8": "^2.1.9",
     "supertest": "^6.3.4",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.2"
+    "vitest": "^2.1.9"
   }
 }

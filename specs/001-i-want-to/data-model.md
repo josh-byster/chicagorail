@@ -19,29 +19,30 @@ Represents a Metra train station.
 ```typescript
 interface Station {
   // Identifiers
-  station_id: string;              // GTFS stop_id (e.g., "OTC" for Ogilvie Transportation Center)
+  station_id: string; // GTFS stop_id (e.g., "OTC" for Ogilvie Transportation Center)
 
   // Basic Info
-  station_name: string;            // Human-readable name (e.g., "Ogilvie Transportation Center")
-  station_code?: string;           // Optional short code displayed to users
+  station_name: string; // Human-readable name (e.g., "Ogilvie Transportation Center")
+  station_code?: string; // Optional short code displayed to users
 
   // Location
-  latitude: number;                // Geographic coordinates (-90 to 90)
-  longitude: number;               // Geographic coordinates (-180 to 180)
+  latitude: number; // Geographic coordinates (-90 to 90)
+  longitude: number; // Geographic coordinates (-180 to 180)
 
   // Service Info
-  lines_served: string[];          // Array of line IDs serving this station
-  zone?: string;                   // Fare zone (if applicable)
+  lines_served: string[]; // Array of line IDs serving this station
+  zone?: string; // Fare zone (if applicable)
 
   // Accessibility
-  wheelchair_accessible: boolean;  // ADA accessibility
+  wheelchair_accessible: boolean; // ADA accessibility
 
   // Metadata
-  platform_count?: number;         // Number of platforms/tracks
+  platform_count?: number; // Number of platforms/tracks
 }
 ```
 
 **Validation Rules** (Zod):
+
 - `station_id`: Required, non-empty string
 - `station_name`: Required, non-empty string
 - `latitude`: Required, number between -90 and 90
@@ -50,6 +51,7 @@ interface Station {
 - `wheelchair_accessible`: Required boolean
 
 **Relationships**:
+
 - Referenced by `StopTime.station_id`
 - Referenced by `SavedRoute.origin_station_id` and `destination_station_id`
 
@@ -62,26 +64,27 @@ Represents a Metra rail line (e.g., Union Pacific North, BNSF Railway).
 ```typescript
 interface Line {
   // Identifiers
-  line_id: string;                 // GTFS route_id (e.g., "UP-N")
+  line_id: string; // GTFS route_id (e.g., "UP-N")
 
   // Basic Info
-  line_name: string;               // Full name (e.g., "Union Pacific North")
-  line_short_name: string;         // Abbreviation (e.g., "UP-N")
+  line_name: string; // Full name (e.g., "Union Pacific North")
+  line_short_name: string; // Abbreviation (e.g., "UP-N")
 
   // Visual
-  line_color: string;              // Hex color code (e.g., "#C60C30")
-  line_text_color: string;         // Text color for contrast (e.g., "#FFFFFF")
+  line_color: string; // Hex color code (e.g., "#C60C30")
+  line_text_color: string; // Text color for contrast (e.g., "#FFFFFF")
 
   // Service Info
-  stations: string[];              // Ordered array of station_ids on this line
+  stations: string[]; // Ordered array of station_ids on this line
 
   // Metadata
-  line_url?: string;               // Link to Metra line schedule page
-  description?: string;            // Line description/service area
+  line_url?: string; // Link to Metra line schedule page
+  description?: string; // Line description/service area
 }
 ```
 
 **Validation Rules** (Zod):
+
 - `line_id`: Required, non-empty string
 - `line_name`: Required, non-empty string
 - `line_short_name`: Required, non-empty string
@@ -90,6 +93,7 @@ interface Line {
 - `stations`: Required, array with at least 2 stations
 
 **Relationships**:
+
 - Referenced by `Train.line_id`
 - Contains multiple `Station` entities
 
@@ -102,56 +106,57 @@ Represents a scheduled train service with real-time position and status.
 ```typescript
 interface Train {
   // Identifiers
-  trip_id: string;                 // GTFS trip_id (unique for each train run)
-  train_number?: string;           // Human-readable train number (e.g., "312")
+  trip_id: string; // GTFS trip_id (unique for each train run)
+  train_number?: string; // Human-readable train number (e.g., "312")
 
   // Line Info
-  line_id: string;                 // Foreign key to Line
-  line_name: string;               // Denormalized for quick display
+  line_id: string; // Foreign key to Line
+  line_name: string; // Denormalized for quick display
 
   // Schedule
-  origin_station_id: string;       // Starting station
-  destination_station_id: string;  // Ending station
-  departure_time: string;          // ISO 8601 timestamp or HH:MM:SS
-  arrival_time: string;            // ISO 8601 timestamp or HH:MM:SS
+  origin_station_id: string; // Starting station
+  destination_station_id: string; // Ending station
+  departure_time: string; // ISO 8601 timestamp or HH:MM:SS
+  arrival_time: string; // ISO 8601 timestamp or HH:MM:SS
 
   // Real-time Status
-  status: TrainStatus;             // Current status enum
-  delay_minutes: number;           // Delay in minutes (0 if on time, negative if early)
-  current_station_id?: string;     // Last known station or next station
+  status: TrainStatus; // Current status enum
+  delay_minutes: number; // Delay in minutes (0 if on time, negative if early)
+  current_station_id?: string; // Last known station or next station
 
   // Position
-  current_position?: Position;     // GPS coordinates if available
+  current_position?: Position; // GPS coordinates if available
 
   // Platform
-  platform?: string;               // Platform/track number at origin
+  platform?: string; // Platform/track number at origin
 
   // Metadata
-  stops: StopTime[];               // All stops for this train
-  service_id?: string;             // GTFS service calendar reference
-  updated_at: string;              // ISO 8601 timestamp of last update
+  stops: StopTime[]; // All stops for this train
+  service_id?: string; // GTFS service calendar reference
+  updated_at: string; // ISO 8601 timestamp of last update
 }
 
 enum TrainStatus {
-  SCHEDULED = 'scheduled',       // Not yet departed
-  ON_TIME = 'on_time',           // Currently running on schedule
-  DELAYED = 'delayed',           // Running behind schedule
-  EARLY = 'early',               // Running ahead of schedule
-  APPROACHING = 'approaching',   // Within 5 minutes of station
-  DEPARTED = 'departed',         // Train has left
-  ARRIVED = 'arrived',           // Reached destination
-  CANCELLED = 'cancelled'        // Service cancelled
+  SCHEDULED = 'scheduled', // Not yet departed
+  ON_TIME = 'on_time', // Currently running on schedule
+  DELAYED = 'delayed', // Running behind schedule
+  EARLY = 'early', // Running ahead of schedule
+  APPROACHING = 'approaching', // Within 5 minutes of station
+  DEPARTED = 'departed', // Train has left
+  ARRIVED = 'arrived', // Reached destination
+  CANCELLED = 'cancelled', // Service cancelled
 }
 
 interface Position {
   latitude: number;
   longitude: number;
-  bearing?: number;              // Direction of travel (0-359 degrees)
-  speed?: number;                // Speed in mph (optional)
+  bearing?: number; // Direction of travel (0-359 degrees)
+  speed?: number; // Speed in mph (optional)
 }
 ```
 
 **Validation Rules** (Zod):
+
 - `trip_id`: Required, non-empty string
 - `line_id`: Required, non-empty string, must reference valid Line
 - `origin_station_id`, `destination_station_id`: Required, must reference valid Stations
@@ -164,11 +169,13 @@ interface Position {
 - `current_position.longitude`: Number between -180 and 180
 
 **Relationships**:
+
 - References `Line` via `line_id`
 - References `Station` via `origin_station_id`, `destination_station_id`, `current_station_id`
 - Contains multiple `StopTime` entities
 
 **State Transitions**:
+
 ```
 SCHEDULED → ON_TIME/DELAYED/EARLY → APPROACHING → DEPARTED → ARRIVED
          ↓                                                      ↑
@@ -184,30 +191,31 @@ Represents a train's scheduled and actual stop at a station.
 ```typescript
 interface StopTime {
   // Identifiers
-  trip_id: string;                 // Foreign key to Train
-  station_id: string;              // Foreign key to Station
+  trip_id: string; // Foreign key to Train
+  station_id: string; // Foreign key to Station
 
   // Schedule
-  arrival_time: string;            // Scheduled arrival (ISO 8601 or HH:MM:SS)
-  departure_time: string;          // Scheduled departure (ISO 8601 or HH:MM:SS)
-  stop_sequence: number;           // Order in the trip (1, 2, 3...)
+  arrival_time: string; // Scheduled arrival (ISO 8601 or HH:MM:SS)
+  departure_time: string; // Scheduled departure (ISO 8601 or HH:MM:SS)
+  stop_sequence: number; // Order in the trip (1, 2, 3...)
 
   // Real-time
-  actual_arrival?: string;         // Actual/estimated arrival time
-  actual_departure?: string;       // Actual/estimated departure time
-  delay_minutes: number;           // Delay at this stop (0 if on time)
+  actual_arrival?: string; // Actual/estimated arrival time
+  actual_departure?: string; // Actual/estimated departure time
+  delay_minutes: number; // Delay at this stop (0 if on time)
 
   // Display
-  headsign?: string;               // Destination shown on train
-  platform?: string;               // Platform/track at this station
+  headsign?: string; // Destination shown on train
+  platform?: string; // Platform/track at this station
 
   // Pickup/Drop-off
-  pickup_type: number;             // 0=regular, 1=none, 2=phone, 3=driver
-  drop_off_type: number;           // 0=regular, 1=none, 2=phone, 3=driver
+  pickup_type: number; // 0=regular, 1=none, 2=phone, 3=driver
+  drop_off_type: number; // 0=regular, 1=none, 2=phone, 3=driver
 }
 ```
 
 **Validation Rules** (Zod):
+
 - `trip_id`: Required, non-empty string
 - `station_id`: Required, non-empty string, must reference valid Station
 - `arrival_time`, `departure_time`: Required, valid time format
@@ -216,6 +224,7 @@ interface StopTime {
 - `pickup_type`, `drop_off_type`: Required, integer 0-3
 
 **Relationships**:
+
 - References `Train` via `trip_id`
 - References `Station` via `station_id`
 - Multiple StopTimes form a Train's route
@@ -229,23 +238,24 @@ Represents a user's saved route (e.g., "Home to Work").
 ```typescript
 interface SavedRoute {
   // Identifiers
-  route_id: string;                // UUID generated client-side
+  route_id: string; // UUID generated client-side
 
   // Route Details
-  origin_station_id: string;       // Foreign key to Station
-  destination_station_id: string;  // Foreign key to Station
+  origin_station_id: string; // Foreign key to Station
+  destination_station_id: string; // Foreign key to Station
 
   // Customization
-  label: string;                   // User-provided name (e.g., "Home to Work")
+  label: string; // User-provided name (e.g., "Home to Work")
 
   // Metadata
-  created_at: string;              // ISO 8601 timestamp
-  last_used_at: string;            // ISO 8601 timestamp
-  use_count: number;               // Number of times accessed
+  created_at: string; // ISO 8601 timestamp
+  last_used_at: string; // ISO 8601 timestamp
+  use_count: number; // Number of times accessed
 }
 ```
 
 **Validation Rules** (Zod):
+
 - `route_id`: Required, valid UUID v4
 - `origin_station_id`, `destination_station_id`: Required, must reference valid Stations, must be different
 - `label`: Required, non-empty string, max 50 characters
@@ -253,9 +263,11 @@ interface SavedRoute {
 - `use_count`: Required, non-negative integer
 
 **Relationships**:
+
 - References `Station` via `origin_station_id` and `destination_station_id`
 
 **Storage**:
+
 - Persisted in browser LocalStorage (simple key-value)
 - Also stored in IndexedDB for offline access
 
@@ -268,25 +280,25 @@ Represents service disruptions, delays, or announcements.
 ```typescript
 interface ServiceAlert {
   // Identifiers
-  alert_id: string;                // GTFS alert ID
+  alert_id: string; // GTFS alert ID
 
   // Scope
-  affected_lines?: string[];       // Line IDs affected (empty = all lines)
-  affected_stations?: string[];    // Station IDs affected (empty = all stations)
-  affected_trips?: string[];       // Specific trip IDs affected
+  affected_lines?: string[]; // Line IDs affected (empty = all lines)
+  affected_stations?: string[]; // Station IDs affected (empty = all stations)
+  affected_trips?: string[]; // Specific trip IDs affected
 
   // Content
-  alert_type: AlertType;           // Type of alert
-  severity: AlertSeverity;         // Severity level
-  header: string;                  // Brief title
-  description: string;             // Detailed description
+  alert_type: AlertType; // Type of alert
+  severity: AlertSeverity; // Severity level
+  header: string; // Brief title
+  description: string; // Detailed description
 
   // Time
-  start_time: string;              // ISO 8601 timestamp
-  end_time?: string;               // ISO 8601 timestamp (null = ongoing)
+  start_time: string; // ISO 8601 timestamp
+  end_time?: string; // ISO 8601 timestamp (null = ongoing)
 
   // Display
-  url?: string;                    // Link to more info
+  url?: string; // Link to more info
 }
 
 enum AlertType {
@@ -297,17 +309,18 @@ enum AlertType {
   CONSTRUCTION = 'construction',
   WEATHER = 'weather',
   INCIDENT = 'incident',
-  INFORMATION = 'information'
+  INFORMATION = 'information',
 }
 
 enum AlertSeverity {
-  INFO = 'info',                   // Informational only
-  WARNING = 'warning',             // May affect some users
-  SEVERE = 'severe'                // Significant disruption
+  INFO = 'info', // Informational only
+  WARNING = 'warning', // May affect some users
+  SEVERE = 'severe', // Significant disruption
 }
 ```
 
 **Validation Rules** (Zod):
+
 - `alert_id`: Required, non-empty string
 - `alert_type`: Required, valid AlertType enum value
 - `severity`: Required, valid AlertSeverity enum value
@@ -317,6 +330,7 @@ enum AlertSeverity {
 - `end_time`: Optional, valid ISO 8601 timestamp, must be after start_time
 
 **Relationships**:
+
 - References `Line` via `affected_lines`
 - References `Station` via `affected_stations`
 - References `Train` via `affected_trips`
@@ -384,12 +398,14 @@ CREATE INDEX idx_alerts_time ON service_alerts(start_time, end_time);
 ### Client-Side (IndexedDB)
 
 **Cached for offline use**:
+
 - All `Station` entities (230 stations × ~200 bytes = 46KB)
 - All `Line` entities (11 lines × ~500 bytes = 5.5KB)
 - `SavedRoute` entities (user-specific, ~10 routes × 150 bytes = 1.5KB)
 - Recent `Train` data (last 30 minutes, ~500 trains × 1KB = 500KB)
 
 **Cache invalidation**:
+
 - Stations/Lines: Update weekly or on app update
 - Trains: Expire after 30 seconds (per research.md polling interval)
 - SavedRoutes: Never expire (user data)
@@ -397,10 +413,12 @@ CREATE INDEX idx_alerts_time ON service_alerts(start_time, end_time);
 ### Server-Side (SQLite)
 
 **GTFS Static Data**:
+
 - Imported weekly from Metra's GTFS schedule feed
 - ~5MB uncompressed
 
 **GTFS Realtime Data**:
+
 - Updated every 30 seconds from Metra's GTFS Realtime API
 - Kept in memory + SQLite with 1-hour retention
 
@@ -409,6 +427,7 @@ CREATE INDEX idx_alerts_time ON service_alerts(start_time, end_time);
 ## Data Flow
 
 ### Initial Load (First Visit)
+
 1. User opens app
 2. Service worker caches app shell (HTML, CSS, JS)
 3. IndexedDB check: empty
@@ -417,6 +436,7 @@ CREATE INDEX idx_alerts_time ON service_alerts(start_time, end_time);
 6. Display UI
 
 ### Typical User Journey (Route Search)
+
 1. User selects origin "Ogilvie" and destination "Arlington Heights"
 2. Query IndexedDB for station IDs
 3. Fetch from backend: `/api/trains?origin=OTC&destination=AH`
@@ -426,6 +446,7 @@ CREATE INDEX idx_alerts_time ON service_alerts(start_time, end_time);
 7. Cache response in IndexedDB (30s TTL)
 
 ### Offline Scenario
+
 1. User opens app (no network)
 2. Service worker serves cached app shell
 3. Query IndexedDB for stations, lines, saved routes
@@ -434,6 +455,7 @@ CREATE INDEX idx_alerts_time ON service_alerts(start_time, end_time);
 6. User can still browse cached data
 
 ### Real-time Updates (Online)
+
 1. User viewing train list
 2. Frontend polls `/api/trains?origin=X&destination=Y` every 30 seconds
 3. Backend returns updated trains with latest delays/positions
@@ -457,7 +479,7 @@ export const StationSchema = z.object({
   lines_served: z.array(z.string()).min(1),
   zone: z.string().optional(),
   wheelchair_accessible: z.boolean(),
-  platform_count: z.number().int().positive().optional()
+  platform_count: z.number().int().positive().optional(),
 });
 
 export type Station = z.infer<typeof StationSchema>;
@@ -468,6 +490,7 @@ export type Station = z.infer<typeof StationSchema>;
 ## Next Steps
 
 With data model complete:
+
 1. Generate API contracts (OpenAPI spec in `contracts/`)
 2. Create quickstart.md with development setup
 3. Update agent context file

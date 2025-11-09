@@ -14,19 +14,19 @@ Go to your domain registrar's DNS settings and add these records:
 
 ### A Records
 
-| Type | Name | Value | TTL |
-|------|------|-------|-----|
-| A | @ | (Vercel's IP - see below) | 3600 |
-| A | api | YOUR_DROPLET_IP | 3600 |
-| A | www | (Vercel's IP - see below) | 3600 |
+| Type | Name | Value                     | TTL  |
+| ---- | ---- | ------------------------- | ---- |
+| A    | @    | (Vercel's IP - see below) | 3600 |
+| A    | api  | YOUR_DROPLET_IP           | 3600 |
+| A    | www  | (Vercel's IP - see below) | 3600 |
 
 ### CNAME Record (Alternative to A records for Vercel)
 
-| Type | Name | Value | TTL |
-|------|------|-------|-----|
-| CNAME | @ | cname.vercel-dns.com | 3600 |
-| CNAME | www | cname.vercel-dns.com | 3600 |
-| A | api | YOUR_DROPLET_IP | 3600 |
+| Type  | Name | Value                | TTL  |
+| ----- | ---- | -------------------- | ---- |
+| CNAME | @    | cname.vercel-dns.com | 3600 |
+| CNAME | www  | cname.vercel-dns.com | 3600 |
+| A     | api  | YOUR_DROPLET_IP      | 3600 |
 
 **Note**: Some registrars don't allow CNAME for root (@). In that case, use Vercel's A records.
 
@@ -90,12 +90,14 @@ vercel domains add www.chicagorail.app
 Add the API URL environment variable:
 
 **Via Dashboard:**
+
 1. Go to Settings > Environment Variables
 2. Add: `VITE_API_URL` = `https://chicagorail.app/api`
 3. Select all environments (Production, Preview, Development)
 4. Save
 
 **Via CLI:**
+
 ```bash
 vercel env add VITE_API_URL production
 # Enter: https://chicagorail.app/api
@@ -163,6 +165,7 @@ Dokku backend responds
 ### DNS Not Resolving
 
 Check DNS propagation:
+
 ```bash
 dig chicagorail.app
 dig api.chicagorail.app
@@ -175,11 +178,13 @@ DNS changes can take up to 48 hours to propagate fully.
 ### SSL Certificate Issues on Dokku
 
 Verify Let's Encrypt is working:
+
 ```bash
 dokku letsencrypt:list
 ```
 
 Renew certificate manually:
+
 ```bash
 dokku letsencrypt:enable metra-backend
 ```
@@ -187,10 +192,12 @@ dokku letsencrypt:enable metra-backend
 ### CORS Errors
 
 The backend is configured to allow:
+
 - `https://chicagorail.app`
 - `https://www.chicagorail.app`
 
 If you get CORS errors, check the backend logs:
+
 ```bash
 ssh dokku@YOUR_DROPLET_IP logs metra-backend --tail
 ```
@@ -198,6 +205,7 @@ ssh dokku@YOUR_DROPLET_IP logs metra-backend --tail
 ### Vercel Proxy Not Working
 
 Check `vercel.json` rewrites:
+
 ```json
 "rewrites": [
   {
@@ -214,16 +222,19 @@ View Vercel logs in the dashboard to debug proxy issues.
 This means Vercel can't reach your backend:
 
 1. Verify backend is running:
+
 ```bash
 ssh dokku@YOUR_DROPLET_IP ps:report metra-backend
 ```
 
 2. Test backend directly:
+
 ```bash
 curl https://api.chicagorail.app/api/health
 ```
 
 3. Check firewall:
+
 ```bash
 ufw status
 ```
@@ -276,10 +287,12 @@ Visit: https://vercel.com/dashboard → Select project → View logs
 ### Uptime Monitoring
 
 Consider setting up uptime monitoring:
+
 - [UptimeRobot](https://uptimerobot.com/) (Free)
 - [Pingdom](https://www.pingdom.com/)
 - [Better Uptime](https://betteruptime.com/)
 
 Monitor these endpoints:
+
 - `https://chicagorail.app`
 - `https://api.chicagorail.app/api/health`

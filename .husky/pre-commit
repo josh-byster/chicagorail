@@ -1,9 +1,16 @@
 # Run lint-staged for formatting and linting
+echo "🎨 Running lint-staged..."
 pnpm exec lint-staged
 
 # Run type checking
 echo "🔍 Running type check..."
 pnpm type-check
+
+# Run tests (unit tests only, skip E2E for speed)
+echo "🧪 Running tests..."
+pnpm --filter shared build
+pnpm --filter backend test run --reporter=verbose --bail=1
+pnpm --filter frontend test run --reporter=verbose --bail=1
 
 # Check file sizes (SOLID principle: files should be focused and small)
 # Currently enforced for backend services only (frontend refactoring separate effort)
@@ -27,4 +34,4 @@ if [ -n "$large_files" ]; then
   exit 1
 fi
 
-echo "✅ All files are appropriately sized"
+echo "✅ All pre-commit checks passed!"

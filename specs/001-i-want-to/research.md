@@ -11,9 +11,11 @@ This document addresses technical uncertainties from the planning phase and prov
 ## 1. Backend Storage Strategy
 
 ### Decision
+
 **SQLite with node-gtfs library**
 
 ### Rationale
+
 - For 100-1000 daily users, SQLite provides excellent read performance (100k+ SELECTs/sec with tuning)
 - node-gtfs library is specifically designed for GTFS data with optimized SQLite schema
 - Zero deployment cost (no separate database server needed on DigitalOcean)
@@ -22,10 +24,12 @@ This document addresses technical uncertainties from the planning phase and prov
 - File-based storage simplifies deployment on DigitalOcean App Platform or Droplets
 
 ### Alternatives Considered
+
 - **PostgreSQL**: Better for 1000+ concurrent users, but overkill for current scale. Would cost $15/month minimum for managed instance. MVCC provides superior concurrency but adds unnecessary complexity.
 - **Redis**: Excellent for caching but lacks GTFS-specific structure. Would require additional storage layer. Best used as cache layer on top of SQLite if scaling beyond 1000 users.
 
 ### Implementation Notes
+
 - Enable WAL mode: `PRAGMA journal_mode=WAL;`
 - Use `PRAGMA optimize` before closing connections
 - Create indexes on frequently queried fields (station_id, route_id, stop_times)
@@ -37,20 +41,24 @@ This document addresses technical uncertainties from the planning phase and prov
 ## 2. GTFS API Rate Limits & Polling Strategy
 
 ### Decision
+
 **Poll every 30 seconds with If-Modified-Since headers**
 
 ### Rationale
+
 - Metra updates realtime data every 30 seconds - no benefit polling faster
 - Official GTFS Realtime best practices recommend 1-60 second intervals; 30s is industry standard
 - If-Modified-Since HTTP headers prevent transferring unchanged data, saving bandwidth
 - Meets spec requirement SC-002: "updates no more than 30 seconds stale"
 
 ### Alternatives Considered
+
 - **10-15 second polling**: Unnecessary - Metra doesn't update faster than 30s, would waste API quota
 - **60+ second polling**: Would violate 30-second freshness requirement
 - **WebSocket/streaming**: Not supported by standard GTFS Realtime Protocol Buffer feeds
 
 ### Implementation Notes
+
 - Metra requires API key (sign license agreement at metra.com/gtfs-realtime-api-key-request-license-agreement)
 - **CRITICAL**: Per Metra terms - redistribute data through YOUR server, don't direct users to Metra's APIs
 - Implement exponential backoff if API returns 429 (rate limited) or 5xx errors
@@ -64,9 +72,11 @@ This document addresses technical uncertainties from the planning phase and prov
 ## 3. GTFS Library Selection
 
 ### Decision
+
 **Use node-gtfs (v4.18.0+) for static GTFS and realtime data**
 
 ### Rationale
+
 - node-gtfs handles both static GTFS import and realtime updates into same SQLite database
 - Uses `SQLITE REPLACE` for efficient realtime data updates
 - Built-in spatial queries for nearby stops/routes (useful for future location features)
@@ -75,6 +85,7 @@ This document addresses technical uncertainties from the planning phase and prov
 - Provides query methods optimized for transit use cases
 
 ### Alternatives Considered
+
 - **gtfs-realtime-bindings**: Lower-level Protocol Buffer parsing only, no database integration
 - **gtfs-utils**: More memory-efficient but lacks realtime support and database persistence
 - **Custom implementation**: Would require months to replicate node-gtfs's optimizations
@@ -84,6 +95,7 @@ This document addresses technical uncertainties from the planning phase and prov
 **API Endpoints**: Metra provides JSON GTFS feeds (not traditional zip files)
 
 **Static Data Endpoints** (base: `https://gtfsapi.metrarail.com`):
+
 - `/gtfs/schedule/stops` - Station data
 - `/gtfs/schedule/stop_times` - Stop times
 - `/gtfs/schedule/trips` - Trip information
@@ -92,6 +104,7 @@ This document addresses technical uncertainties from the planning phase and prov
 - `/gtfs/schedule/agency` - Agency info
 
 **Realtime Data Endpoints**:
+
 - `https://gtfsapi.metrarail.com/gtfs/alerts` - Service alerts
 - `https://gtfsapi.metrarail.com/gtfs/tripUpdates` - Trip updates/delays
 - `https://gtfsapi.metrarail.com/gtfs/positions` - Vehicle positions
@@ -101,8 +114,10 @@ This document addresses technical uncertainties from the planning phase and prov
 ```typescript
 // HTTP Basic Auth helper
 const getAuthHeader = () => {
-  const auth = btoa(`${process.env.METRA_API_USERNAME}:${process.env.METRA_API_PASSWORD}`);
-  return { 'Authorization': `Basic ${auth}` };
+  const auth = btoa(
+    `${process.env.METRA_API_USERNAME}:${process.env.METRA_API_PASSWORD}`
+  );
+  return { Authorization: `Basic ${auth}` };
 };
 
 // Fetch static data (example: stops)
@@ -118,8 +133,12 @@ const fetchStops = async () => {
 setInterval(async () => {
   const [alerts, tripUpdates, positions] = await Promise.all([
     fetch(process.env.GTFS_REALTIME_ALERTS_URL, { headers: getAuthHeader() }),
-    fetch(process.env.GTFS_REALTIME_TRIP_UPDATES_URL, { headers: getAuthHeader() }),
-    fetch(process.env.GTFS_REALTIME_POSITIONS_URL, { headers: getAuthHeader() })
+    fetch(process.env.GTFS_REALTIME_TRIP_UPDATES_URL, {
+      headers: getAuthHeader(),
+    }),
+    fetch(process.env.GTFS_REALTIME_POSITIONS_URL, {
+      headers: getAuthHeader(),
+    }),
   ]);
 
   // Process and merge realtime data with static schedule
@@ -134,9 +153,11 @@ setInterval(async () => {
 ## 4. PWA Architecture & Offline Strategy
 
 ### Decision
+
 **Workbox with Network First + Cache First hybrid strategy, IndexedDB for schedules**
 
 ### Rationale
+
 - **Network First** for realtime API calls (always try fresh data, fallback to cache if offline)
 - **Cache First** for static assets (HTML, CSS, JS, images) for instant loading
 - IndexedDB stores structured GTFS schedule data (routes, stops, timetables) - handles 100MB+ transit data
@@ -144,6 +165,7 @@ setInterval(async () => {
 - Integrated into Vite, Create-React-App, Next.js
 
 ### Alternatives Considered
+
 - **Stale-While-Revalidate**: Not suitable for realtime transit - users need current data, not 30-60 second old cached positions
 - **Network Only**: Breaks offline requirement (FR-010)
 - **Cache Only**: Would show stale data even when online
@@ -151,6 +173,7 @@ setInterval(async () => {
 ### Implementation Notes
 
 **Service Worker Strategy**:
+
 ```typescript
 // workbox-config.js
 import { NetworkFirst, CacheFirst } from 'workbox-strategies';
@@ -165,9 +188,9 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxAgeSeconds: 30,
-        maxEntries: 50
-      })
-    ]
+        maxEntries: 50,
+      }),
+    ],
   })
 );
 
@@ -177,13 +200,17 @@ registerRoute(
   new CacheFirst({
     cacheName: 'static-assets',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 })
-    ]
+      new ExpirationPlugin({
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+      }),
+    ],
   })
 );
 ```
 
 **IndexedDB Strategy**:
+
 - Store GTFS static data (routes, stops, schedules) in IndexedDB
 - Update weekly or on app update
 - Query locally for route planning, reducing API calls
@@ -202,13 +229,14 @@ class MetraDB extends Dexie {
     this.version(1).stores({
       routes: 'route_id, route_short_name',
       stops: 'stop_id, stop_name',
-      stopTimes: '++id, trip_id, stop_id, arrival_time'
+      stopTimes: '++id, trip_id, stop_id, arrival_time',
     });
   }
 }
 ```
 
 **Additional Requirements**:
+
 - Show "Last updated: X minutes ago" when offline (FR-010)
 - Use Workbox Background Sync to queue failed API requests when offline
 - Precache critical routes using Workbox precaching for app shell
@@ -218,9 +246,11 @@ class MetraDB extends Dexie {
 ## 5. UI Component Library Selection
 
 ### Decision
+
 **ShadCN UI with Tailwind CSS**
 
 ### Rationale
+
 - Lightweight: ~150KB vs Material UI's 300KB for comparable projects
 - Modular - only include components you need (tree-shaking friendly)
 - Built on Radix UI (accessible by default, meets WCAG 2.1 Level AA requirement SC-009)
@@ -229,6 +259,7 @@ class MetraDB extends Dexie {
 - Meets constitution bundle size requirement: <500KB gzipped
 
 ### Alternatives Considered
+
 - **Material UI**: Heavier bundle, harder to customize for mobile-first PWA
 - **Chakra UI**: Good option but larger bundle than ShadCN
 - **Headless UI + Tailwind**: More setup required, ShadCN provides this out-of-box
@@ -236,11 +267,13 @@ class MetraDB extends Dexie {
 ### Implementation Notes
 
 **Known Issues to Avoid**:
+
 - Some users report rendering issues on mobile <768px width - test thoroughly on mobile breakpoints
 - ShadCN components become YOUR code - updates require manual copy-paste (not npm update)
 - No built-in data grid/charts - use Recharts or Chart.js separately if needed
 
 **Performance Optimizations**:
+
 ```typescript
 // Only import components you need
 import { Button } from '@/components/ui/button';
@@ -254,10 +287,11 @@ const TrainMap = lazy(() => import('@/components/TrainMap'));
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   // Only includes used classes
-}
+};
 ```
 
 **Mobile-First Best Practices**:
+
 - Use ShadCN Drawer component for mobile (not Dialog/Modal)
 - Test on actual devices, not just browser DevTools
 - Use `touch-action` CSS for better touch responsiveness
@@ -265,6 +299,7 @@ module.exports = {
 - Test with Chrome Lighthouse PWA audit (target score: 90+)
 
 **PWA-Specific Considerations**:
+
 - Add manifest.json with ShadCN theme colors for consistent app icon/splash screen
 - Use ShadCN's theme provider for light/dark mode (respects user's system preference)
 - Ensure focus states work for keyboard navigation (Radix UI handles this by default)
@@ -300,6 +335,7 @@ module.exports = {
 **Deployment**: DigitalOcean App Platform (~$5-12/mo)
 
 **Cost Estimate**:
+
 - DigitalOcean App Platform: $5-12/month (Basic plan)
 - No database hosting cost (SQLite embedded)
 - Domain + SSL: ~$12/year (optional, App Platform provides free subdomain)
@@ -310,6 +346,7 @@ module.exports = {
 ## Technology Stack Summary
 
 ### Frontend
+
 - **Framework**: React 18+ with TypeScript 5.x
 - **Build Tool**: Vite (fast HMR, optimized builds)
 - **UI Library**: ShadCN UI + Tailwind CSS
@@ -318,6 +355,7 @@ module.exports = {
 - **Testing**: Vitest, React Testing Library, Playwright
 
 ### Backend
+
 - **Runtime**: Node.js 20 LTS
 - **Framework**: Express
 - **Database**: SQLite with WAL mode
@@ -326,12 +364,14 @@ module.exports = {
 - **Testing**: Vitest, Supertest
 
 ### Shared
+
 - **Language**: TypeScript 5.x
 - **Package Manager**: pnpm (monorepo workspaces)
 - **Schema Validation**: Zod
 - **Type Sharing**: TypeScript path aliases
 
 ### DevOps
+
 - **CI/CD**: GitHub Actions
 - **Deployment**: DigitalOcean App Platform
 - **Containerization**: Docker
@@ -358,6 +398,7 @@ module.exports = {
 ## Next Phase
 
 With research complete, proceed to Phase 1:
+
 - Generate data-model.md (entity definitions)
 - Create API contracts in contracts/ directory
 - Write quickstart.md (setup instructions)

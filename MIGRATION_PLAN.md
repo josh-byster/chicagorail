@@ -13,6 +13,7 @@ Metra has migrated from JSON-based GTFS endpoints to a standard GTFS feed system
 ## 1. What Changed
 
 ### Old System (BROKEN)
+
 ```
 Static Data:  https://gtfsapi.metrarail.com/gtfs/schedule/* (JSON endpoints)
 Realtime:     https://gtfsapi.metrarail.com/gtfs/* (JSON endpoints)
@@ -21,6 +22,7 @@ Format:       JSON responses
 ```
 
 ### New System (WORKING)
+
 ```
 Static Data:  https://schedules.metrarail.com/gtfs/schedule.zip (ZIP file)
 Published:    https://schedules.metrarail.com/gtfs/published.txt (timestamp check)
@@ -30,6 +32,7 @@ Format:       Standard GTFS (ZIP with .txt files) + GTFS-RT (protobuf)
 ```
 
 **Key Changes:**
+
 1. Static data moved from JSON endpoints to standard GTFS ZIP file
 2. New domain for static data (`schedules.metrarail.com` - no auth required)
 3. Realtime endpoints moved to new domain (`gtfspublic.metrarr.com`)
@@ -42,11 +45,14 @@ Format:       Standard GTFS (ZIP with .txt files) + GTFS-RT (protobuf)
 ## 2. Migration Strategy
 
 ### Phase 1: Environment & Configuration Updates
+
 **Files to modify:**
+
 - `.env.example`
 - `packages/backend/src/config/env.ts`
 
 **Changes:**
+
 ```env
 # OLD - Remove these
 METRA_API_USERNAME=your_username_here
@@ -67,6 +73,7 @@ GTFS_REALTIME_POSITIONS_URL=https://gtfspublic.metrarr.com/gtfs/public/positions
 ```
 
 **Update Zod schema in `env.ts`:**
+
 ```typescript
 const envSchema = z.object({
   // Remove username/password
@@ -87,11 +94,13 @@ const envSchema = z.object({
 ### Phase 2: Add Dependencies
 
 **Install new packages:**
+
 ```bash
 pnpm add --filter backend adm-zip gtfs-realtime-bindings
 ```
 
 **Purpose:**
+
 - `adm-zip`: Unzip the schedule.zip file
 - `gtfs-realtime-bindings`: Parse GTFS-RT Protocol Buffer format
 
@@ -102,12 +111,14 @@ pnpm add --filter backend adm-zip gtfs-realtime-bindings
 **File:** `packages/backend/src/services/gtfs-init.service.ts`
 
 **Current implementation:**
+
 - Fetches 7 separate JSON endpoints
 - Uses Basic Auth
 - Parses JSON directly
 - Inserts into SQLite
 
 **New implementation:**
+
 1. Check `published.txt` for last update timestamp
 2. Compare with stored timestamp (in database or file)
 3. If changed, download `schedule.zip`
@@ -209,7 +220,9 @@ const parseGTFSFiles = (tempDir: string): GTFSData => {
 const getLastImportedTimestamp = (): string | null => {
   const db = getDatabase();
   try {
-    const result = db.prepare('SELECT value FROM metadata WHERE key = ?').get('last_published_timestamp');
+    const result = db
+      .prepare('SELECT value FROM metadata WHERE key = ?')
+      .get('last_published_timestamp');
     return result?.value || null;
   } catch {
     return null;
@@ -218,11 +231,15 @@ const getLastImportedTimestamp = (): string | null => {
 
 const saveLastImportedTimestamp = (timestamp: string): void => {
   const db = getDatabase();
-  db.prepare('INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)').run('last_published_timestamp', timestamp);
+  db.prepare('INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)').run(
+    'last_published_timestamp',
+    timestamp
+  );
 };
 ```
 
 **Add metadata table:**
+
 ```typescript
 // In createTables()
 db.exec(`
@@ -240,6 +257,7 @@ db.exec(`
 **File:** `packages/backend/src/services/gtfs-realtime.service.ts`
 
 **Changes needed:**
+
 1. Update authentication from Basic Auth to Bearer token
 2. Update endpoint URLs
 3. Parse Protocol Buffer format instead of JSON
@@ -267,7 +285,7 @@ const fetchRealtimeEndpoint = async (
 ): Promise<{ data: any; lastModified: string | null }> => {
   const headers: any = {
     ...getAuthHeader(),
-    'Accept': 'application/x-protobuf', // Request protobuf format
+    Accept: 'application/x-protobuf', // Request protobuf format
   };
 
   if (lastModified) {
@@ -351,6 +369,7 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 ```
 
 **GTFS-RT Message Structure:**
+
 ```
 FeedMessage
 ├── header
@@ -369,6 +388,7 @@ FeedMessage
 ### Phase 5: Update Scripts
 
 **Files:**
+
 - `packages/backend/src/scripts/import-gtfs.ts` (no changes needed)
 - `packages/backend/src/scripts/snapshot-api.ts` (update for new endpoints)
 - `packages/backend/src/scripts/validate-gtfs-api.ts` (update for new endpoints)
@@ -378,11 +398,13 @@ FeedMessage
 ### Phase 6: Documentation Updates
 
 **Files to update:**
+
 - `CLAUDE.md` - Update API documentation
 - `README.md` - Update setup instructions
 - `.env.example` - Already covered in Phase 1
 
 **Key documentation points:**
+
 1. How to obtain API token (link to form: https://gtfspublic.metrarr.com/request-key or similar)
 2. New endpoint URLs
 3. Updated polling behavior (check published.txt)
@@ -393,24 +415,28 @@ FeedMessage
 ## 3. Implementation Checklist
 
 ### Pre-Migration
+
 - [ ] Request new API token from Metra (if needed)
 - [ ] Back up current `.env` file
 - [ ] Back up current `gtfs.db` database
 - [ ] Create feature branch: `git checkout -b fix/gtfs-api-migration`
 
 ### Phase 1: Environment
+
 - [ ] Update `.env.example` with new variables
 - [ ] Update `env.ts` Zod schema
 - [ ] Update actual `.env` file with new credentials
 - [ ] Test env validation works
 
 ### Phase 2: Dependencies
+
 - [ ] Install `adm-zip`
 - [ ] Install `gtfs-realtime-bindings`
 - [ ] Install `csv-parse` (for parsing GTFS text files)
 - [ ] Verify all packages installed: `pnpm install`
 
 ### Phase 3: Static Data Import
+
 - [ ] Add metadata table creation to `createTables()`
 - [ ] Implement `fetchPublishedTimestamp()`
 - [ ] Implement `downloadScheduleZip()`
@@ -422,6 +448,7 @@ FeedMessage
 - [ ] Test with: `pnpm gtfs:import`
 
 ### Phase 4: Realtime Data
+
 - [ ] Update `getAuthHeader()` to use Bearer token
 - [ ] Update endpoint URLs in config
 - [ ] Update `fetchRealtimeEndpoint()` to parse protobuf
@@ -430,11 +457,13 @@ FeedMessage
 - [ ] Test realtime polling
 
 ### Phase 5: Scripts
+
 - [ ] Update `snapshot-api.ts` for new endpoints
 - [ ] Update `validate-gtfs-api.ts` for new endpoints
 - [ ] Test all scripts
 
 ### Phase 6: Integration Testing
+
 - [ ] Delete existing `gtfs.db` to force fresh import
 - [ ] Start backend: `pnpm dev`
 - [ ] Verify startup import works
@@ -447,11 +476,13 @@ FeedMessage
 - [ ] Check logs for errors
 
 ### Phase 7: Documentation
+
 - [ ] Update `CLAUDE.md`
 - [ ] Update `README.md`
 - [ ] Add migration notes to `CHANGELOG.md` (if exists)
 
 ### Phase 8: Deployment
+
 - [ ] Commit changes with descriptive message
 - [ ] Push to feature branch
 - [ ] Create pull request
@@ -464,6 +495,7 @@ FeedMessage
 ## 4. Testing Strategy
 
 ### Unit Tests
+
 - [ ] Test CSV parsing handles all GTFS file formats
 - [ ] Test ZIP extraction and cleanup
 - [ ] Test timestamp comparison logic
@@ -471,6 +503,7 @@ FeedMessage
 - [ ] Test auth header generation
 
 ### Integration Tests
+
 - [ ] Test full static import pipeline
 - [ ] Test published.txt timestamp checking
 - [ ] Test database schema creation
@@ -478,12 +511,14 @@ FeedMessage
 - [ ] Test data transformations (colors, wheelchair, lines_served)
 
 ### End-to-End Tests
+
 - [ ] Test API responses match expected format
 - [ ] Test realtime data merging
 - [ ] Test cache behavior
 - [ ] Test error handling (network failures, invalid data)
 
 ### Manual Testing
+
 - [ ] Import fresh GTFS data
 - [ ] Verify station count matches expected
 - [ ] Verify route count matches expected
@@ -498,6 +533,7 @@ FeedMessage
 If the migration fails:
 
 1. **Revert code changes:**
+
    ```bash
    git checkout main
    git branch -D fix/gtfs-api-migration
@@ -508,6 +544,7 @@ If the migration fails:
    - Restore backed-up `gtfs.db` database
 
 3. **Restart backend:**
+
    ```bash
    pnpm dev
    ```
@@ -520,15 +557,15 @@ If the migration fails:
 
 ## 6. Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| New API token not available | Low | High | Request token early; have backup plan |
-| Protobuf parsing errors | Medium | High | Use official gtfs-realtime-bindings library |
-| ZIP file format changes | Low | Medium | Test with multiple schedule versions |
-| Database schema incompatibility | Low | Low | Schema should remain same (GTFS standard) |
-| Realtime data structure changes | Medium | Medium | Add comprehensive error handling |
-| Published timestamp not updated | Low | Low | Fall back to re-import every hour |
-| Large ZIP download times | Low | Low | Only re-download when published.txt changes |
+| Risk                            | Likelihood | Impact | Mitigation                                  |
+| ------------------------------- | ---------- | ------ | ------------------------------------------- |
+| New API token not available     | Low        | High   | Request token early; have backup plan       |
+| Protobuf parsing errors         | Medium     | High   | Use official gtfs-realtime-bindings library |
+| ZIP file format changes         | Low        | Medium | Test with multiple schedule versions        |
+| Database schema incompatibility | Low        | Low    | Schema should remain same (GTFS standard)   |
+| Realtime data structure changes | Medium     | Medium | Add comprehensive error handling            |
+| Published timestamp not updated | Low        | Low    | Fall back to re-import every hour           |
+| Large ZIP download times        | Low        | Low    | Only re-download when published.txt changes |
 
 ---
 
@@ -551,11 +588,13 @@ After successful migration, verify:
 ## 8. Timeline
 
 **Day 1 (4-6 hours):**
+
 - Phases 1-2: Environment & dependencies
 - Phase 3: Static data import refactor
 - Initial testing
 
 **Day 2 (4-6 hours):**
+
 - Phase 4: Realtime data refactor
 - Phases 5-6: Scripts & documentation
 - Integration testing
@@ -567,28 +606,30 @@ After successful migration, verify:
 
 ## 9. Key Files Modified
 
-| File | Type | Changes |
-|------|------|---------|
-| `.env.example` | Config | New env vars (token, new URLs) |
-| `packages/backend/src/config/env.ts` | Config | Update Zod schema |
-| `packages/backend/src/services/gtfs-init.service.ts` | Major | ZIP download, CSV parsing, timestamp checking |
-| `packages/backend/src/services/gtfs-realtime.service.ts` | Major | Bearer auth, protobuf parsing |
-| `packages/backend/src/scripts/snapshot-api.ts` | Minor | Update endpoints |
-| `packages/backend/src/scripts/validate-gtfs-api.ts` | Minor | Update endpoints |
-| `packages/backend/package.json` | Config | Add new dependencies |
-| `CLAUDE.md` | Docs | Update API documentation |
+| File                                                     | Type   | Changes                                       |
+| -------------------------------------------------------- | ------ | --------------------------------------------- |
+| `.env.example`                                           | Config | New env vars (token, new URLs)                |
+| `packages/backend/src/config/env.ts`                     | Config | Update Zod schema                             |
+| `packages/backend/src/services/gtfs-init.service.ts`     | Major  | ZIP download, CSV parsing, timestamp checking |
+| `packages/backend/src/services/gtfs-realtime.service.ts` | Major  | Bearer auth, protobuf parsing                 |
+| `packages/backend/src/scripts/snapshot-api.ts`           | Minor  | Update endpoints                              |
+| `packages/backend/src/scripts/validate-gtfs-api.ts`      | Minor  | Update endpoints                              |
+| `packages/backend/package.json`                          | Config | Add new dependencies                          |
+| `CLAUDE.md`                                              | Docs   | Update API documentation                      |
 
 ---
 
 ## 10. Additional Notes
 
 ### Performance Considerations
+
 - ZIP download is ~5-10 MB (reasonable)
 - Published timestamp check is very fast (<100ms)
 - Only re-import when schedule actually changes
 - Consider adding data compression for database if it grows large
 
 ### Future Enhancements
+
 - Add admin endpoint to manually trigger import
 - Add health check for last successful import time
 - Add monitoring/alerting for import failures
@@ -596,6 +637,7 @@ After successful migration, verify:
 - Add GTFS validation using gtfs-validator
 
 ### Alternative Approaches Considered
+
 1. **Use node-gtfs library**: More heavyweight, less control over transformations
 2. **Keep JSON endpoints**: Not possible - endpoints are deprecated
 3. **Manual updates**: Not scalable, defeats purpose of automation
@@ -605,16 +647,19 @@ After successful migration, verify:
 ## 11. Support & Resources
 
 **Metra GTFS Documentation:**
+
 - Static feed: https://schedules.metrarail.com/gtfs/schedule.zip
 - Published timestamp: https://schedules.metrarail.com/gtfs/published.txt
 - Realtime feeds: https://gtfspublic.metrarr.com/gtfs/public/*
 - API key request: [Insert link when available]
 
 **GTFS Specifications:**
+
 - GTFS Static: https://gtfs.org/schedule/reference/
 - GTFS Realtime: https://gtfs.org/realtime/reference/
 
 **Libraries:**
+
 - gtfs-realtime-bindings: https://github.com/google/gtfs-realtime-bindings
 - adm-zip: https://github.com/cthackers/adm-zip
 - csv-parse: https://csv.js.org/parse/
@@ -642,7 +687,7 @@ const parseGTFSFile = <T>(filePath: string): T[] => {
         return parseFloat(value);
       }
       return value;
-    }
+    },
   });
 
   return records as T[];

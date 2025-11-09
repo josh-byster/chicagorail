@@ -58,7 +58,9 @@ export function StationCombobox({
     );
   }
 
-  const selectedStation = stations?.find((station) => station.station_id === value);
+  const selectedStation = stations?.find(
+    (station) => station.station_id === value
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -70,13 +72,16 @@ export function StationCombobox({
           disabled={disabled || !stations || stations.length === 0}
           className="w-full justify-between h-11 font-normal"
         >
-          <span className={cn(!value && "text-muted-foreground")}>
+          <span className={cn(!value && 'text-muted-foreground')}>
             {selectedStation ? selectedStation.station_name : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
         <Command>
           <CommandInput
             placeholder="Search station..."
