@@ -54,7 +54,6 @@ const getAuthHeader = (): { Authorization: string } | null => {
 };
 
 // Fetch GTFS realtime data with If-Modified-Since header
-// Now parses Protocol Buffer format instead of JSON
 const fetchRealtimeEndpoint = async (
   url: string,
   lastModified?: string | null
@@ -69,37 +68,23 @@ const fetchRealtimeEndpoint = async (
 
   const headers: Record<string, string> = {
     ...authHeader,
-    Accept: 'application/x-protobuf', // Request protobuf format
+    Accept: 'application/x-protobuf',
   };
-
-  // Add If-Modified-Since header if we have a previous timestamp
-  if (lastModified) {
-    headers['If-Modified-Since'] = lastModified;
-  }
+  if (lastModified) headers['If-Modified-Since'] = lastModified;
 
   const response = await fetch(url, { headers });
-
-  if (response.status === 304) {
-    // Not modified - no new data
-    return { data: null, lastModified: null };
-  }
-
+  if (response.status === 304) return { data: null, lastModified: null };
   if (!response.ok) {
     throw new Error(
       `Failed to fetch realtime data: ${response.status} ${response.statusText}`
     );
   }
 
-  // Get the Last-Modified header from response for next request
-  const newLastModified = response.headers.get('Last-Modified');
-
-  // Parse Protocol Buffer format
   const buffer = await response.arrayBuffer();
   const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
     new Uint8Array(buffer)
   );
-
-  return { data: feed, lastModified: newLastModified };
+  return { data: feed, lastModified: response.headers.get('Last-Modified') };
 };
 
 // Store last modified timestamps for each endpoint
@@ -139,18 +124,13 @@ let realtimeVehiclePositions: RealtimeVehiclePosition[] = [];
  * Fetches alerts, trip updates, and vehicle positions
  */
 export const pollGTFSRealtimeData = async (): Promise<void> => {
-  if (!isRealtimeEnabled()) {
-    console.log('⏩ Realtime features disabled (no API token configured)');
-    return;
-  }
-
-  console.log('📡 Polling GTFS realtime data...');
-
   const config = getConfig();
   if (!config) {
     console.log('⏩ Realtime features disabled (no API token configured)');
     return;
   }
+
+  console.log('📡 Polling GTFS realtime data...');
 
   try {
     // Fetch alerts
@@ -162,8 +142,6 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 
     if (alertsResponse.data) {
       console.log('  💾 Processing alerts data...');
-      // Extract alerts from protobuf structure
-      // FeedMessage.entity[] -> each entity has an alert field
       realtimeAlerts = alertsResponse.data.entity
         .filter((e) => e.alert != null)
         .map((e) => ({ id: e.id || '', alert: e.alert! }));
@@ -182,8 +160,6 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 
     if (tripUpdatesResponse.data) {
       console.log('  💾 Processing trip updates data...');
-      // Extract trip updates from protobuf structure
-      // FeedMessage.entity[] -> each entity has a tripUpdate field
       realtimeTripUpdates = tripUpdatesResponse.data.entity
         .filter((e) => e.tripUpdate != null)
         .map((e) => ({
@@ -206,8 +182,6 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
 
     if (positionsResponse.data) {
       console.log('  💾 Processing vehicle positions data...');
-      // Extract vehicle positions from protobuf structure
-      // FeedMessage.entity[] -> each entity has a vehicle field
       realtimeVehiclePositions = positionsResponse.data.entity
         .filter((e) => e.vehicle != null)
         .map((e) => e.vehicle!);
@@ -255,11 +229,6 @@ export const getRealtimeVehiclePositions = (): RealtimeVehiclePosition[] => {
  * Polls data every 30 seconds
  */
 export const startGTFSRealtimePolling = (): void => {
-  if (!isRealtimeEnabled()) {
-    console.log('⏩ Realtime polling disabled (no API token configured)');
-    return;
-  }
-
   const config = getConfig();
   if (!config) {
     console.log('⏩ Realtime polling disabled (no API token configured)');
