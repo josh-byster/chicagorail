@@ -18,9 +18,7 @@ import os from 'os';
  */
 export const fetchPublishedTimestamp = async (): Promise<string | null> => {
   if (!env.GTFS_STATIC_PUBLISHED_URL) {
-    console.log(
-      '  ⏩ Published timestamp URL not configured, skipping check'
-    );
+    console.log('  ⏩ Published timestamp URL not configured, skipping check');
     return null;
   }
 
