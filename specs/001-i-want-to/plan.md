@@ -13,20 +13,24 @@ Build a Progressive Web App for real-time Metra train tracking with emphasis on 
 
 **Language/Version**: TypeScript 5.x (both frontend and backend)
 **Primary Dependencies**:
+
 - Frontend: React 18+, ShadCN UI, Vite, TanStack Query, Workbox (PWA)
 - Backend: Node.js 20 LTS, Express, node-gtfs library
 - Shared: Zod (schema validation), TypeScript path aliases for shared types
 
 **Storage**:
+
 - LocalStorage/IndexedDB (client-side: saved routes, cached train data)
 - SQLite with WAL mode (backend: GTFS static + realtime data via node-gtfs library)
 
 **Testing**:
+
 - Frontend: Vitest, React Testing Library, Playwright (E2E)
 - Backend: Vitest, Supertest (API testing)
 - Shared: Type checking via tsc --noEmit
 
 **Target Platform**:
+
 - Frontend: PWA supporting modern browsers (Chrome 90+, Safari 14+, Firefox 88+)
 - Backend: Linux server (DigitalOcean droplet)
 - Deployment: Docker containers via GitHub Actions CI/CD
@@ -34,12 +38,14 @@ Build a Progressive Web App for real-time Metra train tracking with emphasis on 
 **Project Type**: Web application (monorepo with frontend + backend)
 
 **Performance Goals**:
+
 - Initial load: <2s (as per spec SC-003)
 - API p95 latency: <200ms for reads (train data), <500ms for writes (save routes)
 - Real-time updates: 30-second polling interval (spec SC-002)
 - Bundle size: <500KB gzipped (constitution requirement)
 
 **Constraints**:
+
 - Offline-capable (PWA requirement)
 - Mobile-first responsive design
 - WCAG 2.1 Level AA accessibility
@@ -47,6 +53,7 @@ Build a Progressive Web App for real-time Metra train tracking with emphasis on 
 - Deployment platform: DigitalOcean App Platform
 
 **Scale/Scope**:
+
 - 11 Metra lines, ~230 stations
 - Expected users: 100-1000 daily active users initially
 - Real-time data for ~500 trains during peak hours
@@ -54,7 +61,7 @@ Build a Progressive Web App for real-time Metra train tracking with emphasis on 
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 Verify compliance with `.specify/memory/constitution.md` principles:
 
@@ -172,6 +179,7 @@ packages/
 ```
 
 **Structure Decision**: Monorepo with three packages (shared, backend, frontend) using pnpm workspaces. This architecture enables:
+
 - Type-safe shared models between frontend and backend via `packages/shared`
 - Independent testing and deployment of frontend/backend
 - Simplified development with single repository
@@ -179,7 +187,7 @@ packages/
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+_Fill ONLY if Constitution Check has violations that must be justified_
 
 **No violations** - All constitutional principles are satisfied. No complexity justification required.
 
@@ -224,6 +232,7 @@ packages/
 All Phase 0 and Phase 1 artifacts have been created:
 
 ✅ **Phase 0 - Research**:
+
 - `research.md`: Technical decisions with evidence-based recommendations
   - Backend storage: SQLite with node-gtfs
   - API polling: 30-second intervals with If-Modified-Since headers
@@ -232,6 +241,7 @@ All Phase 0 and Phase 1 artifacts have been created:
   - UI library: ShadCN UI with Tailwind CSS
 
 ✅ **Phase 1 - Design**:
+
 - `data-model.md`: Complete entity definitions with TypeScript interfaces, Zod schemas, relationships, and validation rules
   - Station, Line, Train, StopTime, SavedRoute, ServiceAlert entities
   - State transitions for Train status
@@ -249,6 +259,7 @@ All Phase 0 and Phase 1 artifacts have been created:
   - Troubleshooting guide
 
 ✅ **Agent Context**:
+
 - `CLAUDE.md`: Updated with TypeScript monorepo structure
 
 ---
@@ -262,6 +273,7 @@ With planning complete, the next command generates actionable implementation tas
 ```
 
 This will create `specs/001-i-want-to/tasks.md` with:
+
 - Dependency-ordered tasks for each user story
 - Parallel execution opportunities
 - Test-first workflow integration

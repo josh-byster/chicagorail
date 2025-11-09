@@ -62,6 +62,7 @@ chmod +x /tmp/setup-dokku.sh
 ```
 
 The script will:
+
 - Create the `metra-backend` app
 - Set up persistent storage for the SQLite database
 - Configure environment variables
@@ -94,29 +95,36 @@ cat ~/.ssh/dokku_deploy.pub | ssh root@your-droplet-ip "dokku ssh-keys:add githu
 ### Required Secrets:
 
 **DOKKU_SSH_PRIVATE_KEY**
+
 ```bash
 # Get the private key content
 cat ~/.ssh/dokku_deploy
 ```
+
 Copy the entire output (including `-----BEGIN OPENSSH PRIVATE KEY-----` and `-----END OPENSSH PRIVATE KEY-----`)
 
 **DOKKU_HOST**
+
 ```
 your-droplet-ip-or-domain
 ```
+
 Example: `123.45.67.89` or `droplet.yourdomain.com`
 
 **DOKKU_APP_NAME**
+
 ```
 metra-backend
 ```
 
 **METRA_API_USERNAME**
+
 ```
 your_metra_api_username
 ```
 
 **METRA_API_PASSWORD**
+
 ```
 your_metra_api_password
 ```
@@ -186,6 +194,7 @@ dokku letsencrypt:enable metra-backend
 ```
 
 Update your DNS records:
+
 - Add an A record pointing `api.yourdomain.com` to your droplet IP
 
 ## Troubleshooting
@@ -233,11 +242,13 @@ dokku config:set metra-backend VARIABLE_NAME=value
 If GitHub Actions can't connect:
 
 1. Verify the key is added to Dokku:
+
 ```bash
 dokku ssh-keys:list
 ```
 
 2. Test SSH connection from your local machine:
+
 ```bash
 ssh -i ~/.ssh/dokku_deploy dokku@your-droplet-ip
 ```
@@ -289,6 +300,7 @@ ssh dokku@your-droplet-ip run metra-backend "cd packages/backend && npm run gtfs
 ## Security Considerations
 
 1. **Firewall**: Configure UFW to only allow ports 22, 80, and 443
+
 ```bash
 ufw allow 22
 ufw allow 80
@@ -303,6 +315,7 @@ ufw enable
 4. **SSL**: Always use Let's Encrypt for production domains
 
 5. **Updates**: Keep Dokku and your droplet updated
+
 ```bash
 apt update && apt upgrade
 ```

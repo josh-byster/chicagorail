@@ -45,6 +45,7 @@ cp .env.example .env
 **⚠️ CRITICAL SECURITY**: The `.env` file contains API credentials and is in `.gitignore`. NEVER commit this file to version control.
 
 **Environment Variables Configured**:
+
 - `METRA_API_USERNAME` & `METRA_API_PASSWORD`: GTFS API credentials
 - `GTFS_STATIC_BASE_URL`: Base URL for static GTFS data (https://gtfsapi.metrarail.com)
 - `GTFS_REALTIME_*_URL`: Realtime endpoints for alerts, trip updates, and vehicle positions
@@ -53,6 +54,7 @@ cp .env.example .env
 - `VITE_API_URL`: Frontend API endpoint (http://localhost:3000/api)
 
 **Available GTFS Static Endpoints**:
+
 - `/gtfs/schedule/stops` - All station information
 - `/gtfs/schedule/stop_times` - Stop times for all trips
 - `/gtfs/schedule/trips` - Trip information
@@ -62,6 +64,7 @@ cp .env.example .env
 - `/gtfs/schedule/stop_times/<TRIP_ID>` - Stop times for specific trip
 
 **Available GTFS Realtime Endpoints**:
+
 - `https://gtfsapi.metrarail.com/gtfs/alerts` - Service alerts
 - `https://gtfsapi.metrarail.com/gtfs/tripUpdates` - Trip delays/updates
 - `https://gtfsapi.metrarail.com/gtfs/positions` - Real-time train positions
@@ -69,12 +72,13 @@ cp .env.example .env
 ### 3. Authentication
 
 API requests require HTTP Basic Authentication using the credentials in `.env`:
+
 ```typescript
 const auth = btoa(`${METRA_API_USERNAME}:${METRA_API_PASSWORD}`);
 fetch(url, {
   headers: {
-    'Authorization': `Basic ${auth}`
-  }
+    Authorization: `Basic ${auth}`,
+  },
 });
 ```
 
@@ -106,6 +110,7 @@ pnpm dev
 ```
 
 This runs:
+
 - Backend: http://localhost:3000
 - Frontend: http://localhost:5173
 
@@ -147,6 +152,7 @@ pnpm test
 ```
 
 **Structure**:
+
 ```
 packages/shared/src/
 ├── types/
@@ -183,12 +189,14 @@ pnpm type-check
 ```
 
 **Key Files**:
+
 - `src/server.ts`: Express app entry point
 - `src/services/gtfs.service.ts`: GTFS API integration
 - `src/services/train.service.ts`: Train data processing
 - `src/api/`: REST endpoint handlers
 
 **GTFS Import**:
+
 ```bash
 # Import static GTFS data (run weekly or on deployment)
 pnpm gtfs:import
@@ -201,6 +209,7 @@ pnpm gtfs:import
 ```
 
 **Start Realtime Polling**:
+
 ```bash
 # Backend automatically polls GTFS Realtime API every 30s when running
 pnpm dev
@@ -236,6 +245,7 @@ pnpm lint
 ```
 
 **Key Files**:
+
 - `src/App.tsx`: Main React component
 - `src/components/`: Reusable UI components
 - `src/pages/`: Page components
@@ -244,6 +254,7 @@ pnpm lint
 - `public/manifest.json`: PWA manifest
 
 **ShadCN UI Setup** (if components not yet added):
+
 ```bash
 # Add ShadCN components as needed
 npx shadcn-ui@latest add button
@@ -304,6 +315,7 @@ pnpm test:e2e:headed
 Located at: `packages/backend/data/gtfs.db`
 
 **Useful Commands**:
+
 ```bash
 # Open SQLite CLI
 sqlite3 packages/backend/data/gtfs.db
@@ -323,6 +335,7 @@ SELECT * FROM stops LIMIT 10;
 ```
 
 **Database Maintenance**:
+
 ```bash
 # Optimize database (run weekly)
 sqlite3 packages/backend/data/gtfs.db "PRAGMA optimize;"
@@ -372,6 +385,7 @@ sqlite3 packages/backend/data/gtfs.db "PRAGMA integrity_check;"
 ### Backend Debugging
 
 **VS Code launch.json**:
+
 ```json
 {
   "version": "0.2.0",
@@ -390,6 +404,7 @@ sqlite3 packages/backend/data/gtfs.db "PRAGMA integrity_check;"
 ```
 
 **Console Logging**:
+
 ```typescript
 // Use debug module for structured logging
 import debug from 'debug';
@@ -441,6 +456,7 @@ pnpm analyze
 ```
 
 **Target Metrics** (from constitution):
+
 - Initial load: <2s
 - Time to Interactive: <3s
 - Bundle size: <500KB gzipped
@@ -474,12 +490,14 @@ docker run -p 3000:3000 --env-file .env metra-tracker
 ### DigitalOcean App Platform
 
 **Deploy via GitHub Actions**:
+
 1. Push to `main` branch
 2. GitHub Actions workflow triggers
 3. Builds Docker image
 4. Deploys to DigitalOcean App Platform
 
 **Manual Deployment**:
+
 ```bash
 # Install doctl CLI
 brew install doctl
@@ -500,6 +518,7 @@ doctl apps create --spec .do/app.yaml
 **Issue**: `Error: Unable to download GTFS file`
 
 **Solution**:
+
 1. Check `GTFS_STATIC_URL` in `.env`
 2. Verify internet connection
 3. Try downloading manually: `curl -O https://gtfsapi.metrarail.com/gtfs/schedule/metra_gtfs.zip`
@@ -509,6 +528,7 @@ doctl apps create --spec .do/app.yaml
 **Issue**: Train times are outdated
 
 **Solution**:
+
 1. Check backend logs for GTFS polling errors
 2. Verify `METRA_API_KEY` is valid
 3. Check Metra API status: https://metra.com/developers
@@ -519,6 +539,7 @@ doctl apps create --spec .do/app.yaml
 **Issue**: "Install App" prompt doesn't appear
 
 **Solution**:
+
 1. Check `manifest.json` is valid (use https://manifest-validator.appspot.com/)
 2. Verify service worker is registered (Chrome DevTools > Application > Service Workers)
 3. Ensure HTTPS (or localhost) - PWAs require secure context
@@ -529,6 +550,7 @@ doctl apps create --spec .do/app.yaml
 **Issue**: `Cannot find module '@metra/shared'`
 
 **Solution**:
+
 ```bash
 # Rebuild shared package
 cd packages/shared

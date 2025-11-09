@@ -112,17 +112,20 @@ All features MUST meet these performance standards:
 ## Development Workflow
 
 ### Branch Strategy
+
 - `main` branch MUST always be deployable
 - Feature branches: `feature/###-description` (### = issue/ticket number)
 - Hotfix branches: `hotfix/###-description`
 - All branches MUST be short-lived (<3 days before merge or rebase)
 
 ### Commit Standards
+
 - Commits MUST follow Conventional Commits format: `type(scope): description`
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Commit messages MUST be clear and descriptive (explain the "why")
 
 ### Pull Request Requirements
+
 - PR description MUST link to issue/ticket and explain changes
 - All CI checks MUST pass (tests, linting, type checking, performance benchmarks)
 - At least one approved review required
@@ -161,9 +164,11 @@ Before any feature is considered complete, it MUST pass these gates:
 ## Governance
 
 ### Constitution Authority
+
 This constitution supersedes all other development practices and guidelines. When conflicts arise, the constitution takes precedence.
 
 ### Amendment Process
+
 1. Amendments MUST be proposed via written proposal explaining:
    - Current problem with existing principles
    - Proposed change and rationale
@@ -177,12 +182,15 @@ This constitution supersedes all other development practices and guidelines. Whe
 4. All dependent templates and documentation MUST be updated
 
 ### Compliance Review
+
 - All pull requests MUST verify compliance with constitutional principles
 - Violations MUST be justified in writing and approved by project leads
 - Recurring violations trigger architecture review and potential refactoring
 
 ### Complexity Justification
+
 Any deviation from these principles MUST be explicitly justified:
+
 - Document the specific constraint or requirement necessitating the deviation
 - Explain why simpler alternatives following principles were rejected
 - Get explicit approval from project leads

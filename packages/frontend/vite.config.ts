@@ -13,7 +13,8 @@ export default defineConfig({
       manifest: {
         name: 'Fast Metra Train Tracker',
         short_name: 'Metra Tracker',
-        description: 'Real-time Metra train tracking with route lookup and live updates',
+        description:
+          'Real-time Metra train tracking with route lookup and live updates',
         theme_color: '#0066CC',
         background_color: '#ffffff',
         display: 'standalone',
@@ -23,44 +24,44 @@ export default defineConfig({
           {
             src: '/icons/icon-72x72.png',
             sizes: '72x72',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-96x96.png',
             sizes: '96x96',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-128x128.png',
             sizes: '128x128',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-144x144.png',
             sizes: '144x144',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-152x152.png',
             sizes: '152x152',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-384x384.png',
             sizes: '384x384',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/icons/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+            type: 'image/png',
+          },
+        ],
       },
       workbox: {
         runtimeCaching: [
@@ -71,12 +72,12 @@ export default defineConfig({
               cacheName: 'realtime-api',
               expiration: {
                 maxAgeSeconds: 30,
-                maxEntries: 50
+                maxEntries: 50,
               },
               cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
+                statuses: [0, 200],
+              },
+            },
           },
           {
             urlPattern: /^https:\/\/.*\/api\/(stations|lines).*/,
@@ -85,43 +86,43 @@ export default defineConfig({
               cacheName: 'static-api',
               expiration: {
                 maxAgeSeconds: 7 * 24 * 60 * 60, // 1 week
-                maxEntries: 100
-              }
-            }
-          }
-        ]
-      }
-    })
+                maxEntries: 100,
+              },
+            },
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@metra/shared': path.resolve(__dirname, '../shared/src')
-    }
+      '@metra/shared': path.resolve(__dirname, '../shared/src'),
+    },
   },
   server: {
     port: 5173,
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:3000',
-        changeOrigin: true
-      }
-    }
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'query-vendor': ['@tanstack/react-query']
-        }
-      }
-    }
+          'query-vendor': ['@tanstack/react-query'],
+        },
+      },
+    },
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    css: true
-  }
+    css: true,
+  },
 });

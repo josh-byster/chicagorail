@@ -7,18 +7,22 @@
 **Tests**: Tests are NOT explicitly requested in the spec, so test tasks are omitted per template guidance.
 
 **MCP Tools**: This project REQUIRES using MCP tools:
+
 - **ShadCN UI MCP**: Use `mcp__shadcn__getComponent` before implementing ANY ShadCN component (see CLAUDE.md for details)
 - **Ref MCP**: Use `mcp__Ref__ref_search_documentation` for searching library documentation (TanStack Query, node-gtfs, Workbox, etc.)
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
+
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3, Setup, Foundation)
 - Include exact file paths in descriptions
 
 ## Path Conventions
+
 This is a monorepo project with:
+
 - **Shared types**: `packages/shared/src/`
 - **Backend**: `packages/backend/src/`
 - **Frontend**: `packages/frontend/src/`
@@ -29,16 +33,16 @@ This is a monorepo project with:
 
 **Purpose**: Project initialization and monorepo structure
 
-- [X] T001 [Setup] Create monorepo structure with packages/ directory containing shared/, backend/, and frontend/
-- [X] T002 [Setup] Initialize pnpm workspace configuration in pnpm-workspace.yaml
-- [X] T003 [Setup] Create root package.json with workspace references and dev scripts
-- [X] T004 [P] [Setup] Create tsconfig.base.json with shared TypeScript configuration
-- [X] T005 [P] [Setup] Setup ESLint configuration in .eslintrc.js for monorepo
-- [X] T006 [P] [Setup] Setup Prettier configuration in .prettierrc
-- [X] T007 [P] [Setup] Create .env.example with required environment variables (METRA_API_KEY, GTFS_STATIC_URL, GTFS_REALTIME_URL, PORT, NODE_ENV, DATABASE_PATH, VITE_API_URL)
-- [X] T008 [P] [Setup] Create .gitignore with node_modules, dist, .env, data/*.db
-- [X] T009 [P] [Setup] Setup GitHub Actions workflow in .github/workflows/ci-cd.yml for testing and deployment
-- [X] T010 [P] [Setup] Create docker-compose.yml for local development
+- [x] T001 [Setup] Create monorepo structure with packages/ directory containing shared/, backend/, and frontend/
+- [x] T002 [Setup] Initialize pnpm workspace configuration in pnpm-workspace.yaml
+- [x] T003 [Setup] Create root package.json with workspace references and dev scripts
+- [x] T004 [P] [Setup] Create tsconfig.base.json with shared TypeScript configuration
+- [x] T005 [P] [Setup] Setup ESLint configuration in .eslintrc.js for monorepo
+- [x] T006 [P] [Setup] Setup Prettier configuration in .prettierrc
+- [x] T007 [P] [Setup] Create .env.example with required environment variables (METRA_API_KEY, GTFS_STATIC_URL, GTFS_REALTIME_URL, PORT, NODE_ENV, DATABASE_PATH, VITE_API_URL)
+- [x] T008 [P] [Setup] Create .gitignore with node_modules, dist, .env, data/\*.db
+- [x] T009 [P] [Setup] Setup GitHub Actions workflow in .github/workflows/ci-cd.yml for testing and deployment
+- [x] T010 [P] [Setup] Create docker-compose.yml for local development
 
 ---
 
@@ -50,48 +54,48 @@ This is a monorepo project with:
 
 ### Shared Package Foundation
 
-- [X] T011 [P] [Foundation] Initialize packages/shared package.json with TypeScript, Zod dependencies
-- [X] T012 [P] [Foundation] Create packages/shared/tsconfig.json extending base config
-- [X] T013 [P] [Foundation] Setup packages/shared/src/index.ts as main export file
+- [x] T011 [P] [Foundation] Initialize packages/shared package.json with TypeScript, Zod dependencies
+- [x] T012 [P] [Foundation] Create packages/shared/tsconfig.json extending base config
+- [x] T013 [P] [Foundation] Setup packages/shared/src/index.ts as main export file
 
 ### Backend Package Foundation
 
-- [X] T014 [P] [Foundation] Initialize packages/backend package.json with Express, node-gtfs, SQLite3, Zod dependencies
-- [X] T015 [P] [Foundation] Create packages/backend/tsconfig.json extending base config
-- [X] T016 [Foundation] Setup Express app structure in packages/backend/src/server.ts with middleware
-- [X] T017 [P] [Foundation] Create packages/backend/src/middleware/error-handler.ts for centralized error handling
-- [X] T018 [P] [Foundation] Create packages/backend/src/middleware/logger.ts for request logging
-- [X] T019 [P] [Foundation] Create packages/backend/src/middleware/cors.ts for CORS configuration
-- [X] T020 [Foundation] Setup environment configuration in packages/backend/src/config/env.ts
-- [X] T021 [Foundation] Initialize SQLite database with node-gtfs in packages/backend/src/services/gtfs-init.service.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs library setup"`)
-- [X] T022 [Foundation] Import GTFS static data (Metra schedule) using custom JSON endpoint integration (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs importGtfs configuration"`)
-- [X] T023 [Foundation] Enable SQLite WAL mode and create indexes per research.md in packages/backend/src/services/database.service.ts
-- [X] T024 [Foundation] Setup GTFS realtime polling service skeleton in packages/backend/src/services/gtfs-realtime.service.ts (30-second interval with If-Modified-Since headers) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs realtime API"`)
+- [x] T014 [P] [Foundation] Initialize packages/backend package.json with Express, node-gtfs, SQLite3, Zod dependencies
+- [x] T015 [P] [Foundation] Create packages/backend/tsconfig.json extending base config
+- [x] T016 [Foundation] Setup Express app structure in packages/backend/src/server.ts with middleware
+- [x] T017 [P] [Foundation] Create packages/backend/src/middleware/error-handler.ts for centralized error handling
+- [x] T018 [P] [Foundation] Create packages/backend/src/middleware/logger.ts for request logging
+- [x] T019 [P] [Foundation] Create packages/backend/src/middleware/cors.ts for CORS configuration
+- [x] T020 [Foundation] Setup environment configuration in packages/backend/src/config/env.ts
+- [x] T021 [Foundation] Initialize SQLite database with node-gtfs in packages/backend/src/services/gtfs-init.service.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs library setup"`)
+- [x] T022 [Foundation] Import GTFS static data (Metra schedule) using custom JSON endpoint integration (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs importGtfs configuration"`)
+- [x] T023 [Foundation] Enable SQLite WAL mode and create indexes per research.md in packages/backend/src/services/database.service.ts
+- [x] T024 [Foundation] Setup GTFS realtime polling service skeleton in packages/backend/src/services/gtfs-realtime.service.ts (30-second interval with If-Modified-Since headers) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="node-gtfs realtime API"`)
 
 ### Frontend Package Foundation
 
-- [X] T025 [P] [Foundation] Initialize packages/frontend package.json with React 18, Vite, TypeScript, TanStack Query, Workbox dependencies
-- [X] T026 [P] [Foundation] Create packages/frontend/tsconfig.json extending base config
-- [X] T027 [P] [Foundation] Setup Vite configuration in packages/frontend/vite.config.ts with PWA plugin
-- [X] T028 [P] [Foundation] Create packages/frontend/tailwind.config.js for Tailwind CSS
-- [X] T029 [P] [Foundation] Install ShadCN UI and setup components.json configuration (💡 Use ShadCN MCP: `mcp__shadcn__getComponents` to see available components)
-- [X] T030 [Foundation] Create packages/frontend/src/App.tsx main component with routing setup
-- [X] T031 [P] [Foundation] Setup TanStack Query client in packages/frontend/src/lib/query-client.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="TanStack Query setup TypeScript"`)
-- [X] T032 [P] [Foundation] Create packages/frontend/src/services/api.ts as backend API client
-- [X] T033 [P] [Foundation] Setup Workbox service worker strategy in packages/frontend/src/service-worker.ts (Network First for API, Cache First for static assets) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="Workbox service worker strategies"`)
-- [X] T034 [P] [Foundation] Create packages/frontend/src/services/storage.ts as IndexedDB wrapper using Dexie.js
-- [X] T035 [P] [Foundation] Create packages/frontend/public/manifest.json for PWA configuration
-- [X] T036 [P] [Foundation] Create app icons in various sizes in packages/frontend/public/icons/
+- [x] T025 [P] [Foundation] Initialize packages/frontend package.json with React 18, Vite, TypeScript, TanStack Query, Workbox dependencies
+- [x] T026 [P] [Foundation] Create packages/frontend/tsconfig.json extending base config
+- [x] T027 [P] [Foundation] Setup Vite configuration in packages/frontend/vite.config.ts with PWA plugin
+- [x] T028 [P] [Foundation] Create packages/frontend/tailwind.config.js for Tailwind CSS
+- [x] T029 [P] [Foundation] Install ShadCN UI and setup components.json configuration (💡 Use ShadCN MCP: `mcp__shadcn__getComponents` to see available components)
+- [x] T030 [Foundation] Create packages/frontend/src/App.tsx main component with routing setup
+- [x] T031 [P] [Foundation] Setup TanStack Query client in packages/frontend/src/lib/query-client.ts (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="TanStack Query setup TypeScript"`)
+- [x] T032 [P] [Foundation] Create packages/frontend/src/services/api.ts as backend API client
+- [x] T033 [P] [Foundation] Setup Workbox service worker strategy in packages/frontend/src/service-worker.ts (Network First for API, Cache First for static assets) (💡 Use Ref MCP: `mcp__Ref__ref_search_documentation query="Workbox service worker strategies"`)
+- [x] T034 [P] [Foundation] Create packages/frontend/src/services/storage.ts as IndexedDB wrapper using Dexie.js
+- [x] T035 [P] [Foundation] Create packages/frontend/public/manifest.json for PWA configuration
+- [x] T036 [P] [Foundation] Create app icons in various sizes in packages/frontend/public/icons/
 
 ### Shared Type Definitions (Required for all stories)
 
-- [X] T037 [P] [Foundation] Define Station interface and Zod schema in packages/shared/src/types/station.ts
-- [X] T038 [P] [Foundation] Define Line interface and Zod schema in packages/shared/src/types/line.ts
-- [X] T039 [P] [Foundation] Define Train interface, TrainStatus enum, Position interface, and Zod schemas in packages/shared/src/types/train.ts
-- [X] T040 [P] [Foundation] Define StopTime interface and Zod schema in packages/shared/src/types/stoptime.ts
-- [X] T041 [P] [Foundation] Define ServiceAlert interface, AlertType enum, AlertSeverity enum, and Zod schemas in packages/shared/src/types/alert.ts
-- [X] T042 [Foundation] Export all types and schemas from packages/shared/src/index.ts
-- [X] T043 [Foundation] Build shared package (pnpm build in packages/shared/)
+- [x] T037 [P] [Foundation] Define Station interface and Zod schema in packages/shared/src/types/station.ts
+- [x] T038 [P] [Foundation] Define Line interface and Zod schema in packages/shared/src/types/line.ts
+- [x] T039 [P] [Foundation] Define Train interface, TrainStatus enum, Position interface, and Zod schemas in packages/shared/src/types/train.ts
+- [x] T040 [P] [Foundation] Define StopTime interface and Zod schema in packages/shared/src/types/stoptime.ts
+- [x] T041 [P] [Foundation] Define ServiceAlert interface, AlertType enum, AlertSeverity enum, and Zod schemas in packages/shared/src/types/alert.ts
+- [x] T042 [Foundation] Export all types and schemas from packages/shared/src/index.ts
+- [x] T043 [Foundation] Build shared package (pnpm build in packages/shared/)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -108,32 +112,32 @@ This is a monorepo project with:
 
 ### Backend Implementation for US1
 
-- [X] T044 [P] [US1] Create Station service in packages/backend/src/services/station.service.ts (query stations from SQLite, filter by line)
-- [X] T045 [P] [US1] Create Train service in packages/backend/src/services/train.service.ts (query trains by origin/destination, apply realtime delays)
-- [X] T046 [US1] Create GET /stations endpoint in packages/backend/src/api/stations.ts (list all stations, filter by line_id query param)
-- [X] T047 [US1] Create GET /stations/:stationId endpoint in packages/backend/src/api/stations.ts (get single station details)
-- [X] T048 [US1] Create GET /trains endpoint in packages/backend/src/api/trains.ts (requires origin, destination query params; optional limit, time; returns upcoming trains)
-- [X] T049 [US1] Create GET /trains/:tripId endpoint in packages/backend/src/api/trains.ts (detailed train info with all stops)
-- [X] T050 [US1] Register station and train routes in packages/backend/src/server.ts
-- [X] T051 [US1] Add request validation middleware for train query parameters in packages/backend/src/middleware/validate-trains.ts
+- [x] T044 [P] [US1] Create Station service in packages/backend/src/services/station.service.ts (query stations from SQLite, filter by line)
+- [x] T045 [P] [US1] Create Train service in packages/backend/src/services/train.service.ts (query trains by origin/destination, apply realtime delays)
+- [x] T046 [US1] Create GET /stations endpoint in packages/backend/src/api/stations.ts (list all stations, filter by line_id query param)
+- [x] T047 [US1] Create GET /stations/:stationId endpoint in packages/backend/src/api/stations.ts (get single station details)
+- [x] T048 [US1] Create GET /trains endpoint in packages/backend/src/api/trains.ts (requires origin, destination query params; optional limit, time; returns upcoming trains)
+- [x] T049 [US1] Create GET /trains/:tripId endpoint in packages/backend/src/api/trains.ts (detailed train info with all stops)
+- [x] T050 [US1] Register station and train routes in packages/backend/src/server.ts
+- [x] T051 [US1] Add request validation middleware for train query parameters in packages/backend/src/middleware/validate-trains.ts
 
 ### Frontend Implementation for US1
 
-- [X] T052 [P] [US1] Install and configure ShadCN Select component for station selection (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="select"`)
-- [X] T053 [P] [US1] Install and configure ShadCN Card component for train display (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="card"`)
-- [X] T054 [P] [US1] Install and configure ShadCN Button component for interactions (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="button"`)
-- [X] T055 [US1] Create StationSelect component in packages/frontend/src/components/StationSelect/StationSelect.tsx (searchable dropdown with station names)
-- [X] T056 [US1] Create RouteSearch component in packages/frontend/src/components/RouteSearch/RouteSearch.tsx (origin/destination station selectors, swap button)
-- [X] T057 [US1] Create TrainListItem component in packages/frontend/src/components/TrainList/TrainListItem.tsx (displays single train with departure/arrival times, line color, platform)
-- [X] T058 [US1] Create TrainList component in packages/frontend/src/components/TrainList/TrainList.tsx (renders list of trains)
-- [X] T059 [US1] Create HomePage component in packages/frontend/src/pages/HomePage.tsx (combines RouteSearch + TrainList)
-- [X] T060 [US1] Create TrainDetailPage component in packages/frontend/src/pages/TrainDetailPage.tsx (shows all stops for selected train)
-- [X] T061 [US1] Add API client methods in packages/frontend/src/services/api.ts (fetchStations, fetchTrains, fetchTrainDetail)
-- [X] T062 [US1] Create TanStack Query hooks in packages/frontend/src/hooks/useStations.ts and packages/frontend/src/hooks/useTrains.ts
-- [X] T063 [US1] Setup React Router in packages/frontend/src/App.tsx with routes for HomePage and TrainDetailPage
-- [X] T064 [US1] Cache stations in IndexedDB on first load in packages/frontend/src/services/storage.ts
-- [X] T065 [US1] Implement loading states for train queries (Skeleton components from ShadCN) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="skeleton"`)
-- [X] T066 [US1] Implement error handling UI for API failures (ShadCN Alert component) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
+- [x] T052 [P] [US1] Install and configure ShadCN Select component for station selection (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="select"`)
+- [x] T053 [P] [US1] Install and configure ShadCN Card component for train display (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="card"`)
+- [x] T054 [P] [US1] Install and configure ShadCN Button component for interactions (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="button"`)
+- [x] T055 [US1] Create StationSelect component in packages/frontend/src/components/StationSelect/StationSelect.tsx (searchable dropdown with station names)
+- [x] T056 [US1] Create RouteSearch component in packages/frontend/src/components/RouteSearch/RouteSearch.tsx (origin/destination station selectors, swap button)
+- [x] T057 [US1] Create TrainListItem component in packages/frontend/src/components/TrainList/TrainListItem.tsx (displays single train with departure/arrival times, line color, platform)
+- [x] T058 [US1] Create TrainList component in packages/frontend/src/components/TrainList/TrainList.tsx (renders list of trains)
+- [x] T059 [US1] Create HomePage component in packages/frontend/src/pages/HomePage.tsx (combines RouteSearch + TrainList)
+- [x] T060 [US1] Create TrainDetailPage component in packages/frontend/src/pages/TrainDetailPage.tsx (shows all stops for selected train)
+- [x] T061 [US1] Add API client methods in packages/frontend/src/services/api.ts (fetchStations, fetchTrains, fetchTrainDetail)
+- [x] T062 [US1] Create TanStack Query hooks in packages/frontend/src/hooks/useStations.ts and packages/frontend/src/hooks/useTrains.ts
+- [x] T063 [US1] Setup React Router in packages/frontend/src/App.tsx with routes for HomePage and TrainDetailPage
+- [x] T064 [US1] Cache stations in IndexedDB on first load in packages/frontend/src/services/storage.ts
+- [x] T065 [US1] Implement loading states for train queries (Skeleton components from ShadCN) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="skeleton"`)
+- [x] T066 [US1] Implement error handling UI for API failures (ShadCN Alert component) (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can search routes and see upcoming trains
 
@@ -150,32 +154,32 @@ This is a monorepo project with:
 
 ### Backend Implementation for US2
 
-- [X] T067 [P] [US2] Implement GTFS Realtime polling in packages/backend/src/services/gtfs-realtime.service.ts (fetch vehicle positions, trip updates every 30 seconds)
-- [X] T068 [US2] Update Train service in packages/backend/src/services/train.service.ts to merge realtime position and delay data
-- [X] T069 [P] [US2] Create ServiceAlert service in packages/backend/src/services/alert.service.ts (query active alerts from GTFS realtime)
-- [X] T070 [P] [US2] Create Line service in packages/backend/src/services/line.service.ts (query lines from SQLite)
-- [X] T071 [US2] Create GET /lines endpoint in packages/backend/src/api/lines.ts (list all lines)
-- [X] T072 [US2] Create GET /lines/:lineId endpoint in packages/backend/src/api/lines.ts (get single line details)
-- [X] T073 [US2] Create GET /alerts endpoint in packages/backend/src/api/alerts.ts (filter by line_id or station_id query params)
-- [X] T074 [US2] Create GET /health endpoint in packages/backend/src/api/health.ts (return status, gtfs_last_updated, gtfs_static_version)
-- [X] T075 [US2] Register alert, line, and health routes in packages/backend/src/server.ts
-- [X] T076 [US2] Add caching layer in packages/backend/src/services/cache.service.ts (cache trains for 30 seconds to reduce SQLite queries)
+- [x] T067 [P] [US2] Implement GTFS Realtime polling in packages/backend/src/services/gtfs-realtime.service.ts (fetch vehicle positions, trip updates every 30 seconds)
+- [x] T068 [US2] Update Train service in packages/backend/src/services/train.service.ts to merge realtime position and delay data
+- [x] T069 [P] [US2] Create ServiceAlert service in packages/backend/src/services/alert.service.ts (query active alerts from GTFS realtime)
+- [x] T070 [P] [US2] Create Line service in packages/backend/src/services/line.service.ts (query lines from SQLite)
+- [x] T071 [US2] Create GET /lines endpoint in packages/backend/src/api/lines.ts (list all lines)
+- [x] T072 [US2] Create GET /lines/:lineId endpoint in packages/backend/src/api/lines.ts (get single line details)
+- [x] T073 [US2] Create GET /alerts endpoint in packages/backend/src/api/alerts.ts (filter by line_id or station_id query params)
+- [x] T074 [US2] Create GET /health endpoint in packages/backend/src/api/health.ts (return status, gtfs_last_updated, gtfs_static_version)
+- [x] T075 [US2] Register alert, line, and health routes in packages/backend/src/server.ts
+- [x] T076 [US2] Add caching layer in packages/backend/src/services/cache.service.ts (cache trains for 30 seconds to reduce SQLite queries)
 
 ### Frontend Implementation for US2
 
-- [X] T077 [P] [US2] Install and configure ShadCN Badge component for status indicators (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="badge"`)
-- [X] T078 [P] [US2] Install and configure ShadCN Alert component for service alerts (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
-- [X] T079 [US2] Create TrainStatus component in packages/frontend/src/components/TrainStatus/TrainStatus.tsx (shows status badge: on_time/delayed/cancelled with color coding)
-- [X] T080 [US2] Update TrainListItem to display delay_minutes and status badge from TrainStatus component
-- [X] T081 [US2] Create TrainPosition component in packages/frontend/src/components/TrainDetail/TrainPosition.tsx (progress bar showing current position between origin and destination)
-- [X] T082 [US2] Update TrainDetailPage to include TrainPosition component and show current_station_id
-- [X] T083 [US2] Create ServiceAlertBanner component in packages/frontend/src/components/ServiceAlertBanner/ServiceAlertBanner.tsx (displays active alerts)
-- [X] T084 [US2] Add ServiceAlertBanner to HomePage (show alerts affecting searched route)
-- [X] T085 [US2] Implement auto-refresh using TanStack Query refetchInterval (30 seconds) for train data in packages/frontend/src/hooks/useTrains.ts
-- [X] T086 [US2] Add visual notification when train is approaching (within 5 minutes) in packages/frontend/src/components/TrainList/TrainList.tsx
-- [X] T087 [US2] Update IndexedDB storage to cache realtime train data with 30-second TTL in packages/frontend/src/services/storage.ts
-- [X] T088 [US2] Add "Last updated" timestamp display in packages/frontend/src/components/TrainList/TrainList.tsx
-- [X] T089 [US2] Handle offline scenario: show cached data with staleness indicator in packages/frontend/src/components/TrainList/TrainList.tsx
+- [x] T077 [P] [US2] Install and configure ShadCN Badge component for status indicators (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="badge"`)
+- [x] T078 [P] [US2] Install and configure ShadCN Alert component for service alerts (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="alert"`)
+- [x] T079 [US2] Create TrainStatus component in packages/frontend/src/components/TrainStatus/TrainStatus.tsx (shows status badge: on_time/delayed/cancelled with color coding)
+- [x] T080 [US2] Update TrainListItem to display delay_minutes and status badge from TrainStatus component
+- [x] T081 [US2] Create TrainPosition component in packages/frontend/src/components/TrainDetail/TrainPosition.tsx (progress bar showing current position between origin and destination)
+- [x] T082 [US2] Update TrainDetailPage to include TrainPosition component and show current_station_id
+- [x] T083 [US2] Create ServiceAlertBanner component in packages/frontend/src/components/ServiceAlertBanner/ServiceAlertBanner.tsx (displays active alerts)
+- [x] T084 [US2] Add ServiceAlertBanner to HomePage (show alerts affecting searched route)
+- [x] T085 [US2] Implement auto-refresh using TanStack Query refetchInterval (30 seconds) for train data in packages/frontend/src/hooks/useTrains.ts
+- [x] T086 [US2] Add visual notification when train is approaching (within 5 minutes) in packages/frontend/src/components/TrainList/TrainList.tsx
+- [x] T087 [US2] Update IndexedDB storage to cache realtime train data with 30-second TTL in packages/frontend/src/services/storage.ts
+- [x] T088 [US2] Add "Last updated" timestamp display in packages/frontend/src/components/TrainList/TrainList.tsx
+- [x] T089 [US2] Handle offline scenario: show cached data with staleness indicator in packages/frontend/src/components/TrainList/TrainList.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - users can search routes AND see realtime status
 
@@ -196,19 +200,19 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 
 ### Frontend Implementation for US3
 
-- [X] T090 [P] [US3] Define SavedRoute interface in packages/shared/src/types/route.ts with Zod schema
-- [X] T091 [US3] Create SavedRoute storage service in packages/frontend/src/services/saved-routes.ts (CRUD operations using LocalStorage + IndexedDB)
-- [X] T092 [P] [US3] Install and configure ShadCN Dialog component for save route modal (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="dialog"`)
-- [X] T093 [P] [US3] Install and configure ShadCN Input component for route label input (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="input"`)
-- [X] T094 [US3] Create SaveRouteDialog component in packages/frontend/src/components/SavedRoutes/SaveRouteDialog.tsx (modal to label and save current route)
-- [X] T095 [US3] Create SavedRouteCard component in packages/frontend/src/components/SavedRoutes/SavedRouteCard.tsx (displays favorite route with next train time, origin → destination)
-- [X] T096 [US3] Create SavedRoutesList component in packages/frontend/src/components/SavedRoutes/SavedRoutesList.tsx (grid of SavedRouteCard components)
-- [X] T097 [US3] Update HomePage to show SavedRoutesList above RouteSearch
-- [X] T098 [US3] Add "Save Route" button to RouteSearch component that opens SaveRouteDialog
-- [X] T099 [US3] Implement route deletion: add delete button to SavedRouteCard
-- [X] T100 [US3] Implement "last used" tracking: update last_used_at and use_count when tapping a SavedRouteCard
-- [X] T101 [US3] Auto-display last-used route on app launch if user has saved routes in packages/frontend/src/pages/HomePage.tsx
-- [X] T102 [US3] Fetch and display next train time for each saved route in SavedRouteCard using useTrains hook
+- [x] T090 [P] [US3] Define SavedRoute interface in packages/shared/src/types/route.ts with Zod schema
+- [x] T091 [US3] Create SavedRoute storage service in packages/frontend/src/services/saved-routes.ts (CRUD operations using LocalStorage + IndexedDB)
+- [x] T092 [P] [US3] Install and configure ShadCN Dialog component for save route modal (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="dialog"`)
+- [x] T093 [P] [US3] Install and configure ShadCN Input component for route label input (💡 Use ShadCN MCP: `mcp__shadcn__getComponent component="input"`)
+- [x] T094 [US3] Create SaveRouteDialog component in packages/frontend/src/components/SavedRoutes/SaveRouteDialog.tsx (modal to label and save current route)
+- [x] T095 [US3] Create SavedRouteCard component in packages/frontend/src/components/SavedRoutes/SavedRouteCard.tsx (displays favorite route with next train time, origin → destination)
+- [x] T096 [US3] Create SavedRoutesList component in packages/frontend/src/components/SavedRoutes/SavedRoutesList.tsx (grid of SavedRouteCard components)
+- [x] T097 [US3] Update HomePage to show SavedRoutesList above RouteSearch
+- [x] T098 [US3] Add "Save Route" button to RouteSearch component that opens SaveRouteDialog
+- [x] T099 [US3] Implement route deletion: add delete button to SavedRouteCard
+- [x] T100 [US3] Implement "last used" tracking: update last_used_at and use_count when tapping a SavedRouteCard
+- [x] T101 [US3] Auto-display last-used route on app launch if user has saved routes in packages/frontend/src/pages/HomePage.tsx
+- [x] T102 [US3] Fetch and display next train time for each saved route in SavedRouteCard using useTrains hook
 
 **Checkpoint**: All user stories should now be independently functional - MVP complete with all P1, P2, P3 features
 
@@ -259,11 +263,13 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 ### Within Each User Story
 
 **Backend First Approach**:
+
 1. Backend services before API endpoints
 2. API endpoints before frontend integration
 3. Core functionality before caching/optimization
 
 **Frontend Flow**:
+
 1. Install ShadCN components needed
 2. Create atomic components (TrainListItem, StationSelect)
 3. Create composite components (TrainList, RouteSearch)
@@ -276,26 +282,31 @@ No backend changes required - SavedRoute is stored entirely in client-side Local
 **Phase 1 (Setup)**: T004, T005, T006, T007, T008, T009, T010 can all run in parallel
 
 **Phase 2 (Foundation)**:
+
 - Shared, Backend, Frontend package initialization can run in parallel (T011-T013, T014-T015, T025-T029)
 - Type definitions (T037-T041) can all run in parallel
 - Once Express app is setup (T016), middleware tasks (T017, T018, T019) can run in parallel
 
 **Phase 3 (US1)**:
+
 - Backend services (T044, T045) can run in parallel
 - ShadCN component installations (T052, T053, T054) can run in parallel
 - Frontend atomic components can run in parallel after ShadCN components ready
 
 **Phase 4 (US2)**:
+
 - Backend services (T069, T070) can run in parallel
 - ShadCN component installations (T077, T078) can run in parallel
 
 **Phase 5 (US3)**:
+
 - ShadCN component installations (T092, T093) can run in parallel
 - Frontend components can be built in parallel with coordination
 
 **Phase 6 (Polish)**: Most polish tasks (T103-T112, T114-T119) can run in parallel
 
 **Multi-Story Parallelization**:
+
 - Once Foundational (Phase 2) is complete, US1 and US2 can be developed in parallel by different developers
 - US3 can start once US1's train query functionality is complete
 
@@ -385,6 +396,7 @@ Each user story adds value without breaking previous functionality.
 
 **Total Tasks**: 120 tasks
 **By Phase**:
+
 - Phase 1 (Setup): 10 tasks
 - Phase 2 (Foundation): 33 tasks
 - Phase 3 (US1 - Quick Route Lookup): 23 tasks
@@ -393,6 +405,7 @@ Each user story adds value without breaking previous functionality.
 - Phase 6 (Polish): 18 tasks
 
 **By User Story**:
+
 - User Story 1 (P1 - Quick Route Lookup): 23 tasks → MVP core functionality
 - User Story 2 (P2 - Real-Time Status): 23 tasks → Realtime enhancements
 - User Story 3 (P3 - Saved Routes): 13 tasks → Power user feature
@@ -400,6 +413,7 @@ Each user story adds value without breaking previous functionality.
 **Parallel Opportunities**: 50+ tasks marked [P] for parallel execution
 
 **Independent Test Criteria**:
+
 - **US1**: Can search origin/destination and see upcoming trains in <5 seconds
 - **US2**: Can see train delays and position updates every 30 seconds automatically
 - **US3**: Can save a route and access it with 1 tap showing current train times

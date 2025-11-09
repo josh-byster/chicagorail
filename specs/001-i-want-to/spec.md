@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "I want to create an app that, a progressive web app that allows users to track the current state of metro trains using the GTFS API that I have a key for and like figure out what the times are very quickly. Like I'm very much focused on making it really like quick for users to access information. Like right now, the current apps really lack in terms of like it takes a while to select like what line you want to go to. And like I really want to be able to see like I want to go from this like place to this place and instantly see like the trains that are available, like upcoming and like be able to drill down and see like how far they are, etc. And all of that type of stuff. But like really focus on like very quickly getting the information to the user."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Quick Route Lookup (Priority: P1)
 
@@ -68,7 +68,7 @@ Commuter wants to save frequently used routes (home to work, work to home) for i
 - What happens when a train is cancelled?
   - Mark train as "Cancelled" with red indicator and show next available alternative
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -88,7 +88,7 @@ Commuter wants to save frequently used routes (home to work, work to home) for i
 - **FR-014**: System MUST handle API errors gracefully with user-friendly messages
 - **FR-015**: System MUST support all Metra lines and stations
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Station**: Represents a Metra station with name, location coordinates, lines served, and platform information
 - **Route**: A saved pair of origin and destination stations with optional custom label (e.g., "Home to Work")
@@ -96,7 +96,7 @@ Commuter wants to save frequently used routes (home to work, work to home) for i
 - **Line**: Represents a Metra rail line (e.g., Union Pacific North, BNSF Railway) with stations served and schedule
 - **Service Alert**: Represents delays, cancellations, or service disruptions affecting specific trains or lines
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -123,7 +123,7 @@ Commuter wants to save frequently used routes (home to work, work to home) for i
 - User authentication/accounts are not required for basic functionality
 - Location services are optional enhancement, not core requirement
 
-## Out of Scope *(optional - remove if not needed)*
+## Out of Scope _(optional - remove if not needed)_
 
 The following are explicitly NOT included in this feature:
 

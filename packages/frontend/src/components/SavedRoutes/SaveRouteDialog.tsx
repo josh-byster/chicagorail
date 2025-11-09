@@ -1,26 +1,34 @@
-import * as React from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { SavedRoute } from "@metra/shared"
+import * as React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { SavedRoute } from '@metra/shared';
 
 // Generate UUID v4
 const generateUUID = (): string => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
+};
 
 interface SaveRouteDialogProps {
-  originStationId: string
-  destinationStationId: string
-  originStationName: string
-  destinationStationName: string
-  onSave: (route: SavedRoute) => void
-  children: React.ReactNode
+  originStationId: string;
+  destinationStationId: string;
+  originStationName: string;
+  destinationStationName: string;
+  onSave: (route: SavedRoute) => void;
+  children: React.ReactNode;
 }
 
 export function SaveRouteDialog({
@@ -31,16 +39,16 @@ export function SaveRouteDialog({
   onSave,
   children,
 }: SaveRouteDialogProps) {
-  const [open, setOpen] = React.useState(false)
-  const [routeLabel, setRouteLabel] = React.useState("")
+  const [open, setOpen] = React.useState(false);
+  const [routeLabel, setRouteLabel] = React.useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!routeLabel.trim()) {
-      return
+      return;
     }
-    
+
     const now = new Date().toISOString();
     const newRoute: SavedRoute = {
       route_id: generateUUID(),
@@ -50,18 +58,16 @@ export function SaveRouteDialog({
       created_at: now,
       last_used_at: now,
       use_count: 1,
-    }
-    
-    onSave(newRoute)
-    setRouteLabel("")
-    setOpen(false)
-  }
+    };
+
+    onSave(newRoute);
+    setRouteLabel('');
+    setOpen(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Save Route</DialogTitle>
@@ -113,7 +119,11 @@ export function SaveRouteDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={!routeLabel.trim()}>
@@ -123,5 +133,5 @@ export function SaveRouteDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
