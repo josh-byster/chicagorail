@@ -18,18 +18,39 @@ interface GTFSRealtimeConfig {
   pollInterval: number;
 }
 
+/**
+ * Check if realtime features are enabled (API token and URLs are configured)
+ */
+export const isRealtimeEnabled = (): boolean => {
+  return !!(
+    env.METRA_API_TOKEN &&
+    env.GTFS_REALTIME_ALERTS_URL &&
+    env.GTFS_REALTIME_TRIP_UPDATES_URL &&
+    env.GTFS_REALTIME_POSITIONS_URL
+  );
+};
+
 // Lazy config getter - only access env when needed
-const getConfig = (): GTFSRealtimeConfig => ({
-  apiToken: env.METRA_API_TOKEN,
-  alertsUrl: env.GTFS_REALTIME_ALERTS_URL,
-  tripUpdatesUrl: env.GTFS_REALTIME_TRIP_UPDATES_URL,
-  positionsUrl: env.GTFS_REALTIME_POSITIONS_URL,
-  pollInterval: 30000, // 30 seconds
-});
+const getConfig = (): GTFSRealtimeConfig | null => {
+  if (!isRealtimeEnabled()) {
+    return null;
+  }
+  return {
+    apiToken: env.METRA_API_TOKEN!,
+    alertsUrl: env.GTFS_REALTIME_ALERTS_URL!,
+    tripUpdatesUrl: env.GTFS_REALTIME_TRIP_UPDATES_URL!,
+    positionsUrl: env.GTFS_REALTIME_POSITIONS_URL!,
+    pollInterval: 30000, // 30 seconds
+  };
+};
 
 // Helper to create Bearer token header
-const getAuthHeader = (): { Authorization: string } => {
-  return { Authorization: `Bearer ${getConfig().apiToken}` };
+const getAuthHeader = (): { Authorization: string } | null => {
+  const config = getConfig();
+  if (!config) {
+    return null;
+  }
+  return { Authorization: `Bearer ${config.apiToken}` };
 };
 
 // Fetch GTFS realtime data with If-Modified-Since header
@@ -41,8 +62,13 @@ const fetchRealtimeEndpoint = async (
   data: GtfsRealtimeBindings.transit_realtime.FeedMessage | null;
   lastModified: string | null;
 }> => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    throw new Error('Realtime features are not enabled (missing API token)');
+  }
+
   const headers: Record<string, string> = {
-    ...getAuthHeader(),
+    ...authHeader,
     Accept: 'application/x-protobuf', // Request protobuf format
   };
 
@@ -113,13 +139,24 @@ let realtimeVehiclePositions: RealtimeVehiclePosition[] = [];
  * Fetches alerts, trip updates, and vehicle positions
  */
 export const pollGTFSRealtimeData = async (): Promise<void> => {
+  if (!isRealtimeEnabled()) {
+    console.log('⏩ Realtime features disabled (no API token configured)');
+    return;
+  }
+
   console.log('📡 Polling GTFS realtime data...');
+
+  const config = getConfig();
+  if (!config) {
+    console.log('⏩ Realtime features disabled (no API token configured)');
+    return;
+  }
 
   try {
     // Fetch alerts
     console.log('  ⏳ Fetching service alerts...');
     const alertsResponse = await fetchRealtimeEndpoint(
-      getConfig().alertsUrl,
+      config.alertsUrl,
       lastAlertsModified
     );
 
@@ -139,7 +176,7 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
     // Fetch trip updates
     console.log('  ⏳ Fetching trip updates...');
     const tripUpdatesResponse = await fetchRealtimeEndpoint(
-      getConfig().tripUpdatesUrl,
+      config.tripUpdatesUrl,
       lastTripUpdatesModified
     );
 
@@ -163,7 +200,7 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
     // Fetch vehicle positions
     console.log('  ⏳ Fetching vehicle positions...');
     const positionsResponse = await fetchRealtimeEndpoint(
-      getConfig().positionsUrl,
+      config.positionsUrl,
       lastPositionsModified
     );
 
@@ -218,6 +255,17 @@ export const getRealtimeVehiclePositions = (): RealtimeVehiclePosition[] => {
  * Polls data every 30 seconds
  */
 export const startGTFSRealtimePolling = (): void => {
+  if (!isRealtimeEnabled()) {
+    console.log('⏩ Realtime polling disabled (no API token configured)');
+    return;
+  }
+
+  const config = getConfig();
+  if (!config) {
+    console.log('⏩ Realtime polling disabled (no API token configured)');
+    return;
+  }
+
   console.log('🚀 Starting GTFS realtime polling service...');
 
   // Initial poll
@@ -226,7 +274,7 @@ export const startGTFSRealtimePolling = (): void => {
   // Set up interval polling
   setInterval(() => {
     pollGTFSRealtimeData().catch(console.error);
-  }, getConfig().pollInterval);
+  }, config.pollInterval);
 
-  console.log(`⏱️  Polling interval set to ${getConfig().pollInterval}ms`);
+  console.log(`⏱️  Polling interval set to ${config.pollInterval}ms`);
 };

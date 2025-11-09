@@ -97,8 +97,16 @@ interface GTFSData {
 /**
  * Fetch the published timestamp from Metra
  * Returns the timestamp string (e.g., "2025-01-15 03:00:00")
+ * Returns null if published URL is not configured
  */
-const fetchPublishedTimestamp = async (): Promise<string> => {
+const fetchPublishedTimestamp = async (): Promise<string | null> => {
+  if (!env.GTFS_STATIC_PUBLISHED_URL) {
+    console.log(
+      '  ⏩ Published timestamp URL not configured, will import data'
+    );
+    return null;
+  }
+
   try {
     const response = await fetch(env.GTFS_STATIC_PUBLISHED_URL);
     if (!response.ok) {
@@ -292,18 +300,26 @@ export const importGTFSStaticData = async (): Promise<void> => {
   let tempDir: string | null = null;
 
   try {
-    // Step 1: Check published timestamp
+    // Step 1: Check published timestamp (if URL is configured)
     const publishedTimestamp = await fetchPublishedTimestamp();
-    const lastImportedTimestamp = getLastImportedTimestamp();
 
-    if (publishedTimestamp === lastImportedTimestamp) {
-      console.log('✅ GTFS data is up to date, skipping import');
-      return;
-    }
+    // Only check for updates if we have a published timestamp
+    if (publishedTimestamp) {
+      const lastImportedTimestamp = getLastImportedTimestamp();
 
-    console.log(`  🆕 New data available (published: ${publishedTimestamp})`);
-    if (lastImportedTimestamp) {
-      console.log(`     Last imported: ${lastImportedTimestamp}`);
+      if (publishedTimestamp === lastImportedTimestamp) {
+        console.log('✅ GTFS data is up to date, skipping import');
+        return;
+      }
+
+      console.log(`  🆕 New data available (published: ${publishedTimestamp})`);
+      if (lastImportedTimestamp) {
+        console.log(`     Last imported: ${lastImportedTimestamp}`);
+      }
+    } else {
+      console.log(
+        '  ℹ️  Published timestamp not available, will import/update data'
+      );
     }
 
     // Step 2: Download schedule.zip
@@ -329,8 +345,10 @@ export const importGTFSStaticData = async (): Promise<void> => {
     createIndexes(db);
     deriveLinesServed(db);
 
-    // Step 6: Save published timestamp
-    saveLastImportedTimestamp(publishedTimestamp);
+    // Step 6: Save published timestamp (if we have one)
+    if (publishedTimestamp) {
+      saveLastImportedTimestamp(publishedTimestamp);
+    }
 
     console.log('✅ GTFS static data import complete!');
   } catch (error) {
