@@ -44,16 +44,16 @@ export default async function globalSetup(_config: FullConfig) {
       GTFS_REALTIME_POSITIONS_URL: '',
     };
 
-    // Run import script with pnpm exec tsx (resolves from backend node_modules)
-    const importScriptPath = path.join(
-      backendDir,
-      'src/scripts/import-gtfs.ts'
+    // Run import script using the existing gtfs:import script
+    const importProcess = spawn(
+      'pnpm',
+      ['--filter', 'backend', 'gtfs:import'],
+      {
+        cwd: path.join(backendDir, '../..'), // Run from monorepo root
+        env: testEnv,
+        stdio: 'pipe',
+      }
     );
-    const importProcess = spawn('pnpm', ['exec', 'tsx', importScriptPath], {
-      cwd: backendDir,
-      env: testEnv,
-      stdio: 'pipe',
-    });
 
     let importOutput = '';
     importProcess.stdout?.on('data', (data) => {
