@@ -40,14 +40,14 @@ test.describe('Home Page', () => {
     await expect(dialog).not.toBeVisible();
   });
 
-  test('page is responsive', async ({ page: _page }) => {
+  test('page is responsive', async () => {
     // Check that the page renders without errors
-    const body = page.locator('body');
+    const body = homePage.page.locator('body');
     await expect(body).toBeVisible();
 
     // Navigate using keyboard
-    await page.keyboard.press('Tab');
-    const focusedElement = await page.evaluate(
+    await homePage.page.keyboard.press('Tab');
+    const focusedElement = await homePage.page.evaluate(
       () => document.activeElement?.tagName
     );
     expect(['BUTTON', 'A', 'INPUT']).toContain(focusedElement);

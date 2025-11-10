@@ -155,7 +155,7 @@ jobs:
         run: pnpm --filter frontend exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: pnpm --filter frontend test:e2e
+        run: pnpm --filter frontend test:e2e --project=chromium
         env:
           CI: true
 
