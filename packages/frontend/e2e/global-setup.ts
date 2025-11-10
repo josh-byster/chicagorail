@@ -32,16 +32,13 @@ export default async function globalSetup(_config: FullConfig) {
     console.log('⏳ This may take 1-2 minutes on first run...');
 
     // Set environment variables for the import
+    // Note: We omit realtime URLs since they're optional and empty strings fail validation
     const testEnv = {
       ...process.env,
       DATABASE_PATH: testDbPath,
       NODE_ENV: 'test',
       GTFS_STATIC_SCHEDULE_URL:
         'https://schedules.metrarail.com/gtfs/schedule.zip',
-      METRA_API_TOKEN: '',
-      GTFS_REALTIME_ALERTS_URL: '',
-      GTFS_REALTIME_TRIP_UPDATES_URL: '',
-      GTFS_REALTIME_POSITIONS_URL: '',
     };
 
     // Run import script using the existing gtfs:import script
@@ -110,11 +107,10 @@ export default async function globalSetup(_config: FullConfig) {
       DATABASE_PATH: testDbPath,
       PORT: '3001',
       NODE_ENV: 'test',
-      METRA_API_TOKEN: '',
-      GTFS_REALTIME_ALERTS_URL: '',
-      GTFS_REALTIME_TRIP_UPDATES_URL: '',
-      GTFS_REALTIME_POSITIONS_URL: '',
+      GTFS_STATIC_SCHEDULE_URL:
+        'https://schedules.metrarail.com/gtfs/schedule.zip',
       CORS_ORIGIN: '*',
+      // Omit realtime URLs - they're optional and tests don't need them
     },
     stdio: 'pipe',
   });
