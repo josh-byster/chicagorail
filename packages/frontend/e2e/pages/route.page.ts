@@ -61,21 +61,19 @@ export class RoutePage {
   }
 
   /**
-   * Get train list container
+   * Get train list container (looks for results section)
    */
   getTrainList() {
-    return this.page
-      .getByRole('list', { name: /trains|results/i })
-      .or(this.page.locator('[class*="train-list"]'));
+    // Wait for either trains badge or no trains message
+    return this.page.locator('.space-y-4.animate-fade-in, [role="alert"]');
   }
 
   /**
    * Get all train cards
    */
   getTrainCards() {
-    return this.page
-      .getByRole('article')
-      .or(this.page.locator('[class*="train-card"]'));
+    // Train items are in a specific structure within the train list
+    return this.page.locator('.space-y-3 > div');
   }
 
   /**
@@ -181,7 +179,20 @@ export class RoutePage {
    * Wait for search results to load
    */
   async waitForResults() {
-    await this.getTrainList().waitFor({ state: 'visible', timeout: 10000 });
+    // Wait for loading skeletons to disappear
+    await this.page
+      .locator('[class*="skeleton"]')
+      .first()
+      .waitFor({ state: 'hidden', timeout: 15000 })
+      .catch(() => {
+        // If no skeleton found, that's okay - might have loaded instantly
+      });
+
+    // Then wait for either results or error/empty message
+    await this.page
+      .locator('[role="alert"], .space-y-3')
+      .first()
+      .waitFor({ state: 'visible', timeout: 5000 });
   }
 
   /**
