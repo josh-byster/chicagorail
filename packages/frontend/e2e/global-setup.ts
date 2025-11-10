@@ -44,12 +44,12 @@ export default async function globalSetup(_config: FullConfig) {
       GTFS_REALTIME_POSITIONS_URL: '',
     };
 
-    // Run import script directly with tsx
+    // Run import script with pnpm exec tsx (resolves from backend node_modules)
     const importScriptPath = path.join(
       backendDir,
       'src/scripts/import-gtfs.ts'
     );
-    const importProcess = spawn('npx', ['tsx', importScriptPath], {
+    const importProcess = spawn('pnpm', ['exec', 'tsx', importScriptPath], {
       cwd: backendDir,
       env: testEnv,
       stdio: 'pipe',
