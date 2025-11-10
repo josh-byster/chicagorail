@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
 import { FullConfig } from '@playwright/test';
 
-export default async function globalTeardown(config: FullConfig) {
+export default async function globalTeardown(_config: FullConfig) {
   console.log('🧹 Cleaning up test environment...');
 
   // Kill backend process

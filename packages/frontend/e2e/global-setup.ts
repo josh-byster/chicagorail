@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { chromium, FullConfig } from '@playwright/test';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
@@ -9,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 let backendProcess: ChildProcess | null = null;
 
-export default async function globalSetup(config: FullConfig) {
+export default async function globalSetup(_config: FullConfig) {
   console.log('🚀 Starting test environment setup...');
 
   // 1. Setup test database path
@@ -30,36 +31,69 @@ export default async function globalSetup(config: FullConfig) {
     console.log('📦 Test database not found, importing GTFS data...');
     console.log('⏳ This may take 1-2 minutes on first run...');
 
-    // Run import script with test environment
-    const importProcess = spawn('pnpm', ['gtfs:import'], {
+    // Set environment variables for the import
+    const testEnv = {
+      ...process.env,
+      DATABASE_PATH: testDbPath,
+      NODE_ENV: 'test',
+      GTFS_STATIC_SCHEDULE_URL:
+        'https://schedules.metrarail.com/gtfs/schedule.zip',
+      METRA_API_TOKEN: '',
+      GTFS_REALTIME_ALERTS_URL: '',
+      GTFS_REALTIME_TRIP_UPDATES_URL: '',
+      GTFS_REALTIME_POSITIONS_URL: '',
+    };
+
+    // Run import script directly with tsx
+    const importScriptPath = path.join(
+      backendDir,
+      'src/scripts/import-gtfs.ts'
+    );
+    const importProcess = spawn('npx', ['tsx', importScriptPath], {
       cwd: backendDir,
-      env: {
-        ...process.env,
-        DATABASE_PATH: testDbPath,
-        NODE_ENV: 'test',
-        GTFS_STATIC_SCHEDULE_URL:
-          'https://schedules.metrarail.com/gtfs/schedule.zip',
-      },
+      env: testEnv,
       stdio: 'pipe',
     });
 
     let importOutput = '';
     importProcess.stdout?.on('data', (data) => {
-      importOutput += data.toString();
-      process.stdout.write(data);
+      const output = data.toString();
+      importOutput += output;
+      if (!process.env.CI) {
+        process.stdout.write(output);
+      }
     });
+
     importProcess.stderr?.on('data', (data) => {
-      process.stderr.write(data);
+      const output = data.toString();
+      importOutput += output;
+      if (!process.env.CI) {
+        process.stderr.write(output);
+      }
     });
 
     await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        importProcess.kill();
+        reject(new Error('GTFS import timed out after 5 minutes'));
+      }, 300000); // 5 minute timeout
+
       importProcess.on('exit', (code) => {
+        clearTimeout(timeout);
         if (code === 0) {
           console.log('✅ GTFS data imported successfully');
           resolve();
         } else {
+          console.error('❌ Import process failed with code:', code);
+          console.error('Last 500 chars of output:', importOutput.slice(-500));
           reject(new Error(`GTFS import failed with code ${code}`));
         }
+      });
+
+      importProcess.on('error', (error) => {
+        clearTimeout(timeout);
+        console.error('❌ Failed to spawn import process:', error);
+        reject(error);
       });
     });
   } else {
@@ -107,7 +141,10 @@ export default async function globalSetup(config: FullConfig) {
 
     backendProcess!.stdout?.on('data', (data) => {
       const output = data.toString();
-      if (output.includes('Server listening') || output.includes('listening on')) {
+      if (
+        output.includes('Server listening') ||
+        output.includes('listening on')
+      ) {
         clearTimeout(timeout);
         console.log('✅ Backend server started successfully');
         resolve();
