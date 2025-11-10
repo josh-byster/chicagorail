@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Line Detail Page
@@ -30,9 +30,9 @@ export class LineDetailPage {
    * Get all station cards
    */
   getStationCards() {
-    return this.page.getByRole('article').or(
-      this.page.locator('[class*="station-card"]')
-    );
+    return this.page
+      .getByRole('article')
+      .or(this.page.locator('[class*="station-card"]'));
   }
 
   /**
@@ -40,9 +40,11 @@ export class LineDetailPage {
    * @param stationName - Name of the station
    */
   getStationCard(stationName: string) {
-    return this.page.locator('[class*="station"]', {
-      has: this.page.getByText(new RegExp(stationName, 'i')),
-    }).first();
+    return this.page
+      .locator('[class*="station"]', {
+        has: this.page.getByText(new RegExp(stationName, 'i')),
+      })
+      .first();
   }
 
   /**
@@ -72,7 +74,10 @@ export class LineDetailPage {
       const text = await cards.nth(i).textContent();
       if (text) {
         // Extract just the station name (may have other info in the card)
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const lines = text
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean);
         if (lines.length > 0) {
           names.push(lines[0]);
         }
@@ -86,9 +91,9 @@ export class LineDetailPage {
    * Get back to lines button
    */
   getBackButton() {
-    return this.page.getByRole('link', { name: /back|lines/i }).or(
-      this.page.getByRole('button', { name: /back|lines/i })
-    );
+    return this.page
+      .getByRole('link', { name: /back|lines/i })
+      .or(this.page.getByRole('button', { name: /back|lines/i }));
   }
 
   /**

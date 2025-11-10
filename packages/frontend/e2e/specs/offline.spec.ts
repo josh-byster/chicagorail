@@ -74,7 +74,10 @@ test.describe('PWA and Offline Functionality', () => {
     await context.setOffline(false);
   });
 
-  test('offline indicator appears when disconnected', async ({ page, context }) => {
+  test('offline indicator appears when disconnected', async ({
+    page,
+    context,
+  }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -90,7 +93,9 @@ test.describe('PWA and Offline Functionality', () => {
     await page.waitForTimeout(1000);
 
     // Look for offline indicator
-    const offlineIndicator = page.getByText(/offline|no connection|disconnected/i);
+    const offlineIndicator = page.getByText(
+      /offline|no connection|disconnected/i
+    );
 
     // May or may not have offline indicator implemented
     // This is a soft assertion

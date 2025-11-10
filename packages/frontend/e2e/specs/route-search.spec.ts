@@ -16,7 +16,9 @@ test.describe('Route Search', () => {
     await expect(routePage.getSearchButton()).toBeVisible();
   });
 
-  test('complete route search flow - Chicago Union to Aurora', async ({ page }) => {
+  test('complete route search flow - Chicago Union to Aurora', async ({
+    page,
+  }) => {
     const route = COMMON_ROUTES.CHICAGO_TO_AURORA;
 
     // Select origin station
@@ -42,7 +44,9 @@ test.describe('Route Search', () => {
     expect(page.url()).toContain('route');
   });
 
-  test('complete route search flow - Ogilvie to Elburn', async ({ page }) => {
+  test('complete route search flow - Ogilvie to Elburn', async ({
+    page: _page,
+  }) => {
     const route = COMMON_ROUTES.OGILVIE_TO_ELBURN;
 
     await routePage.selectOrigin(route.origin.searchTerm);
@@ -78,7 +82,9 @@ test.describe('Route Search', () => {
     await routePage.searchButton();
 
     // Should show error or validation message
-    const errorMessage = routePage.page.getByText(/same station|different station/i);
+    const errorMessage = routePage.page.getByText(
+      /same station|different station/i
+    );
     if (await errorMessage.isVisible()) {
       await expect(errorMessage).toBeVisible();
     }

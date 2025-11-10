@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Route Search Page
@@ -64,18 +64,18 @@ export class RoutePage {
    * Get train list container
    */
   getTrainList() {
-    return this.page.getByRole('list', { name: /trains|results/i }).or(
-      this.page.locator('[class*="train-list"]')
-    );
+    return this.page
+      .getByRole('list', { name: /trains|results/i })
+      .or(this.page.locator('[class*="train-list"]'));
   }
 
   /**
    * Get all train cards
    */
   getTrainCards() {
-    return this.page.getByRole('article').or(
-      this.page.locator('[class*="train-card"]')
-    );
+    return this.page
+      .getByRole('article')
+      .or(this.page.locator('[class*="train-card"]'));
   }
 
   /**
@@ -97,9 +97,11 @@ export class RoutePage {
     await this.page.waitForTimeout(500);
 
     // Find and click the option
-    const option = this.page.getByRole('option', {
-      name: new RegExp(stationName, 'i')
-    }).first();
+    const option = this.page
+      .getByRole('option', {
+        name: new RegExp(stationName, 'i'),
+      })
+      .first();
     await option.click();
 
     // Wait for selection to register
@@ -118,9 +120,11 @@ export class RoutePage {
     await this.page.waitForTimeout(500);
 
     // Find and click the option
-    const option = this.page.getByRole('option', {
-      name: new RegExp(stationName, 'i')
-    }).first();
+    const option = this.page
+      .getByRole('option', {
+        name: new RegExp(stationName, 'i'),
+      })
+      .first();
     await option.click();
 
     // Wait for selection to register
@@ -223,7 +227,9 @@ export class RoutePage {
     await routeCard.getByRole('button', { name: /delete|remove/i }).click();
 
     // Confirm deletion if dialog appears
-    const confirmButton = this.page.getByRole('button', { name: /confirm|yes|delete/i });
+    const confirmButton = this.page.getByRole('button', {
+      name: /confirm|yes|delete/i,
+    });
     if (await confirmButton.isVisible()) {
       await confirmButton.click();
     }

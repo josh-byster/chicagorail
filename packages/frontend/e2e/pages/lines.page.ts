@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Lines Page
@@ -22,9 +22,9 @@ export class LinesPage {
    * Get all line cards
    */
   getLineCards() {
-    return this.page.getByRole('article').or(
-      this.page.locator('[class*="line-card"]')
-    );
+    return this.page
+      .getByRole('article')
+      .or(this.page.locator('[class*="line-card"]'));
   }
 
   /**
@@ -32,9 +32,11 @@ export class LinesPage {
    * @param lineName - Name of the line (e.g., "BNSF", "Union Pacific North")
    */
   getLineCard(lineName: string) {
-    return this.page.locator('[class*="line"]', {
-      has: this.page.getByText(new RegExp(lineName, 'i')),
-    }).first();
+    return this.page
+      .locator('[class*="line"]', {
+        has: this.page.getByText(new RegExp(lineName, 'i')),
+      })
+      .first();
   }
 
   /**
@@ -43,9 +45,7 @@ export class LinesPage {
    */
   getLineStatus(lineName: string) {
     const card = this.getLineCard(lineName);
-    return card.locator('[class*="status"]').or(
-      card.getByRole('status')
-    );
+    return card.locator('[class*="status"]').or(card.getByRole('status'));
   }
 
   /**

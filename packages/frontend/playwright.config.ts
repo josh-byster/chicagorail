@@ -21,9 +21,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   // Reporting
-  reporter: process.env.CI
-    ? [['html'], ['github']]
-    : [['html'], ['list']],
+  reporter: process.env.CI ? [['html'], ['github']] : [['html'], ['list']],
 
   // Global setup/teardown
   globalSetup: './e2e/global-setup.ts',

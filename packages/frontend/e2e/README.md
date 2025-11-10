@@ -13,16 +13,19 @@ This directory contains end-to-end tests for the Metra Train Tracker frontend ap
 ### First-time Setup
 
 1. Install dependencies:
+
    ```bash
    pnpm install
    ```
 
 2. Install Playwright browsers:
+
    ```bash
    pnpm --filter frontend exec playwright install --with-deps chromium
    ```
 
 3. Build the shared package:
+
    ```bash
    pnpm --filter shared build
    ```
@@ -35,31 +38,37 @@ This directory contains end-to-end tests for the Metra Train Tracker frontend ap
 ## Running Tests
 
 ### Run all tests (headless)
+
 ```bash
 pnpm --filter frontend test:e2e
 ```
 
 ### Run tests with UI mode (interactive)
+
 ```bash
 pnpm --filter frontend test:e2e:ui
 ```
 
 ### Run tests in headed mode (see browser)
+
 ```bash
 pnpm --filter frontend test:e2e:headed
 ```
 
 ### Run tests in debug mode
+
 ```bash
 pnpm --filter frontend test:e2e:debug
 ```
 
 ### Run specific test file
+
 ```bash
 pnpm --filter frontend test:e2e specs/route-search.spec.ts
 ```
 
 ### Run specific browser
+
 ```bash
 pnpm --filter frontend test:e2e --project=chromium
 pnpm --filter frontend test:e2e --project=firefox
@@ -67,6 +76,7 @@ pnpm --filter frontend test:e2e --project=webkit
 ```
 
 ### View test report
+
 ```bash
 pnpm --filter frontend test:e2e:report
 ```
@@ -78,6 +88,7 @@ pnpm --filter frontend test:e2e:report
 E2E tests use a dedicated test database (`packages/backend/data/gtfs.test.db`) that is automatically created and populated with GTFS static data on first run.
 
 The test database is:
+
 - Created in `global-setup.ts`
 - Populated from the public Metra GTFS feed (no API key required)
 - Cached locally to speed up subsequent test runs
@@ -188,6 +199,7 @@ await routePage.waitForResults();
 ```
 
 Benefits:
+
 - **Maintainability**: UI changes only require updating POMs, not tests
 - **Reusability**: Common actions are centralized
 - **Readability**: Tests read like user stories
@@ -234,6 +246,7 @@ test.describe('Route Search', () => {
 ## CI/CD Integration
 
 E2E tests run automatically in GitHub Actions on:
+
 - Push to `main` branch
 - Push to `claude/**` branches
 - Pull requests to `main`
@@ -260,6 +273,7 @@ DATABASE_PATH=./data/gtfs.test.db pnpm gtfs:import
 ### Backend server not starting
 
 Check that:
+
 - Port 3001 is not in use
 - `.env.test` file exists
 - Backend builds successfully

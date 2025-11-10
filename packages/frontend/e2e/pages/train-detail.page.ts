@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Train Detail Page
@@ -30,18 +30,24 @@ export class TrainDetailPage {
    * Get line name display
    */
   getLineName() {
-    return this.page.locator('[class*="line-name"]').or(
-      this.page.getByText(/BNSF|Union Pacific|Rock Island|Metra Electric|Milwaukee|Heritage|North Central|Southwest/i).first()
-    );
+    return this.page
+      .locator('[class*="line-name"]')
+      .or(
+        this.page
+          .getByText(
+            /BNSF|Union Pacific|Rock Island|Metra Electric|Milwaukee|Heritage|North Central|Southwest/i
+          )
+          .first()
+      );
   }
 
   /**
    * Get all stop cards
    */
   getStopCards() {
-    return this.page.getByRole('listitem').or(
-      this.page.locator('[class*="stop-card"]')
-    );
+    return this.page
+      .getByRole('listitem')
+      .or(this.page.locator('[class*="stop-card"]'));
   }
 
   /**
@@ -49,45 +55,47 @@ export class TrainDetailPage {
    * @param stationName - Name of the station
    */
   getStopByStation(stationName: string) {
-    return this.page.locator('[class*="stop"]', {
-      has: this.page.getByText(new RegExp(stationName, 'i')),
-    }).first();
+    return this.page
+      .locator('[class*="stop"]', {
+        has: this.page.getByText(new RegExp(stationName, 'i')),
+      })
+      .first();
   }
 
   /**
    * Get origin stop (highlighted)
    */
   getOriginStop() {
-    return this.page.locator('[class*="origin"]').or(
-      this.page.locator('[class*="stop"][class*="highlight"]').first()
-    );
+    return this.page
+      .locator('[class*="origin"]')
+      .or(this.page.locator('[class*="stop"][class*="highlight"]').first());
   }
 
   /**
    * Get destination stop (highlighted)
    */
   getDestinationStop() {
-    return this.page.locator('[class*="destination"]').or(
-      this.page.locator('[class*="stop"][class*="highlight"]').last()
-    );
+    return this.page
+      .locator('[class*="destination"]')
+      .or(this.page.locator('[class*="stop"][class*="highlight"]').last());
   }
 
   /**
    * Get map visualization container
    */
   getMapVisualization() {
-    return this.page.locator('[class*="map"]').or(
-      this.page.getByRole('region', { name: /map/i })
-    );
+    return this.page
+      .locator('[class*="map"]')
+      .or(this.page.getByRole('region', { name: /map/i }));
   }
 
   /**
    * Get back button/link
    */
   getBackButton() {
-    return this.page.getByRole('link', { name: /back|return/i }).or(
-      this.page.getByRole('button', { name: /back|return/i })
-    );
+    return this.page
+      .getByRole('link', { name: /back|return/i })
+      .or(this.page.getByRole('button', { name: /back|return/i }));
   }
 
   /**
@@ -103,9 +111,9 @@ export class TrainDetailPage {
    */
   async getDepartureTime(stationName: string) {
     const stop = this.getStopByStation(stationName);
-    const timeElement = stop.locator('[class*="time"]').or(
-      stop.getByText(/\d{1,2}:\d{2}\s*(AM|PM)?/i)
-    );
+    const timeElement = stop
+      .locator('[class*="time"]')
+      .or(stop.getByText(/\d{1,2}:\d{2}\s*(AM|PM)?/i));
     return timeElement.textContent();
   }
 

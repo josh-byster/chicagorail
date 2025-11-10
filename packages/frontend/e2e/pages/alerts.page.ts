@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Alerts Page
@@ -22,9 +22,9 @@ export class AlertsPage {
    * Get all alert cards
    */
   getAlertCards() {
-    return this.page.getByRole('article').or(
-      this.page.locator('[class*="alert-card"]')
-    );
+    return this.page
+      .getByRole('article')
+      .or(this.page.locator('[class*="alert-card"]'));
   }
 
   /**
@@ -54,7 +54,9 @@ export class AlertsPage {
    */
   async filterByLine(lineName: string) {
     await this.getLineFilter().click();
-    await this.page.getByRole('option', { name: new RegExp(lineName, 'i') }).click();
+    await this.page
+      .getByRole('option', { name: new RegExp(lineName, 'i') })
+      .click();
   }
 
   /**
@@ -63,7 +65,9 @@ export class AlertsPage {
    */
   async filterByStation(stationName: string) {
     await this.getStationFilter().click();
-    await this.page.getByRole('option', { name: new RegExp(stationName, 'i') }).click();
+    await this.page
+      .getByRole('option', { name: new RegExp(stationName, 'i') })
+      .click();
   }
 
   /**

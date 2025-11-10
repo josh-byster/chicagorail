@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Statistics Page
@@ -22,9 +22,9 @@ export class StatisticsPage {
    * Get statistics cards
    */
   getStatCards() {
-    return this.page.getByRole('article').or(
-      this.page.locator('[class*="stat-card"]')
-    );
+    return this.page
+      .getByRole('article')
+      .or(this.page.locator('[class*="stat-card"]'));
   }
 
   /**
@@ -32,9 +32,11 @@ export class StatisticsPage {
    * @param statName - Name of the statistic (e.g., "Total Stations")
    */
   getStat(statName: string) {
-    return this.page.locator('[class*="stat"]', {
-      has: this.page.getByText(new RegExp(statName, 'i')),
-    }).first();
+    return this.page
+      .locator('[class*="stat"]', {
+        has: this.page.getByText(new RegExp(statName, 'i')),
+      })
+      .first();
   }
 
   /**
@@ -72,9 +74,9 @@ export class StatisticsPage {
    * Get usage chart if it exists
    */
   getUsageChart() {
-    return this.page.locator('[class*="chart"]').or(
-      this.page.getByRole('img', { name: /chart|graph/i })
-    );
+    return this.page
+      .locator('[class*="chart"]')
+      .or(this.page.getByRole('img', { name: /chart|graph/i }));
   }
 
   /**

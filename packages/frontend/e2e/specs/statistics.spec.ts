@@ -47,7 +47,7 @@ test.describe('Statistics Page', () => {
     }
   });
 
-  test('statistics have valid numeric values', async ({ page }) => {
+  test('statistics have valid numeric values', async ({ page: _page }) => {
     const statCards = statsPage.getStatCards();
     const count = await statCards.count();
 

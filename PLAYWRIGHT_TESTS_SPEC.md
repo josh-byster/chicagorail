@@ -33,6 +33,7 @@ TEST_DATABASE_PATH=./data/gtfs.test.db
 ```
 
 **Initialization**:
+
 1. Download `https://schedules.metrarail.com/gtfs/schedule.zip` (publicly accessible)
 2. Import into test database using existing `import-gtfs.ts` script
 3. Cache the test database in CI for faster test runs
@@ -67,6 +68,7 @@ VITE_API_URL=http://localhost:3001/api
 ### 3. Test Server Setup
 
 Create a test server script that:
+
 1. Loads `.env.test` configuration
 2. Starts backend on port 3001
 3. Builds and serves frontend in preview mode
@@ -87,7 +89,7 @@ export default defineConfig({
   // Timeouts
   timeout: 30000,
   expect: {
-    timeout: 5000
+    timeout: 5000,
   },
 
   // Execution
@@ -97,9 +99,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   // Reporting
-  reporter: process.env.CI
-    ? [['html'], ['github']]
-    : [['html'], ['list']],
+  reporter: process.env.CI ? [['html'], ['github']] : [['html'], ['list']],
 
   // Global setup
   globalSetup: './e2e/global-setup.ts',
@@ -195,9 +195,15 @@ test.describe('Home Page', () => {
     await page.goto('/');
 
     // Verify quick stats cards
-    await expect(page.getByRole('heading', { name: 'Total Stations' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Active Lines' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Routes Today' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Total Stations' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Active Lines' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Routes Today' })
+    ).toBeVisible();
   });
 
   test('shows recent searches if available', async ({ page }) => {
@@ -229,7 +235,9 @@ test.describe('Home Page', () => {
     // Press "?" to open shortcuts
     await page.keyboard.press('?');
 
-    await expect(page.getByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeVisible();
+    await expect(
+      page.getByRole('dialog', { name: 'Keyboard Shortcuts' })
+    ).toBeVisible();
   });
 });
 ```
@@ -267,7 +275,9 @@ test.describe('Route Search', () => {
     // Select origin
     const originSelect = page.getByLabel('From');
     await originSelect.click();
-    await page.getByRole('option', { name: /Ogilvie Transportation Center/i }).click();
+    await page
+      .getByRole('option', { name: /Ogilvie Transportation Center/i })
+      .click();
 
     // Open destination dropdown
     const destSelect = page.getByLabel('To');
@@ -279,7 +289,9 @@ test.describe('Route Search', () => {
 
     expect(count).toBeGreaterThan(0);
     // Verify no unreachable stations (e.g., Rock Island line stations)
-    await expect(page.getByRole('option', { name: /Joliet/i })).not.toBeVisible();
+    await expect(
+      page.getByRole('option', { name: /Joliet/i })
+    ).not.toBeVisible();
   });
 
   test('filters trains by time', async ({ page }) => {
@@ -300,7 +312,9 @@ test.describe('Route Search', () => {
     const firstTrain = page.getByTestId('train-card').first();
     await expect(firstTrain).toBeVisible();
 
-    const departureTime = await firstTrain.getByTestId('departure-time').textContent();
+    const departureTime = await firstTrain
+      .getByTestId('departure-time')
+      .textContent();
     // Departure should be >= 14:00
     expect(departureTime).toBeTruthy();
   });
@@ -529,7 +543,10 @@ test.describe('Line Detail Page', () => {
     await page.getByText('Rock Island').click();
 
     // Click a station
-    await page.getByTestId('station-card').filter({ hasText: 'Joliet' }).click();
+    await page
+      .getByTestId('station-card')
+      .filter({ hasText: 'Joliet' })
+      .click();
 
     // Should navigate to route page with origin pre-filled
     await expect(page).toHaveURL('/route');
@@ -658,7 +675,9 @@ test.describe('Nearby Stations (Geolocation)', () => {
     await page.getByRole('button', { name: 'Nearby Stations' }).click();
 
     // Verify Ogilvie is in the list and has distance
-    const ogilvieStation = page.getByTestId('nearby-station').filter({ hasText: 'Ogilvie' });
+    const ogilvieStation = page
+      .getByTestId('nearby-station')
+      .filter({ hasText: 'Ogilvie' });
     await expect(ogilvieStation).toBeVisible();
 
     const distance = await ogilvieStation.getByTestId('distance').textContent();
@@ -729,7 +748,10 @@ test.describe('PWA and Offline Functionality', () => {
     await context.setOffline(false);
   });
 
-  test('shows offline indicator when disconnected', async ({ page, context }) => {
+  test('shows offline indicator when disconnected', async ({
+    page,
+    context,
+  }) => {
     await page.goto('/');
 
     // Go offline
@@ -801,7 +823,9 @@ test.describe('Accessibility (WCAG 2.1 Level AA)', () => {
     await page.keyboard.press('Tab');
 
     // Verify focus is visible
-    const focusedElement = await page.evaluate(() => document.activeElement?.tagName);
+    const focusedElement = await page.evaluate(
+      () => document.activeElement?.tagName
+    );
     expect(['BUTTON', 'A', 'INPUT', 'SELECT']).toContain(focusedElement);
   });
 
@@ -927,12 +951,16 @@ export class RoutePage {
 
   async selectOrigin(stationName: string) {
     await this.originSelect.click();
-    await this.page.getByRole('option', { name: new RegExp(stationName, 'i') }).click();
+    await this.page
+      .getByRole('option', { name: new RegExp(stationName, 'i') })
+      .click();
   }
 
   async selectDestination(stationName: string) {
     await this.destinationSelect.click();
-    await this.page.getByRole('option', { name: new RegExp(stationName, 'i') }).click();
+    await this.page
+      .getByRole('option', { name: new RegExp(stationName, 'i') })
+      .click();
   }
 
   async searchTrains() {
@@ -979,15 +1007,19 @@ export default async function globalSetup(config: FullConfig) {
     console.log('📦 Test database not found, importing GTFS data...');
 
     // Run import script with test environment
-    const importProcess = spawn('pnpm', ['--filter', 'backend', 'gtfs:import'], {
-      cwd: path.join(__dirname, '../../..'),
-      env: {
-        ...process.env,
-        DATABASE_PATH: testDbPath,
-        NODE_ENV: 'test',
-      },
-      stdio: 'inherit',
-    });
+    const importProcess = spawn(
+      'pnpm',
+      ['--filter', 'backend', 'gtfs:import'],
+      {
+        cwd: path.join(__dirname, '../../..'),
+        env: {
+          ...process.env,
+          DATABASE_PATH: testDbPath,
+          NODE_ENV: 'test',
+        },
+        stdio: 'inherit',
+      }
+    );
 
     await new Promise((resolve, reject) => {
       importProcess.on('exit', (code) => {

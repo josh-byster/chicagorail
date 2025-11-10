@@ -22,9 +22,7 @@ test.describe('Lines Page', () => {
   test('shows key Metra lines', async ({ page }) => {
     // Verify some key lines are visible
     await expect(page.getByText(KNOWN_LINES.BNSF.searchTerm)).toBeVisible();
-    await expect(
-      page.getByText(KNOWN_LINES.UP_N.searchTerm)
-    ).toBeVisible();
+    await expect(page.getByText(KNOWN_LINES.UP_N.searchTerm)).toBeVisible();
     await expect(
       page.getByText(KNOWN_LINES.ROCK_ISLAND.searchTerm)
     ).toBeVisible();
@@ -39,7 +37,9 @@ test.describe('Lines Page', () => {
 
     // Verify line name is displayed
     await expect(
-      page.getByRole('heading', { name: new RegExp(KNOWN_LINES.BNSF.searchTerm, 'i') })
+      page.getByRole('heading', {
+        name: new RegExp(KNOWN_LINES.BNSF.searchTerm, 'i'),
+      })
     ).toBeVisible();
   });
 

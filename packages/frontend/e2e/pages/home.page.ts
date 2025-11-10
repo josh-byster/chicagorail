@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 /**
  * Page Object Model for Home Page
@@ -57,7 +57,9 @@ export class HomePage {
    * Click "View Alerts" button
    */
   async clickViewAlerts() {
-    await this.page.getByRole('button', { name: /view alerts|alerts/i }).click();
+    await this.page
+      .getByRole('button', { name: /view alerts|alerts/i })
+      .click();
   }
 
   /**

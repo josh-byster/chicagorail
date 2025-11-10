@@ -39,7 +39,7 @@ test.describe('Train Detail Page', () => {
     await expect(stops.last()).toBeVisible();
   });
 
-  test('shows all stops in sequence', async ({ page }) => {
+  test('shows all stops in sequence', async ({ page: _page }) => {
     // Search and navigate to train detail
     await routePage.goto();
     await routePage.selectOrigin(KNOWN_STATIONS.OGILVIE.searchTerm);
@@ -86,7 +86,7 @@ test.describe('Train Detail Page', () => {
     await expect(page).toHaveURL(/\/route/);
   });
 
-  test('displays line information', async ({ page }) => {
+  test('displays line information', async ({ page: _page }) => {
     // Navigate to train detail
     await routePage.goto();
     await routePage.selectOrigin(KNOWN_STATIONS.CHICAGO_UNION.searchTerm);

@@ -26,7 +26,9 @@ test.describe('Home Page', () => {
     await expect(page).toHaveURL('/lines');
   });
 
-  test('keyboard shortcuts dialog opens and closes', async ({ page }) => {
+  test('keyboard shortcuts dialog opens and closes', async ({
+    page: _page,
+  }) => {
     // Open with "?"
     await homePage.openKeyboardShortcuts();
 
@@ -38,14 +40,16 @@ test.describe('Home Page', () => {
     await expect(dialog).not.toBeVisible();
   });
 
-  test('page is responsive', async ({ page }) => {
+  test('page is responsive', async ({ page: _page }) => {
     // Check that the page renders without errors
     const body = page.locator('body');
     await expect(body).toBeVisible();
 
     // Navigate using keyboard
     await page.keyboard.press('Tab');
-    const focusedElement = await page.evaluate(() => document.activeElement?.tagName);
+    const focusedElement = await page.evaluate(
+      () => document.activeElement?.tagName
+    );
     expect(['BUTTON', 'A', 'INPUT']).toContain(focusedElement);
   });
 });

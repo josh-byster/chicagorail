@@ -86,12 +86,16 @@ export async function checkKeyboardNavigation(page: Page) {
 
     // Focused element should be an interactive element
     const interactiveTags = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'];
-    const hasInteractiveRole = ['button', 'link', 'textbox', 'combobox'].includes(
-      focusedElement.role || ''
-    );
+    const hasInteractiveRole = [
+      'button',
+      'link',
+      'textbox',
+      'combobox',
+    ].includes(focusedElement.role || '');
 
     expect(
-      interactiveTags.includes(focusedElement.tagName || '') || hasInteractiveRole
+      interactiveTags.includes(focusedElement.tagName || '') ||
+        hasInteractiveRole
     ).toBeTruthy();
   }
 }

@@ -90,15 +90,19 @@ test.describe('Accessibility (WCAG 2.1 Level AA)', () => {
     const destLabel = await destInput.getAttribute('aria-label');
 
     // Should have either aria-label or associated label
-    const hasOriginLabel = originLabel || (await originInput.evaluate((el) => {
-      const id = el.id;
-      return id ? !!document.querySelector(`label[for="${id}"]`) : false;
-    }));
+    const hasOriginLabel =
+      originLabel ||
+      (await originInput.evaluate((el) => {
+        const id = el.id;
+        return id ? !!document.querySelector(`label[for="${id}"]`) : false;
+      }));
 
-    const hasDestLabel = destLabel || (await destInput.evaluate((el) => {
-      const id = el.id;
-      return id ? !!document.querySelector(`label[for="${id}"]`) : false;
-    }));
+    const hasDestLabel =
+      destLabel ||
+      (await destInput.evaluate((el) => {
+        const id = el.id;
+        return id ? !!document.querySelector(`label[for="${id}"]`) : false;
+      }));
 
     expect(hasOriginLabel).toBeTruthy();
     expect(hasDestLabel).toBeTruthy();
@@ -154,8 +158,12 @@ test.describe('Accessibility (WCAG 2.1 Level AA)', () => {
       }));
 
       return [...h1, ...h2, ...h3].sort((a, b) => {
-        const aPos = document.querySelector(`h${a.level}`)?.getBoundingClientRect().top || 0;
-        const bPos = document.querySelector(`h${b.level}`)?.getBoundingClientRect().top || 0;
+        const aPos =
+          document.querySelector(`h${a.level}`)?.getBoundingClientRect().top ||
+          0;
+        const bPos =
+          document.querySelector(`h${b.level}`)?.getBoundingClientRect().top ||
+          0;
         return aPos - bPos;
       });
     });
