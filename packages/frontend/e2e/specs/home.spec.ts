@@ -13,17 +13,17 @@ test.describe('Home Page', () => {
     await expect(homePage.page).toHaveTitle(/metra|train|chicago/i);
   });
 
-  test('quick action buttons navigate correctly', async ({ page }) => {
-    // Test "Find Route" button
-    await homePage.clickFindRoute();
-    await expect(page).toHaveURL('/route');
+  test('quick action cards navigate correctly', async ({ page }) => {
+    // Test "Browse Lines" card
+    await homePage.clickBrowseLines();
+    await expect(page).toHaveURL('/lines');
 
     // Navigate back
     await homePage.goto();
 
-    // Test "View Lines" button
-    await homePage.clickViewLines();
-    await expect(page).toHaveURL('/lines');
+    // Test "Service Alerts" card
+    await homePage.clickServiceAlerts();
+    await expect(page).toHaveURL('/alerts');
   });
 
   test('keyboard shortcuts dialog opens and closes', async ({

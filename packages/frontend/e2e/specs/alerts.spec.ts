@@ -28,12 +28,10 @@ test.describe('Alerts Page', () => {
   test('has filter controls', async () => {
     // Verify filter controls exist (even if no alerts)
     const lineFilter = alertsPage.getLineFilter();
-    const stationFilter = alertsPage.getStationFilter();
+    const severityFilter = alertsPage.getSeverityFilter();
 
-    // At least one filter should be visible
-    const lineFilterVisible = await lineFilter.isVisible();
-    const stationFilterVisible = await stationFilter.isVisible();
-
-    expect(lineFilterVisible || stationFilterVisible).toBeTruthy();
+    // Both filters should be visible
+    await expect(lineFilter).toBeVisible();
+    await expect(severityFilter).toBeVisible();
   });
 });

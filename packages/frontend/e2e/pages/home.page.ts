@@ -40,26 +40,26 @@ export class HomePage {
   }
 
   /**
-   * Click "Find Route" button
+   * Click "Browse Lines" quick action card
    */
-  async clickFindRoute() {
-    await this.page.getByRole('button', { name: /find route/i }).click();
+  async clickBrowseLines() {
+    await this.page.getByText('Browse Lines').click();
   }
 
   /**
-   * Click "View Lines" button
+   * Click "Service Alerts" quick action card
    */
-  async clickViewLines() {
-    await this.page.getByRole('button', { name: /view lines/i }).click();
+  async clickServiceAlerts() {
+    await this.page.getByText('Service Alerts').click();
   }
 
   /**
-   * Click "View Alerts" button
+   * Navigate to route search (home page already has route search)
    */
-  async clickViewAlerts() {
-    await this.page
-      .getByRole('button', { name: /view alerts|alerts/i })
-      .click();
+  async navigateToRoute() {
+    // Home page already has route search, just use it
+    // or navigate to /route if needed
+    await this.page.goto('/route');
   }
 
   /**

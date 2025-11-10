@@ -19,12 +19,13 @@ export class LinesPage {
   }
 
   /**
-   * Get all line cards
+   * Get all line cards (they're in a grid)
    */
   getLineCards() {
-    return this.page
-      .getByRole('article')
-      .or(this.page.locator('[class*="line-card"]'));
+    // Cards are in .grid.grid-cols-1 container
+    return this.page.locator(
+      '.grid.grid-cols-1 > div[class*="cursor-pointer"]'
+    );
   }
 
   /**
@@ -32,9 +33,10 @@ export class LinesPage {
    * @param lineName - Name of the line (e.g., "BNSF", "Union Pacific North")
    */
   getLineCard(lineName: string) {
+    // Look for the card that contains the line name
     return this.page
-      .locator('[class*="line"]', {
-        has: this.page.getByText(new RegExp(lineName, 'i')),
+      .locator('div[class*="cursor-pointer"]', {
+        has: this.page.getByText(lineName, { exact: false }),
       })
       .first();
   }

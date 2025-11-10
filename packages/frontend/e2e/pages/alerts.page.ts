@@ -38,14 +38,16 @@ export class AlertsPage {
    * Get line filter dropdown
    */
   getLineFilter() {
-    return this.page.getByLabel(/filter.*line|line filter/i);
+    // Find the select with "Line" label
+    return this.page.getByRole('combobox').first();
   }
 
   /**
-   * Get station filter dropdown
+   * Get severity filter dropdown
    */
-  getStationFilter() {
-    return this.page.getByLabel(/filter.*station|station filter/i);
+  getSeverityFilter() {
+    // The second combobox is severity
+    return this.page.getByRole('combobox').nth(1);
   }
 
   /**
