@@ -115,61 +115,70 @@ export default async function globalSetup(_config: FullConfig) {
     stdio: 'pipe',
   });
 
-  // Capture backend output
+  // Capture backend output for debugging
+  let backendOutput = '';
+  let backendErrors = '';
+
   backendProcess.stdout?.on('data', (data) => {
     const output = data.toString();
+    backendOutput += output;
     if (!process.env.CI) {
       process.stdout.write(`[Backend] ${output}`);
     }
   });
 
   backendProcess.stderr?.on('data', (data) => {
+    const output = data.toString();
+    backendErrors += output;
     if (!process.env.CI) {
-      process.stderr.write(`[Backend Error] ${data.toString()}`);
+      process.stderr.write(`[Backend Error] ${output}`);
     }
   });
 
-  // Wait for backend to be ready
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('Backend server failed to start within 60 seconds'));
-    }, 60000);
-
-    backendProcess!.stdout?.on('data', (data) => {
-      const output = data.toString();
-      if (
-        output.includes('Server listening') ||
-        output.includes('listening on')
-      ) {
-        clearTimeout(timeout);
-        console.log('✅ Backend server started successfully');
-        resolve();
-      }
-    });
-
-    backendProcess!.on('exit', (code) => {
-      clearTimeout(timeout);
-      reject(new Error(`Backend process exited with code ${code}`));
-    });
+  // Check if backend process exited immediately
+  let processExited = false;
+  backendProcess!.on('exit', (code) => {
+    processExited = true;
+    console.error(`❌ Backend process exited unexpectedly with code ${code}`);
+    if (backendErrors) {
+      console.error('Last stderr output:', backendErrors.slice(-500));
+    }
   });
 
-  // 5. Wait for backend health check
-  console.log('🏥 Waiting for backend health check...');
+  // 5. Wait for backend health check (with polling)
+  console.log('🏥 Waiting for backend to be ready...');
+
+  // Give the server a moment to initialize before polling
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  // Check if process exited during initialization
+  if (processExited) {
+    throw new Error('Backend process exited during initialization');
+  }
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
   let healthCheckPassed = false;
+  let lastError: Error | null = null;
+
   for (let i = 0; i < 30; i++) {
+    if (processExited) {
+      break;
+    }
+
     try {
-      const response = await page.goto('http://localhost:3001/api/health');
+      const response = await page.goto('http://localhost:3001/api/health', {
+        timeout: 2000,
+      });
       if (response?.ok()) {
         healthCheckPassed = true;
-        console.log('✅ Backend health check passed');
+        console.log('✅ Backend server is ready');
         break;
       }
     } catch (error) {
-      // Retry
+      lastError = error instanceof Error ? error : new Error(String(error));
+      // Continue retrying
     }
     await page.waitForTimeout(1000);
   }
@@ -177,7 +186,14 @@ export default async function globalSetup(_config: FullConfig) {
   await browser.close();
 
   if (!healthCheckPassed) {
-    throw new Error('Backend health check failed after 30 attempts');
+    console.error('=== Backend Startup Debug Info ===');
+    console.error('Last 1000 chars of stdout:', backendOutput.slice(-1000));
+    console.error('Last 1000 chars of stderr:', backendErrors.slice(-1000));
+
+    const errorMsg = processExited
+      ? 'Backend process exited unexpectedly'
+      : `Backend health check failed after 30 attempts${lastError ? `: ${lastError.message}` : ''}`;
+    throw new Error(errorMsg);
   }
 
   // Store backend PID for cleanup
