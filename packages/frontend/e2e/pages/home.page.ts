@@ -43,22 +43,18 @@ export class HomePage {
    * Click "Browse Lines" quick action card
    */
   async clickBrowseLines() {
-    // Find the card containing "Browse Lines" text and click it
-    const card = this.page.locator('div[class*="cursor-pointer"]', {
-      has: this.page.getByText('Browse Lines'),
-    });
-    await card.click();
+    // Click the text directly - the parent card will handle the navigation
+    await this.page.getByText('Browse Lines').click();
+    await this.page.waitForURL('/lines');
   }
 
   /**
    * Click "Service Alerts" quick action card
    */
   async clickServiceAlerts() {
-    // Find the card containing "Service Alerts" text and click it
-    const card = this.page.locator('div[class*="cursor-pointer"]', {
-      has: this.page.getByText('Service Alerts'),
-    });
-    await card.click();
+    // Click the text directly - the parent card will handle the navigation
+    await this.page.getByText('Service Alerts').click();
+    await this.page.waitForURL('/alerts');
   }
 
   /**

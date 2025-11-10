@@ -55,7 +55,10 @@ export class LinesPage {
    * @param lineName - Name of the line
    */
   async clickLine(lineName: string) {
-    await this.getLineCard(lineName).click();
+    // Click on the line name text - the card will handle navigation
+    await this.page.getByText(lineName, { exact: false }).first().click();
+    // Wait for navigation to complete
+    await this.page.waitForURL(/\/lines\/.+/);
   }
 
   /**
