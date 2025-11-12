@@ -47,9 +47,10 @@ async function startServer() {
     // Initialize database and start background tasks
     await initializeOnStartup();
 
-    // Start Express server
-    app.listen(PORT, () => {
-      console.log(`Metra Train Tracker API running on port ${PORT}`);
+    // Start Express server - explicitly bind to 0.0.0.0 for Dokku
+    const HOST = '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+      console.log(`Metra Train Tracker API running on ${HOST}:${PORT}`);
       console.log(`Environment: ${env.NODE_ENV}`);
       console.log(`Database: ${env.DATABASE_PATH}`);
     });
