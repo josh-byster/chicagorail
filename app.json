@@ -12,5 +12,29 @@
       "quantity": 1
     }
   },
-  "addons": []
+  "addons": [],
+  "healthchecks": {
+    "web": [
+      {
+        "type": "startup",
+        "name": "web startup check",
+        "description": "Checks if the web process has started successfully",
+        "path": "/api/health",
+        "attempts": 3,
+        "timeout": 5,
+        "wait": 5,
+        "upcheck": true,
+        "downcheck": false
+      },
+      {
+        "type": "liveness",
+        "name": "web liveness check",
+        "description": "Checks if the web process is alive and responding",
+        "path": "/api/health",
+        "attempts": 3,
+        "timeout": 5,
+        "wait": 10
+      }
+    ]
+  }
 }
