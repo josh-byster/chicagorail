@@ -22,7 +22,7 @@ const getAllowedOrigins = (): string[] => {
 
 /**
  * Check if origin is allowed
- * Allows all Vercel.app subdomains and explicitly configured origins
+ * Allows all Vercel.app and chicagorail.app subdomains and explicitly configured origins
  */
 const isOriginAllowed = (origin: string | undefined): boolean => {
   if (!origin) return true; // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -37,6 +37,13 @@ const isOriginAllowed = (origin: string | undefined): boolean => {
 
   // Allow all Vercel.app subdomains
   if (origin.endsWith('.vercel.app')) return true;
+
+  // Allow all chicagorail.app subdomains (www.chicagorail.app, api.chicagorail.app, etc.)
+  if (
+    origin.endsWith('.chicagorail.app') ||
+    origin === 'https://chicagorail.app'
+  )
+    return true;
 
   // In development mode, allow all localhost/127.0.0.1 origins
   if (env.NODE_ENV === 'development') {
