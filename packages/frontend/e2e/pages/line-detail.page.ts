@@ -30,9 +30,8 @@ export class LineDetailPage {
    * Get all station cards
    */
   getStationCards() {
-    return this.page
-      .getByRole('article')
-      .or(this.page.locator('[class*="station-card"]'));
+    // Station cards are in a space-y-3 container
+    return this.page.locator('.space-y-3 > div');
   }
 
   /**
@@ -40,11 +39,12 @@ export class LineDetailPage {
    * @param stationName - Name of the station
    */
   getStationCard(stationName: string) {
+    // Find the card by looking for the h3 heading with the station name
     return this.page
-      .locator('[class*="station"]', {
-        has: this.page.getByText(new RegExp(stationName, 'i')),
-      })
-      .first();
+      .getByRole('heading', { level: 3, name: new RegExp(stationName, 'i') })
+      .locator('..')
+      .locator('..')
+      .locator('..');
   }
 
   /**

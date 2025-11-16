@@ -40,20 +40,20 @@ export class HomePage {
   }
 
   /**
-   * Click "Browse Lines" quick action card
+   * Click "Lines" navigation button
    */
   async clickBrowseLines() {
-    // Click the text directly - the parent card will handle the navigation
-    await this.page.getByText('Browse Lines').click();
+    // Click the Lines button in the navigation bar
+    await this.page.getByRole('button', { name: /^Lines$/i }).click();
     await this.page.waitForURL('/lines');
   }
 
   /**
-   * Click "Service Alerts" quick action card
+   * Click "Alerts" navigation button
    */
   async clickServiceAlerts() {
-    // Click the text directly - the parent card will handle the navigation
-    await this.page.getByText('Service Alerts').click();
+    // Click the Alerts button in the navigation bar
+    await this.page.getByRole('button', { name: /^Alerts$/i }).click();
     await this.page.waitForURL('/alerts');
   }
 

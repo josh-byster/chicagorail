@@ -19,70 +19,84 @@ export class StatisticsPage {
   }
 
   /**
-   * Get statistics cards
+   * Check if page shows "No Statistics Yet" message
    */
-  getStatCards() {
-    return this.page
-      .getByRole('article')
-      .or(this.page.locator('[class*="stat-card"]'));
+  async hasNoData(): Promise<boolean> {
+    return this.page.getByText('No Statistics Yet').isVisible();
   }
 
   /**
-   * Get specific stat by name
-   * @param statName - Name of the statistic (e.g., "Total Stations")
+   * Get "Total Trips" value
    */
-  getStat(statName: string) {
-    return this.page
-      .locator('[class*="stat"]', {
-        has: this.page.getByText(new RegExp(statName, 'i')),
-      })
-      .first();
-  }
-
-  /**
-   * Get stat value
-   * @param statName - Name of the statistic
-   */
-  async getStatValue(statName: string): Promise<string | null> {
-    const stat = this.getStat(statName);
-    const text = await stat.textContent();
-
-    if (!text) return null;
-
-    // Try to extract number from text
-    const match = text.match(/\d+/);
-    return match ? match[0] : null;
-  }
-
-  /**
-   * Get total stations stat
-   */
-  async getTotalStations(): Promise<number | null> {
-    const value = await this.getStatValue('total stations');
+  async getTotalTrips(): Promise<number | null> {
+    const card = this.page.getByText('Total Trips').locator('..').locator('..');
+    const value = await card.getByText(/^\d+$/).textContent();
     return value ? Number(value) : null;
   }
 
   /**
-   * Get total lines stat
+   * Get "Days Active" value
    */
-  async getTotalLines(): Promise<number | null> {
-    const value = await this.getStatValue('total lines|active lines');
+  async getDaysActive(): Promise<number | null> {
+    const card = this.page.getByText('Days Active').locator('..').locator('..');
+    const value = await card.getByText(/^\d+$/).textContent();
     return value ? Number(value) : null;
   }
 
   /**
-   * Get usage chart if it exists
+   * Get "Recent Activity" value
    */
-  getUsageChart() {
-    return this.page
-      .locator('[class*="chart"]')
-      .or(this.page.getByRole('img', { name: /chart|graph/i }));
+  async getRecentActivity(): Promise<number | null> {
+    const card = this.page
+      .getByText('Recent Activity')
+      .locator('..')
+      .locator('..');
+    const value = await card.getByText(/^\d+$/).textContent();
+    return value ? Number(value) : null;
   }
 
   /**
-   * Check if charts are displayed
+   * Get Most Used Route card
+   */
+  getMostUsedRoute() {
+    return this.page.getByText('Most Used Route').locator('..').locator('..');
+  }
+
+  /**
+   * Get Top Stations section
+   */
+  getTopStations() {
+    return this.page.getByText('Top Stations').locator('..').locator('..');
+  }
+
+  /**
+   * Get Top Lines section
+   */
+  getTopLines() {
+    return this.page.getByText('Most Used Lines').locator('..').locator('..');
+  }
+
+  /**
+   * Get Activity by Day section
+   */
+  getActivityByDay() {
+    return this.page.getByText('Activity by Day').locator('..').locator('..');
+  }
+
+  /**
+   * Check if charts/graphs are displayed
    */
   async hasCharts(): Promise<boolean> {
-    return this.getUsageChart().isVisible();
+    // The activity by day section has progress bars (visual charts)
+    const activitySection = this.page.getByText('Activity by Day');
+    return activitySection.isVisible();
+  }
+
+  /**
+   * Get all stat cards (overview cards)
+   */
+  getStatCards() {
+    // The overview cards grid
+    return this.page.locator('.grid.grid-cols-1.md\\:grid-cols-3 > div');
   }
 }

@@ -1,7 +1,9 @@
 import { Page } from '@playwright/test';
 
 /**
- * Page Object Model for Route Search Page
+ * Page Object Model for Route Search
+ * Note: Route search happens on the home page (/), not a separate /route page.
+ * The /route page only displays results after selection.
  */
 export class RoutePage {
   readonly page: Page;
@@ -11,174 +13,140 @@ export class RoutePage {
   }
 
   /**
-   * Navigate to route search page
+   * Navigate to route search page (home page)
    */
   async goto() {
-    await this.page.goto('/route');
+    await this.page.goto('/');
     await this.page.waitForLoadState('networkidle');
   }
 
   /**
-   * Get origin station select/combobox
+   * Get origin station search input (Command component)
+   */
+  getOriginInput() {
+    return this.page.getByPlaceholder('Search for a station');
+  }
+
+  /**
+   * Alias for getOriginInput() for backwards compatibility
    */
   getOriginSelect() {
-    return this.page.getByLabel(/from|origin/i).first();
+    return this.getOriginInput();
   }
 
   /**
-   * Get destination station select/combobox
+   * Get destination station search input (Command component)
+   */
+  getDestinationInput() {
+    return this.page.getByPlaceholder('Search destinations...');
+  }
+
+  /**
+   * Alias for getDestinationInput() for backwards compatibility
    */
   getDestinationSelect() {
-    return this.page.getByLabel(/to|destination/i).first();
+    return this.getDestinationInput();
   }
 
   /**
-   * Get departure time input
-   */
-  getDepartureTimeInput() {
-    return this.page.getByLabel(/departure time|time/i);
-  }
-
-  /**
-   * Get departure date input
-   */
-  getDepartureDateInput() {
-    return this.page.getByLabel(/date/i);
-  }
-
-  /**
-   * Get search button
+   * DEPRECATED: There is no search button - kept for backwards compatibility
+   * Returns a dummy locator that will always be visible
    */
   getSearchButton() {
-    return this.page.getByRole('button', { name: /search|find trains/i });
+    // Return the body element since there's no actual search button
+    return this.page.locator('body');
   }
 
   /**
-   * Get save route button
-   */
-  getSaveRouteButton() {
-    return this.page.getByRole('button', { name: /save route/i });
-  }
-
-  /**
-   * Get train list container (looks for results section)
+   * Get train list container (on /route page after search)
    */
   getTrainList() {
-    // Wait for either trains badge or no trains message
-    return this.page.locator('.space-y-4.animate-fade-in, [role="alert"]');
+    return this.page.locator('.space-y-4, [role="alert"]');
   }
 
   /**
-   * Get all train cards
+   * Get all train cards (on /route page)
    */
   getTrainCards() {
-    // Train items are in a specific structure within the train list
     return this.page.locator('.space-y-3 > div');
   }
 
   /**
-   * Get saved routes section
-   */
-  getSavedRoutes() {
-    return this.page.getByRole('region', { name: /saved routes/i });
-  }
-
-  /**
-   * Select origin station
+   * Select origin station by typing and clicking
    * @param stationName - Name or partial name of station
    */
   async selectOrigin(stationName: string) {
-    const select = this.getOriginSelect();
-    await select.click();
+    const input = this.getOriginInput();
 
-    // Wait for dropdown to open
+    // Type in the search field
+    await input.click();
+    await input.fill(stationName);
+
+    // Wait for the dropdown to appear
     await this.page.waitForTimeout(500);
 
-    // Find and click the option
+    // Click the matching option (CommandItem)
     const option = this.page
       .getByRole('option', {
         name: new RegExp(stationName, 'i'),
       })
       .first();
+
+    await option.waitFor({ state: 'visible', timeout: 5000 });
     await option.click();
 
-    // Wait for selection to register
+    // Wait for selection to complete
     await this.page.waitForTimeout(300);
   }
 
   /**
-   * Select destination station
+   * Select destination station by typing and clicking
+   * Note: This automatically navigates to /route page
    * @param stationName - Name or partial name of station
    */
   async selectDestination(stationName: string) {
-    const select = this.getDestinationSelect();
-    await select.click();
+    const input = this.getDestinationInput();
 
-    // Wait for dropdown to open
+    // Type in the search field
+    await input.click();
+    await input.fill(stationName);
+
+    // Wait for the dropdown to appear
     await this.page.waitForTimeout(500);
 
-    // Find and click the option
+    // Click the matching option (CommandItem)
     const option = this.page
       .getByRole('option', {
         name: new RegExp(stationName, 'i'),
       })
       .first();
+
+    await option.waitFor({ state: 'visible', timeout: 5000 });
     await option.click();
 
-    // Wait for selection to register
-    await this.page.waitForTimeout(300);
-  }
-
-  /**
-   * Set departure time
-   * @param time - Time in HH:mm format (e.g., "14:30")
-   */
-  async setDepartureTime(time: string) {
-    await this.getDepartureTimeInput().fill(time);
-  }
-
-  /**
-   * Set departure date
-   * @param date - Date in YYYY-MM-DD format
-   */
-  async setDepartureDate(date: string) {
-    await this.getDepartureDateInput().fill(date);
+    // Wait for navigation to /route page
+    await this.page.waitForURL(/\/route\?origin=.+&destination=.+/, {
+      timeout: 5000,
+    });
   }
 
   /**
    * Perform a complete route search
+   * This will navigate from home page to results page
    */
-  async searchRoute(params: {
-    origin: string;
-    destination: string;
-    time?: string;
-    date?: string;
-  }) {
+  async searchRoute(params: { origin: string; destination: string }) {
     await this.selectOrigin(params.origin);
     await this.selectDestination(params.destination);
-
-    if (params.time) {
-      await this.setDepartureTime(params.time);
-    }
-
-    if (params.date) {
-      await this.setDepartureDate(params.date);
-    }
-
-    await this.searchButton();
+    // Navigation happens automatically - no search button needed
   }
 
   /**
-   * Click search button
-   */
-  async searchButton() {
-    await this.getSearchButton().click();
-  }
-
-  /**
-   * Wait for search results to load
+   * Wait for search results to load (on /route page)
    */
   async waitForResults() {
+    // Wait for URL to be /route
+    await this.page.waitForURL(/\/route/, { timeout: 5000 });
+
     // Wait for loading skeletons to disappear
     await this.page
       .locator('[class*="skeleton"]')
@@ -205,44 +173,25 @@ export class RoutePage {
   }
 
   /**
-   * Save current route
-   * @param routeName - Name for the saved route
+   * Get the "Change route" button (on /route page)
    */
-  async saveRoute(routeName: string) {
-    await this.getSaveRouteButton().click();
-
-    // Fill in route name in dialog
-    await this.page.getByLabel(/route name|name/i).fill(routeName);
-
-    // Click save in dialog
-    await this.page.getByRole('button', { name: /^save$/i }).click();
+  getChangeRouteButton() {
+    return this.page.getByRole('button', { name: /change route/i });
   }
 
   /**
-   * Click on a saved route
-   * @param routeName - Name of the saved route
+   * Click the "Change route" button to go back to search
    */
-  async clickSavedRoute(routeName: string) {
-    await this.page.getByText(routeName).click();
+  async changeRoute() {
+    await this.getChangeRouteButton().click();
+    await this.page.waitForURL('/', { timeout: 3000 });
   }
 
   /**
-   * Delete a saved route
-   * @param routeName - Name of the saved route
+   * DEPRECATED: There is no separate search button - selection triggers navigation
    */
-  async deleteSavedRoute(routeName: string) {
-    const routeCard = this.page.locator(`[class*="saved-route"]`, {
-      has: this.page.getByText(routeName),
-    });
-
-    await routeCard.getByRole('button', { name: /delete|remove/i }).click();
-
-    // Confirm deletion if dialog appears
-    const confirmButton = this.page.getByRole('button', {
-      name: /confirm|yes|delete/i,
-    });
-    if (await confirmButton.isVisible()) {
-      await confirmButton.click();
-    }
+  async searchButton() {
+    // This method is kept for backwards compatibility but does nothing
+    // Navigation happens automatically when destination is selected
   }
 }
