@@ -9,6 +9,7 @@
 import { parse } from 'csv-parse/sync';
 import fs from 'fs';
 import path from 'path';
+import * as logger from '../utils/logger.utils.js';
 import type {
   GTFSData,
   GTFSAgency,
@@ -54,7 +55,7 @@ const parseGTFSFile = <T>(filePath: string): T[] => {
     });
     return records as T[];
   } catch (error) {
-    console.error(`❌ Failed to parse ${filePath}:`, error);
+    logger.error(`Failed to parse ${filePath}:`, error);
     throw error;
   }
 };
@@ -63,34 +64,34 @@ const parseGTFSFile = <T>(filePath: string): T[] => {
  * Parse all GTFS files from the extracted directory
  */
 export const parseGTFSFiles = (tempDir: string): GTFSData => {
-  console.log('  📄 Parsing GTFS files...');
+  logger.debug('Parsing GTFS files...');
 
   const agencies = parseGTFSFile<GTFSAgency>(path.join(tempDir, 'agency.txt'));
-  console.log(`    ✓ Parsed ${agencies.length} agencies`);
+  logger.debug(`Parsed ${agencies.length} agencies`);
 
   const routes = parseGTFSFile<GTFSRoute>(path.join(tempDir, 'routes.txt'));
-  console.log(`    ✓ Parsed ${routes.length} routes`);
+  logger.debug(`Parsed ${routes.length} routes`);
 
   const stops = parseGTFSFile<GTFSStop>(path.join(tempDir, 'stops.txt'));
-  console.log(`    ✓ Parsed ${stops.length} stops`);
+  logger.debug(`Parsed ${stops.length} stops`);
 
   const trips = parseGTFSFile<GTFSTrip>(path.join(tempDir, 'trips.txt'));
-  console.log(`    ✓ Parsed ${trips.length} trips`);
+  logger.debug(`Parsed ${trips.length} trips`);
 
   const stopTimes = parseGTFSFile<GTFSStopTime>(
     path.join(tempDir, 'stop_times.txt')
   );
-  console.log(`    ✓ Parsed ${stopTimes.length} stop times`);
+  logger.debug(`Parsed ${stopTimes.length} stop times`);
 
   const calendar = parseGTFSFile<GTFSCalendar>(
     path.join(tempDir, 'calendar.txt')
   );
-  console.log(`    ✓ Parsed ${calendar.length} calendar entries`);
+  logger.debug(`Parsed ${calendar.length} calendar entries`);
 
   const calendarDates = parseGTFSFile<GTFSCalendarDate>(
     path.join(tempDir, 'calendar_dates.txt')
   );
-  console.log(`    ✓ Parsed ${calendarDates.length} calendar date exceptions`);
+  logger.debug(`Parsed ${calendarDates.length} calendar date exceptions`);
 
   return {
     agencies,

@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import GtfsRealtimeBindings from 'gtfs-realtime-bindings';
+import * as logger from '../utils/logger.utils.js';
 
 /**
  * GTFS Realtime Polling Service
@@ -52,7 +53,6 @@ const getAuthHeader = (): { Authorization: string } | null => {
   }
   return { Authorization: `Bearer ${config.apiToken}` };
 };
-
 // Fetch GTFS realtime data with If-Modified-Since header
 const fetchRealtimeEndpoint = async (
   url: string,
@@ -86,12 +86,10 @@ const fetchRealtimeEndpoint = async (
   );
   return { data: feed, lastModified: response.headers.get('Last-Modified') };
 };
-
 // Store last modified timestamps for each endpoint
 let lastAlertsModified: string | null = null;
 let lastTripUpdatesModified: string | null = null;
 let lastPositionsModified: string | null = null;
-
 /**
  * Simplified interfaces for realtime data extraction
  * These represent the processed data from GTFS-RT entities
@@ -100,7 +98,6 @@ export interface RealtimeAlert {
   id: string;
   alert: GtfsRealtimeBindings.transit_realtime.IAlert;
 }
-
 export interface RealtimeTripUpdate {
   tripId: string;
   delay?: number | null;
@@ -108,11 +105,9 @@ export interface RealtimeTripUpdate {
     | GtfsRealtimeBindings.transit_realtime.TripUpdate.IStopTimeUpdate[]
     | null;
 }
-
 // Use the actual GTFS-RT VehiclePosition type from the protobuf library
 export type RealtimeVehiclePosition =
   GtfsRealtimeBindings.transit_realtime.IVehiclePosition;
-
 // Store realtime data in memory
 // Extract the actual data from GTFS-RT entity structure
 let realtimeAlerts: RealtimeAlert[] = [];
@@ -126,40 +121,40 @@ let realtimeVehiclePositions: RealtimeVehiclePosition[] = [];
 export const pollGTFSRealtimeData = async (): Promise<void> => {
   const config = getConfig();
   if (!config) {
-    console.log('⏩ Realtime features disabled (no API token configured)');
+    logger.debug('Realtime features disabled (no API token configured)');
     return;
   }
 
-  console.log('📡 Polling GTFS realtime data...');
+  logger.debug('Polling GTFS realtime data...');
 
   try {
     // Fetch alerts
-    console.log('  ⏳ Fetching service alerts...');
+    logger.debug('Fetching service alerts...');
     const alertsResponse = await fetchRealtimeEndpoint(
       config.alertsUrl,
       lastAlertsModified
     );
 
     if (alertsResponse.data) {
-      console.log('  💾 Processing alerts data...');
+      logger.debug('Processing alerts data...');
       realtimeAlerts = alertsResponse.data.entity
         .filter((e) => e.alert != null)
         .map((e) => ({ id: e.id || '', alert: e.alert! }));
       lastAlertsModified = alertsResponse.lastModified;
-      console.log(`    ✓ Processed ${realtimeAlerts.length} alerts`);
+      logger.debug(`Processed ${realtimeAlerts.length} alerts`);
     } else {
-      console.log('  ⏩ Alerts not modified since last fetch');
+      logger.debug('Alerts not modified since last fetch');
     }
 
     // Fetch trip updates
-    console.log('  ⏳ Fetching trip updates...');
+    logger.debug('Fetching trip updates...');
     const tripUpdatesResponse = await fetchRealtimeEndpoint(
       config.tripUpdatesUrl,
       lastTripUpdatesModified
     );
 
     if (tripUpdatesResponse.data) {
-      console.log('  💾 Processing trip updates data...');
+      logger.debug('Processing trip updates data...');
       realtimeTripUpdates = tripUpdatesResponse.data.entity
         .filter((e) => e.tripUpdate != null)
         .map((e) => ({
@@ -168,34 +163,34 @@ export const pollGTFSRealtimeData = async (): Promise<void> => {
           stopTimeUpdates: e.tripUpdate?.stopTimeUpdate,
         }));
       lastTripUpdatesModified = tripUpdatesResponse.lastModified;
-      console.log(`    ✓ Processed ${realtimeTripUpdates.length} trip updates`);
+      logger.debug(`Processed ${realtimeTripUpdates.length} trip updates`);
     } else {
-      console.log('  ⏩ Trip updates not modified since last fetch');
+      logger.debug('Trip updates not modified since last fetch');
     }
 
     // Fetch vehicle positions
-    console.log('  ⏳ Fetching vehicle positions...');
+    logger.debug('Fetching vehicle positions...');
     const positionsResponse = await fetchRealtimeEndpoint(
       config.positionsUrl,
       lastPositionsModified
     );
 
     if (positionsResponse.data) {
-      console.log('  💾 Processing vehicle positions data...');
+      logger.debug('Processing vehicle positions data...');
       realtimeVehiclePositions = positionsResponse.data.entity
         .filter((e) => e.vehicle != null)
         .map((e) => e.vehicle!);
       lastPositionsModified = positionsResponse.lastModified;
-      console.log(
-        `    ✓ Processed ${realtimeVehiclePositions.length} vehicle positions`
+      logger.debug(
+        `Processed ${realtimeVehiclePositions.length} vehicle positions`
       );
     } else {
-      console.log('  ⏩ Vehicle positions not modified since last fetch');
+      logger.debug('Vehicle positions not modified since last fetch');
     }
 
-    console.log('✅ GTFS realtime polling cycle complete!');
+    logger.info('GTFS realtime polling cycle complete');
   } catch (error) {
-    console.error('❌ GTFS realtime polling failed:', error);
+    logger.error('GTFS realtime polling failed:', error);
     // Don't throw - keep polling service running even if one cycle fails
   }
 };
@@ -231,19 +226,23 @@ export const getRealtimeVehiclePositions = (): RealtimeVehiclePosition[] => {
 export const startGTFSRealtimePolling = (): void => {
   const config = getConfig();
   if (!config) {
-    console.log('⏩ Realtime polling disabled (no API token configured)');
+    logger.debug('Realtime polling disabled (no API token configured)');
     return;
   }
 
-  console.log('🚀 Starting GTFS realtime polling service...');
+  logger.info('Starting GTFS realtime polling service...');
 
   // Initial poll
-  pollGTFSRealtimeData().catch(console.error);
+  pollGTFSRealtimeData().catch((err) =>
+    logger.error('Realtime polling error:', err)
+  );
 
   // Set up interval polling
   setInterval(() => {
-    pollGTFSRealtimeData().catch(console.error);
+    pollGTFSRealtimeData().catch((err) =>
+      logger.error('Realtime polling error:', err)
+    );
   }, config.pollInterval);
 
-  console.log(`⏱️  Polling interval set to ${config.pollInterval}ms`);
+  logger.debug(`Polling interval set to ${config.pollInterval}ms`);
 };

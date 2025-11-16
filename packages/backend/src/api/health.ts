@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDatabase } from '../services/database.service.js';
+import * as logger from '../utils/logger.utils.js';
 
 const router: Router = Router();
 
@@ -38,7 +39,7 @@ router.get('/health', (_req, res) => {
       const lastUpdatedResult = db
         .prepare(
           `
-        SELECT MAX(last_modified) as last_updated 
+        SELECT MAX(last_modified) as last_updated
         FROM (
           SELECT MAX(last_modified) as last_modified FROM trips
           UNION ALL
@@ -52,7 +53,7 @@ router.get('/health', (_req, res) => {
 
       gtfsLastUpdated = lastUpdatedResult?.last_updated || null;
     } catch (dbError) {
-      console.warn('Could not fetch GTFS metadata:', dbError);
+      logger.warn('Could not fetch GTFS metadata:', dbError);
     }
 
     const healthResponse: HealthResponse = {
@@ -65,7 +66,7 @@ router.get('/health', (_req, res) => {
 
     res.json(healthResponse);
   } catch (error) {
-    console.error('Health check failed:', error);
+    logger.error('Health check failed:', error);
     res.status(500).json({
       status: 'error',
       timestamp: new Date().toISOString(),

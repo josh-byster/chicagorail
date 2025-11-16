@@ -5,6 +5,7 @@ import {
   getStationById,
   getReachableStations,
 } from '../services/station.service.js';
+import * as logger from '../utils/logger.utils.js';
 
 const router: Router = Router();
 
@@ -33,7 +34,7 @@ router.get('/stations', (req, res) => {
 
     res.json(stations);
   } catch (error) {
-    console.error('Error fetching stations:', error);
+    logger.error('Error fetching stations:', error);
     res.status(500).json({ error: 'Failed to fetch stations' });
   }
 });
@@ -64,7 +65,7 @@ router.get('/stations/:stationId', (req, res) => {
 
     res.json(station);
   } catch (error) {
-    console.error('Error fetching station:', error);
+    logger.error('Error fetching station:', error);
     res.status(500).json({ error: 'Failed to fetch station' });
   }
 });
@@ -89,7 +90,7 @@ router.get('/stations/:stationId/reachable', (req, res) => {
 
     res.json(stations);
   } catch (error) {
-    console.error('Error fetching reachable stations:', error);
+    logger.error('Error fetching reachable stations:', error);
     res.status(500).json({ error: 'Failed to fetch reachable stations' });
   }
 });

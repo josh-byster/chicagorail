@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { env } from '../config/env.js';
 import fs from 'fs';
 import path from 'path';
+import * as logger from '../utils/logger.utils.js';
 
 let db: Database.Database | null = null;
 
@@ -25,8 +26,8 @@ export const initDatabase = (): Database.Database => {
   db.pragma('cache_size = -64000'); // 64MB cache
   db.pragma('temp_store = MEMORY');
 
-  console.log('✅ Database initialized with WAL mode');
-  console.log(`📁 Database path: ${env.DATABASE_PATH}`);
+  logger.info('Database initialized with WAL mode');
+  logger.debug(`Database path: ${env.DATABASE_PATH}`);
 
   return db;
 };
@@ -43,7 +44,7 @@ export const closeDatabase = (): void => {
     db.pragma('optimize');
     db.close();
     db = null;
-    console.log('✅ Database connection closed');
+    logger.info('Database connection closed');
   }
 };
 

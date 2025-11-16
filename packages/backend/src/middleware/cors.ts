@@ -1,5 +1,6 @@
 import type { CorsOptions } from 'cors';
 import { env } from '../config/env.js';
+import * as logger from '../utils/logger.utils.js';
 
 /**
  * Get allowed origins from environment variable or use defaults for development
@@ -73,7 +74,7 @@ export const corsOptions: CorsOptions = {
       const error = new Error(
         `CORS: Origin '${origin}' not allowed. Configure CORS_ORIGIN environment variable.`
       );
-      console.error(error.message);
+      logger.error(error.message, error);
       callback(error);
     }
   },

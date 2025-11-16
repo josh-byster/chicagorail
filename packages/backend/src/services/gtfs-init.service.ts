@@ -6,6 +6,8 @@ import { parse } from 'csv-parse/sync';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import * as logger from '../utils/logger.utils.js';
+import { DEFAULT_ROUTE_COLORS } from '../constants/gtfs.constants.js';
 
 /**
  * GTFS Static Data Import Service
@@ -43,6 +45,7 @@ interface GTFSStop {
   stop_desc?: string;
   zone_id?: string;
   parent_station?: string;
+  wheelchair_boarding?: number;
 }
 
 interface GTFSTrip {
@@ -101,9 +104,7 @@ interface GTFSData {
  */
 const fetchPublishedTimestamp = async (): Promise<string | null> => {
   if (!env.GTFS_STATIC_PUBLISHED_URL) {
-    console.log(
-      '  ⏩ Published timestamp URL not configured, will import data'
-    );
+    logger.info('Published timestamp URL not configured, will import data');
     return null;
   }
 
@@ -115,10 +116,10 @@ const fetchPublishedTimestamp = async (): Promise<string | null> => {
       );
     }
     const timestamp = (await response.text()).trim();
-    console.log(`  📅 Latest published timestamp: ${timestamp}`);
+    logger.info(`Latest published timestamp: ${timestamp}`);
     return timestamp;
   } catch (error) {
-    console.error('❌ Failed to fetch published timestamp:', error);
+    logger.error('Failed to fetch published timestamp', error);
     throw error;
   }
 };
@@ -148,14 +149,14 @@ const saveLastImportedTimestamp = (timestamp: string): void => {
     'last_published_timestamp',
     timestamp
   );
-  console.log(`  💾 Saved published timestamp: ${timestamp}`);
+  logger.info(`Saved published timestamp: ${timestamp}`);
 };
 
 /**
  * Download the GTFS schedule ZIP file from Metra
  */
 const downloadScheduleZip = async (): Promise<Buffer> => {
-  console.log('  ⬇️  Downloading schedule.zip...');
+  logger.info('Downloading schedule.zip...');
   try {
     const response = await fetch(env.GTFS_STATIC_SCHEDULE_URL);
     if (!response.ok) {
@@ -165,12 +166,10 @@ const downloadScheduleZip = async (): Promise<Buffer> => {
     }
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    console.log(
-      `  ✅ Downloaded ${(buffer.length / 1024 / 1024).toFixed(2)} MB`
-    );
+    logger.info(`Downloaded ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
     return buffer;
   } catch (error) {
-    console.error('❌ Failed to download schedule.zip:', error);
+    logger.error('Failed to download schedule.zip', error);
     throw error;
   }
 };
@@ -179,15 +178,15 @@ const downloadScheduleZip = async (): Promise<Buffer> => {
  * Extract ZIP file to a temporary directory
  */
 const extractZipToTemp = (zipBuffer: Buffer): string => {
-  console.log('  📦 Extracting ZIP file...');
+  logger.info('Extracting ZIP file...');
   try {
     const zip = new AdmZip(zipBuffer);
     const tempDir = path.join(os.tmpdir(), `gtfs-${Date.now()}`);
     zip.extractAllTo(tempDir, true);
-    console.log(`  ✅ Extracted to ${tempDir}`);
+    logger.debug(`Extracted to ${tempDir}`);
     return tempDir;
   } catch (error) {
-    console.error('❌ Failed to extract ZIP:', error);
+    logger.error('Failed to extract ZIP', error);
     throw error;
   }
 };
@@ -229,7 +228,7 @@ const parseGTFSFile = <T>(filePath: string): T[] => {
     });
     return records as T[];
   } catch (error) {
-    console.error(`❌ Failed to parse ${filePath}:`, error);
+    logger.error(`Failed to parse ${filePath}`, error);
     throw error;
   }
 };
@@ -238,34 +237,34 @@ const parseGTFSFile = <T>(filePath: string): T[] => {
  * Parse all GTFS files from the extracted directory
  */
 const parseGTFSFiles = (tempDir: string): GTFSData => {
-  console.log('  📄 Parsing GTFS files...');
+  logger.info('Parsing GTFS files...');
 
   const agencies = parseGTFSFile<GTFSAgency>(path.join(tempDir, 'agency.txt'));
-  console.log(`    ✓ Parsed ${agencies.length} agencies`);
+  logger.debug(`Parsed ${agencies.length} agencies`);
 
   const routes = parseGTFSFile<GTFSRoute>(path.join(tempDir, 'routes.txt'));
-  console.log(`    ✓ Parsed ${routes.length} routes`);
+  logger.debug(`Parsed ${routes.length} routes`);
 
   const stops = parseGTFSFile<GTFSStop>(path.join(tempDir, 'stops.txt'));
-  console.log(`    ✓ Parsed ${stops.length} stops`);
+  logger.debug(`Parsed ${stops.length} stops`);
 
   const trips = parseGTFSFile<GTFSTrip>(path.join(tempDir, 'trips.txt'));
-  console.log(`    ✓ Parsed ${trips.length} trips`);
+  logger.debug(`Parsed ${trips.length} trips`);
 
   const stopTimes = parseGTFSFile<GTFSStopTime>(
     path.join(tempDir, 'stop_times.txt')
   );
-  console.log(`    ✓ Parsed ${stopTimes.length} stop times`);
+  logger.debug(`Parsed ${stopTimes.length} stop times`);
 
   const calendar = parseGTFSFile<GTFSCalendar>(
     path.join(tempDir, 'calendar.txt')
   );
-  console.log(`    ✓ Parsed ${calendar.length} calendar entries`);
+  logger.debug(`Parsed ${calendar.length} calendar entries`);
 
   const calendarDates = parseGTFSFile<GTFSCalendarDate>(
     path.join(tempDir, 'calendar_dates.txt')
   );
-  console.log(`    ✓ Parsed ${calendarDates.length} calendar date exceptions`);
+  logger.debug(`Parsed ${calendarDates.length} calendar date exceptions`);
 
   return {
     agencies,
@@ -284,9 +283,9 @@ const parseGTFSFiles = (tempDir: string): GTFSData => {
 const cleanupTempDir = (tempDir: string): void => {
   try {
     fs.rmSync(tempDir, { recursive: true, force: true });
-    console.log(`  🧹 Cleaned up temp directory`);
+    logger.debug('Cleaned up temp directory');
   } catch (error) {
-    console.warn(`⚠️  Failed to cleanup temp directory: ${error}`);
+    logger.warn(`Failed to cleanup temp directory: ${error}`);
   }
 };
 
@@ -295,7 +294,7 @@ const cleanupTempDir = (tempDir: string): void => {
  * Checks published timestamp before downloading to avoid unnecessary work
  */
 export const importGTFSStaticData = async (): Promise<void> => {
-  console.log('📥 Importing GTFS static data from Metra...');
+  logger.info('Importing GTFS static data from Metra...');
 
   let tempDir: string | null = null;
 
@@ -308,18 +307,16 @@ export const importGTFSStaticData = async (): Promise<void> => {
       const lastImportedTimestamp = getLastImportedTimestamp();
 
       if (publishedTimestamp === lastImportedTimestamp) {
-        console.log('✅ GTFS data is up to date, skipping import');
+        logger.info('GTFS data is up to date, skipping import');
         return;
       }
 
-      console.log(`  🆕 New data available (published: ${publishedTimestamp})`);
+      logger.info(`New data available (published: ${publishedTimestamp})`);
       if (lastImportedTimestamp) {
-        console.log(`     Last imported: ${lastImportedTimestamp}`);
+        logger.info(`Last imported: ${lastImportedTimestamp}`);
       }
     } else {
-      console.log(
-        '  ℹ️  Published timestamp not available, will import/update data'
-      );
+      logger.info('Published timestamp not available, will import/update data');
     }
 
     // Step 2: Download schedule.zip
@@ -332,7 +329,7 @@ export const importGTFSStaticData = async (): Promise<void> => {
     const gtfsData = parseGTFSFiles(tempDir);
 
     // Step 5: Insert into database
-    console.log('  💾 Inserting data into database...');
+    logger.info('Inserting data into database...');
     const db = getDatabase();
     createTables(db);
     insertAgencies(db, gtfsData.agencies);
@@ -350,9 +347,9 @@ export const importGTFSStaticData = async (): Promise<void> => {
       saveLastImportedTimestamp(publishedTimestamp);
     }
 
-    console.log('✅ GTFS static data import complete!');
+    logger.info('GTFS static data import complete!');
   } catch (error) {
-    console.error('❌ GTFS import failed:', error);
+    logger.error('GTFS import failed', error);
     throw error;
   } finally {
     // Step 7: Cleanup
@@ -436,7 +433,10 @@ const createTables = (db: Database.Database): void => {
   `);
 };
 
-const insertAgencies = (db: any, agencies: any[]) => {
+const insertAgencies = (
+  db: Database.Database,
+  agencies: GTFSAgency[]
+): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO agency (agency_id, agency_name, agency_url, agency_timezone)
     VALUES (?, ?, ?, ?)
@@ -451,27 +451,30 @@ const insertAgencies = (db: any, agencies: any[]) => {
   }
 };
 
-const insertRoutes = (db: any, routes: any[]) => {
+const insertRoutes = (db: Database.Database, routes: GTFSRoute[]): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
   for (const route of routes) {
     // TRANSFORMATION (Option B): Add # prefix to colors and convert text color number to hex
-    let routeColor = '#CCCCCC'; // Default gray
+    let routeColor = DEFAULT_ROUTE_COLORS.BACKGROUND;
     if (route.route_color) {
       const colorStr = String(route.route_color);
       routeColor = colorStr.startsWith('#') ? colorStr : `#${colorStr}`;
     }
 
     // Convert route_text_color number to hex color
-    let textColor = '#000000'; // Default black
+    let textColor = DEFAULT_ROUTE_COLORS.TEXT_ON_LIGHT;
     if (
       route.route_text_color !== undefined &&
       route.route_text_color !== null
     ) {
       if (typeof route.route_text_color === 'number') {
-        textColor = route.route_text_color === 0 ? '#FFFFFF' : '#000000';
+        textColor =
+          route.route_text_color === 0
+            ? DEFAULT_ROUTE_COLORS.TEXT_ON_DARK
+            : DEFAULT_ROUTE_COLORS.TEXT_ON_LIGHT;
       } else {
         const colorStr = String(route.route_text_color);
         textColor = colorStr.startsWith('#') ? colorStr : `#${colorStr}`;
@@ -489,7 +492,7 @@ const insertRoutes = (db: any, routes: any[]) => {
   }
 };
 
-const insertStops = (db: any, stops: any[]) => {
+const insertStops = (db: Database.Database, stops: GTFSStop[]): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO stops (stop_id, stop_name, stop_lat, stop_lon, wheelchair_boarding, zone_id)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -509,7 +512,7 @@ const insertStops = (db: any, stops: any[]) => {
   }
 };
 
-const insertTrips = (db: any, trips: any[]) => {
+const insertTrips = (db: Database.Database, trips: GTFSTrip[]): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id)
     VALUES (?, ?, ?, ?, ?)
@@ -525,7 +528,10 @@ const insertTrips = (db: any, trips: any[]) => {
   }
 };
 
-const insertStopTimes = (db: any, stopTimes: any[]) => {
+const insertStopTimes = (
+  db: Database.Database,
+  stopTimes: GTFSStopTime[]
+): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO stop_times (trip_id, stop_id, stop_sequence, arrival_time, departure_time)
     VALUES (?, ?, ?, ?, ?)
@@ -541,7 +547,10 @@ const insertStopTimes = (db: any, stopTimes: any[]) => {
   }
 };
 
-const insertCalendar = (db: any, calendar: any[]) => {
+const insertCalendar = (
+  db: Database.Database,
+  calendar: GTFSCalendar[]
+): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO calendar (service_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -562,7 +571,10 @@ const insertCalendar = (db: any, calendar: any[]) => {
   }
 };
 
-const insertCalendarDates = (db: any, calendarDates: any[]) => {
+const insertCalendarDates = (
+  db: Database.Database,
+  calendarDates: GTFSCalendarDate[]
+): void => {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO calendar_dates (service_id, date, exception_type)
     VALUES (?, ?, ?)
@@ -573,7 +585,7 @@ const insertCalendarDates = (db: any, calendarDates: any[]) => {
 };
 
 const createIndexes = (db: Database.Database): void => {
-  console.log('  🔍 Creating performance indexes...');
+  logger.info('Creating performance indexes...');
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_stops_name ON stops(stop_name);
     CREATE INDEX IF NOT EXISTS idx_trips_route ON trips(route_id);
@@ -594,7 +606,14 @@ const deriveLinesServed = (db: Database.Database): void => {
   try {
     db.exec(`ALTER TABLE stops ADD COLUMN lines_served TEXT`);
   } catch (error) {
-    // Column might already exist, ignore error
+    // Check if error is due to column already existing
+    if (error instanceof Error && error.message.includes('duplicate column')) {
+      logger.debug('Column lines_served already exists, skipping creation');
+    } else {
+      // Re-throw unexpected errors
+      logger.error('Failed to add lines_served column', error);
+      throw error;
+    }
   }
 
   // Find all routes that serve each station
@@ -627,5 +646,5 @@ const deriveLinesServed = (db: Database.Database): void => {
     );
   }
 
-  console.log(`  ✅ Derived lines_served for ${stations.length} stations`);
+  logger.info(`Derived lines_served for ${stations.length} stations`);
 };

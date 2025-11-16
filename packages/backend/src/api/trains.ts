@@ -4,6 +4,7 @@ import {
   getTrainDetail,
 } from '../services/train.service.js';
 import { validateTrainQueryParams } from '../middleware/validate-trains.js';
+import * as logger from '../utils/logger.utils.js';
 
 const router: Router = Router();
 
@@ -45,7 +46,7 @@ router.get('/trains', validateTrainQueryParams, (req, res) => {
 
     res.json(trains);
   } catch (error) {
-    console.error('Error fetching trains:', error);
+    logger.error('Error fetching trains:', error);
     res.status(500).json({ error: 'Failed to fetch trains' });
   }
 });
@@ -76,7 +77,7 @@ router.get('/trains/:tripId', (req, res) => {
 
     res.json(train);
   } catch (error) {
-    console.error('Error fetching train detail:', error);
+    logger.error('Error fetching train detail:', error);
     res.status(500).json({ error: 'Failed to fetch train detail' });
   }
 });

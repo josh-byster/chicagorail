@@ -11,6 +11,7 @@ import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import * as logger from '../utils/logger.utils.js';
 
 /**
  * Fetch the published timestamp from Metra
@@ -18,7 +19,7 @@ import os from 'os';
  */
 export const fetchPublishedTimestamp = async (): Promise<string | null> => {
   if (!env.GTFS_STATIC_PUBLISHED_URL) {
-    console.log('  ⏩ Published timestamp URL not configured, skipping check');
+    logger.debug('Published timestamp URL not configured, skipping check');
     return null;
   }
 
@@ -30,10 +31,10 @@ export const fetchPublishedTimestamp = async (): Promise<string | null> => {
       );
     }
     const timestamp = (await response.text()).trim();
-    console.log(`  📅 Latest published timestamp: ${timestamp}`);
+    logger.debug(`Latest published timestamp: ${timestamp}`);
     return timestamp;
   } catch (error) {
-    console.error('❌ Failed to fetch published timestamp:', error);
+    logger.error('Failed to fetch published timestamp:', error);
     throw error;
   }
 };
@@ -42,7 +43,7 @@ export const fetchPublishedTimestamp = async (): Promise<string | null> => {
  * Download GTFS ZIP file from Metra
  */
 export const downloadGTFSZip = async (): Promise<Buffer> => {
-  console.log(`  🌐 Downloading from ${env.GTFS_STATIC_SCHEDULE_URL}...`);
+  logger.debug(`Downloading from ${env.GTFS_STATIC_SCHEDULE_URL}...`);
 
   const response = await fetch(env.GTFS_STATIC_SCHEDULE_URL);
   if (!response.ok) {
@@ -54,9 +55,7 @@ export const downloadGTFSZip = async (): Promise<Buffer> => {
   const buffer = await response.arrayBuffer();
   const zipBuffer = Buffer.from(buffer);
 
-  console.log(
-    `  ✓ Downloaded ${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`
-  );
+  logger.debug(`Downloaded ${(zipBuffer.length / 1024 / 1024).toFixed(2)} MB`);
   return zipBuffer;
 };
 
@@ -65,13 +64,13 @@ export const downloadGTFSZip = async (): Promise<Buffer> => {
  */
 export const extractZipToTemp = (zipBuffer: Buffer): string => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gtfs-'));
-  console.log(`  📦 Extracting to ${tempDir}...`);
+  logger.debug(`Extracting to ${tempDir}...`);
 
   const zip = new AdmZip(zipBuffer);
   zip.extractAllTo(tempDir, true);
 
   const files = fs.readdirSync(tempDir);
-  console.log(`  ✓ Extracted ${files.length} files`);
+  logger.debug(`Extracted ${files.length} files`);
 
   return tempDir;
 };
@@ -82,8 +81,8 @@ export const extractZipToTemp = (zipBuffer: Buffer): string => {
 export const cleanupTempDir = (tempDir: string): void => {
   try {
     fs.rmSync(tempDir, { recursive: true, force: true });
-    console.log(`  🗑️  Cleaned up temporary directory`);
+    logger.debug('Cleaned up temporary directory');
   } catch (error) {
-    console.warn(`⚠️  Failed to cleanup temp directory: ${error}`);
+    logger.warn(`Failed to cleanup temp directory: ${error}`);
   }
 };

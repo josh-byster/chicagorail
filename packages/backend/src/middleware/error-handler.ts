@@ -1,10 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-
-export interface AppError extends Error {
-  statusCode?: number;
-  isOperational?: boolean;
-}
+import * as logger from '../utils/logger.utils.js';
+import {
+  AppError,
+  ValidationError,
+  NotFoundError,
+  DatabaseError,
+  ExternalServiceError,
+} from '../utils/errors.js';
 
 export const errorHandler = (
   err: AppError | ZodError | Error,
@@ -23,29 +26,39 @@ export const errorHandler = (
     });
   }
 
-  // Application errors
-  const statusCode = (err as AppError).statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  // Custom application errors
+  if (err instanceof AppError) {
+    logger.error(`${err.constructor.name}: ${err.message}`, err);
+    return res.status(err.statusCode).json({
+      error: err.message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    });
+  }
 
-  console.error('Error:', {
-    statusCode,
-    message,
-    stack: err.stack,
-  });
-
-  res.status(statusCode).json({
-    error: message,
+  // Unknown errors
+  logger.error('Unexpected error', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
 
-export class HttpError extends Error implements AppError {
+// Re-export error classes for convenience
+export {
+  AppError,
+  ValidationError,
+  NotFoundError,
+  DatabaseError,
+  ExternalServiceError,
+};
+
+// Deprecated: Use AppError instead
+export class HttpError extends AppError {
   constructor(
-    public statusCode: number,
+    statusCode: number,
     message: string,
-    public isOperational: boolean = true
+    isOperational: boolean = true
   ) {
-    super(message);
-    Object.setPrototypeOf(this, HttpError.prototype);
+    super(message, statusCode, isOperational);
   }
 }

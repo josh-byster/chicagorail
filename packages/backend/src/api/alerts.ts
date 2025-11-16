@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getActiveAlerts } from '../services/alert.service.js';
+import * as logger from '../utils/logger.utils.js';
 
 const router: Router = Router();
 
@@ -27,7 +28,7 @@ router.get('/alerts', (req, res) => {
 
     res.json(alerts);
   } catch (error) {
-    console.error('Error fetching alerts:', error);
+    logger.error('Error fetching alerts:', error);
     res.status(500).json({ error: 'Failed to fetch alerts' });
   }
 });

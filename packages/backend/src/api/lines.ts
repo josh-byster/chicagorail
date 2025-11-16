@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getAllLines, getLineById } from '../services/line.service.js';
+import * as logger from '../utils/logger.utils.js';
 
 const router: Router = Router();
 
@@ -20,7 +21,7 @@ router.get('/lines', (_req, res) => {
     const lines = getAllLines();
     res.json(lines);
   } catch (error) {
-    console.error('Error fetching lines:', error);
+    logger.error('Error fetching lines:', error);
     res.status(500).json({ error: 'Failed to fetch lines' });
   }
 });
@@ -51,7 +52,7 @@ router.get('/lines/:lineId', (req, res) => {
 
     res.json(line);
   } catch (error) {
-    console.error('Error fetching line detail:', error);
+    logger.error('Error fetching line detail:', error);
     res.status(500).json({ error: 'Failed to fetch line detail' });
   }
 });
