@@ -102,11 +102,14 @@ export const getCurrentChicagoTime = (): string => {
   });
 
   const parts = formatter.formatToParts(now);
-  const hour = parts.find((p) => p.type === 'hour')?.value || '00';
+  const hourValue = parts.find((p) => p.type === 'hour')?.value || '00';
   const minute = parts.find((p) => p.type === 'minute')?.value || '00';
   const second = parts.find((p) => p.type === 'second')?.value || '00';
 
-  return `${hour}:${minute}:${second}`;
+  // Normalize hour to 0-23 range (some implementations return "24" for midnight)
+  const normalizedHour = (parseInt(hourValue) % 24).toString().padStart(2, '0');
+
+  return `${normalizedHour}:${minute}:${second}`;
 };
 
 /**
