@@ -7,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: ['https://www.chicagorail.app', 'https://chicagorail.app', 'http://localhost:3001'],
+  origin: ['https://www.chicagorail.app', 'https://chicagorail.app', 'http://localhost:3001', 'http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json());
