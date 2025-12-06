@@ -6,7 +6,10 @@ import { logger } from './logger';
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://www.chicagorail.app', 'https://chicagorail.app', 'http://localhost:3001'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Initialize GTFS service
