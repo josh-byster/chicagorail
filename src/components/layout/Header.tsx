@@ -1,5 +1,6 @@
 import { Train } from 'lucide-react';
 import { DatePicker } from './DatePicker';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   selectedDate: Date;
@@ -14,7 +15,10 @@ export function Header({ selectedDate, onDateChange }: HeaderProps) {
           <Train className="h-6 w-6 text-primary" />
           <h1 className="text-xl font-bold">Metra Tracker</h1>
         </div>
-        <DatePicker selectedDate={selectedDate} onDateChange={onDateChange} />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <DatePicker selectedDate={selectedDate} onDateChange={onDateChange} />
+        </div>
       </div>
     </header>
   );
