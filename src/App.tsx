@@ -5,6 +5,7 @@ import { SearchResults } from '@/components/search/SearchResults';
 import { RouteGrid } from '@/components/routes/RouteGrid';
 import { ScheduleView } from '@/components/schedule/ScheduleView';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
 import { Route, Stop } from '@/types/metra';
 
@@ -68,6 +69,13 @@ function App() {
       <Header selectedDate={selectedDate} onDateChange={handleDateChange} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Test Input */}
+        <div className="max-w-md space-y-2">
+          <Input type="email" placeholder="Test Input - Email" />
+          <Input type="text" placeholder="Test Input - Text" />
+          <Input type="password" placeholder="Test Input - Password" />
+        </div>
+
         {/* Station Search - Always visible */}
         <StationSearch
           onStationSelect={handleStationSelect}
