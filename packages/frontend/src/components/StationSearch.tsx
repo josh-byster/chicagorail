@@ -6,9 +6,10 @@ import type { Stop } from '@chicagorail/shared';
 
 interface StationSearchProps {
   onSelectStation: (stop: Stop) => void;
+  placeholder?: string;
 }
 
-export function StationSearch({ onSelectStation }: StationSearchProps) {
+export function StationSearch({ onSelectStation, placeholder = "Search for a station..." }: StationSearchProps) {
   const [query, setQuery] = useState('');
   const { stops, loading } = useStationSearch(query);
   const { recentStops, addRecentStop } = useRecentStops();
@@ -26,7 +27,7 @@ export function StationSearch({ onSelectStation }: StationSearchProps) {
     <div className="relative">
       <Input
         type="text"
-        placeholder="Search for a station..."
+        placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="w-full"
