@@ -287,6 +287,11 @@ export class GTFSService {
         } as Departure;
       })
       .filter((d): d is Departure => d !== null)
+      .filter(d => {
+        // Exclude trains heading TO this station (arrivals)
+        // Only show trains departing FROM this station
+        return !d.trip_headsign.toLowerCase().includes(stop.stop_name.toLowerCase());
+      })
       .filter(d => new Date(d.departure_time) > now) // Only future departures
       .sort((a, b) => new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()) // Sort by time
       .slice(0, limit);
