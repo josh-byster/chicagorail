@@ -1,0 +1,14 @@
+{
+  "name": "chicagorail",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --stream dev",
+    "build": "pnpm --recursive --stream build",
+    "backend:dev": "pnpm --filter @chicagorail/backend dev",
+    "frontend:dev": "pnpm --filter @chicagorail/frontend dev",
+    "shared:build": "pnpm --filter @chicagorail/shared build"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
