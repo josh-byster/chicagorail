@@ -215,6 +215,32 @@ export class GTFSService {
     return date.toISOString();
   }
 
+  // Check if a service is active on a given date
+  private isServiceActiveOnDate(serviceId: string, date: Date): boolean {
+    if (!this.data) return false;
+
+    const servicePeriod = this.data.servicePeriods.find(sp => sp.service_id === serviceId);
+    if (!servicePeriod) return false;
+
+    const dayOfWeek = date.getDay();
+
+    // Check if service runs on this day of the week
+    const isActive =
+      (dayOfWeek === 0 && servicePeriod.sunday === 1) ||
+      (dayOfWeek === 1 && servicePeriod.monday === 1) ||
+      (dayOfWeek === 2 && servicePeriod.tuesday === 1) ||
+      (dayOfWeek === 3 && servicePeriod.wednesday === 1) ||
+      (dayOfWeek === 4 && servicePeriod.thursday === 1) ||
+      (dayOfWeek === 5 && servicePeriod.friday === 1) ||
+      (dayOfWeek === 6 && servicePeriod.saturday === 1);
+
+    if (!isActive) return false;
+
+    // Check date range (YYYYMMDD format)
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    return dateStr >= servicePeriod.start_date && dateStr <= servicePeriod.end_date;
+  }
+
   public async getDeparturesForStop(
     stopId: string,
     date: Date,
@@ -231,11 +257,18 @@ export class GTFSService {
     // Get all stop times for this stop
     const stopTimes = data.stopTimes.filter(st => st.stop_id === stopId);
 
+    const now = new Date();
+
     // Build departures with route info
     const departures = stopTimes
       .map(st => {
         const trip = data.trips.find(t => t.trip_id === st.trip_id);
         if (!trip) return null;
+
+        // Check if this trip's service is active today
+        if (!this.isServiceActiveOnDate(trip.service_id, date)) {
+          return null;
+        }
 
         const route = data.routes.find(r => r.route_id === trip.route_id);
         if (!route) return null;
@@ -254,6 +287,8 @@ export class GTFSService {
         } as Departure;
       })
       .filter((d): d is Departure => d !== null)
+      .filter(d => new Date(d.departure_time) > now) // Only future departures
+      .sort((a, b) => new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()) // Sort by time
       .slice(0, limit);
 
     return { stop, departures };
