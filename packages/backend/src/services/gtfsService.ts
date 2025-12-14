@@ -199,6 +199,22 @@ export class GTFSService {
     return this.data;
   }
 
+  // Convert GTFS time format (HH:MM:SS) to ISO datetime string
+  private gtfsTimeToISO(gtfsTime: string, baseDate: Date): string {
+    const [hours, minutes, seconds] = gtfsTime.split(':').map(Number);
+    const date = new Date(baseDate);
+
+    // Handle times >= 24:00:00 (next day service)
+    if (hours >= 24) {
+      date.setDate(date.getDate() + 1);
+      date.setHours(hours - 24, minutes, seconds || 0);
+    } else {
+      date.setHours(hours, minutes, seconds || 0);
+    }
+
+    return date.toISOString();
+  }
+
   public async getDeparturesForStop(
     stopId: string,
     date: Date,
@@ -231,8 +247,8 @@ export class GTFSService {
         return {
           route,
           trip_headsign: trip.trip_headsign,
-          departure_time: st.departure_time,
-          arrival_time: st.arrival_time,
+          departure_time: this.gtfsTimeToISO(st.departure_time, date),
+          arrival_time: this.gtfsTimeToISO(st.arrival_time, date),
           direction: trip.direction_id === 0 ? 'outbound' : 'inbound',
           trip_id: trip.trip_id
         } as Departure;
