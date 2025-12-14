@@ -1,54 +1,112 @@
-# React + TypeScript + Vite
+# Chicago Rail
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern monorepo for tracking Metra train departures in real-time.
 
-Currently, two official plugins are available:
+## Project Structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```
+chicagorail/
+├── packages/
+│   ├── shared/          # Shared types and utilities
+│   ├── backend/         # Express REST API
+│   └── frontend/        # React SPA with ShadCN UI
+└── schedule/            # GTFS data
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Monorepo**: PNPM workspaces
+- **Shared**: TypeScript types and utilities
+- **Backend**: Express, Node.js, TypeScript
+- **Frontend**: React, Vite, TailwindCSS, ShadCN UI
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- PNPM 8+
+
+### Installation
+
+```bash
+# Install dependencies for all packages
+pnpm install
+
+# Build the shared package first
+pnpm run shared:build
 ```
+
+### Development
+
+```bash
+# Run all packages in development mode
+pnpm run dev
+
+# Or run individually
+pnpm run backend:dev   # Backend on :3000
+pnpm run frontend:dev  # Frontend on :5173
+```
+
+### Environment Variables
+
+#### Backend (`packages/backend/.env`)
+```
+PORT=3000
+NODE_ENV=development
+GTFS_UPDATE_INTERVAL=86400000
+```
+
+#### Frontend (`packages/frontend/.env`)
+```
+VITE_API_URL=http://localhost:3000/api
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/routes` | Get all Metra routes |
+| GET | `/api/stops/search?q=` | Search stops by name |
+| GET | `/api/stops/:stopId/departures` | Get departures for a stop |
+
+## Features
+
+- 🔍 **Station Search**: Fuzzy search for Metra stations
+- 🚂 **Real-time Departures**: Live departure information
+- 📍 **Recent Searches**: Quick access to recently viewed stations
+- 🎨 **Line Filtering**: Filter departures by route
+- 📱 **Mobile Responsive**: Works on all devices
+- 🌙 **Dark Mode**: Coming soon
+
+## Architecture
+
+### Shared Package (`@chicagorail/shared`)
+- GTFS domain types (Route, Stop, Trip, etc.)
+- API request/response types
+- Shared utilities (time formatting, search)
+
+### Backend Package (`@chicagorail/backend`)
+- GTFS data ingestion and caching
+- REST API endpoints
+- Type-safe responses using shared types
+
+### Frontend Package (`@chicagorail/frontend`)
+- React components with ShadCN UI
+- Custom hooks for data fetching
+- Type-safe API client
+
+## Building for Production
+
+```bash
+# Build all packages
+pnpm run build
+
+# Start backend
+cd packages/backend && pnpm start
+```
+
+## License
+
+MIT
