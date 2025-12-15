@@ -10,7 +10,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/backend/package.json ./packages/backend/
 
-# Install dependencies
+# Install all dependencies (including dev for tsx)
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
@@ -19,15 +19,12 @@ COPY packages/shared/ ./packages/shared/
 COPY packages/backend/ ./packages/backend/
 COPY schedule/ ./schedule/
 
-# Build
-RUN pnpm --filter @chicagorail/shared build && pnpm --filter @chicagorail/backend build
-
-# Verify build output
-RUN ls -la packages/backend/dist/src/
+# Build shared package
+RUN pnpm --filter @chicagorail/shared build
 
 # Expose port
 ENV PORT=5000
 EXPOSE 5000
 
-# Start the server
-CMD ["node", "packages/backend/dist/src/index.js"]
+# Start the server using tsx (handles ESM properly)
+CMD ["pnpm", "--filter", "@chicagorail/backend", "start"]

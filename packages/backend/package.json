@@ -2,9 +2,9 @@
   "name": "@chicagorail/backend",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
