@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { StationCommand } from '../components/StationCommand';
 import { Button } from '../components/ui/button';
 import { ArrowRight, Clock } from 'lucide-react';
@@ -39,6 +39,13 @@ export function TripPlanner() {
       setLoading(false);
     }
   };
+
+  // Auto-search when both origin and destination are selected
+  useEffect(() => {
+    if (origin && destination) {
+      handleSearch();
+    }
+  }, [origin, destination]);
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
