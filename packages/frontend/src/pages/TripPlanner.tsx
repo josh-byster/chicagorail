@@ -13,7 +13,13 @@ export function TripPlanner() {
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const originRef = useRef<HTMLInputElement>(null);
   const destinationRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus origin input on mount
+  useEffect(() => {
+    originRef.current?.focus();
+  }, []);
 
   const handleOriginSelect = (stop: Stop) => {
     setOrigin(stop);
@@ -73,6 +79,7 @@ export function TripPlanner() {
                 Origin Station
               </label>
               <StationCommand
+                ref={originRef}
                 onSelectStation={handleOriginSelect}
                 placeholder="Where are you starting from?"
                 selectedStation={origin}
