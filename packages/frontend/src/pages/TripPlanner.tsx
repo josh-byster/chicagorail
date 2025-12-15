@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { StationCommand } from '../components/StationCommand';
-import { Button } from '../components/ui/button';
 import { ArrowRight, Clock } from 'lucide-react';
 import type { Stop, DirectTrip } from '@chicagorail/shared';
 import { api } from '../lib/api';
