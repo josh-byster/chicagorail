@@ -66,7 +66,7 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
 
   return (
     <div className="relative">
-      <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+      <Command className="rounded-lg border shadow-md h-auto" shouldFilter={false}>
         <CommandInput
           ref={ref}
           placeholder={placeholder}
@@ -76,7 +76,7 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
           onClick={handleInputClick}
         />
         {isOpen && (
-          <CommandList className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg bg-popover">
+          <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border shadow-lg bg-popover">
           {showSearchResults && (
           <>
             {loading ? (
