@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import routesRouter from './routes/routes';
 import stopsRouter from './routes/stops';
+import tripsRouter from './routes/trips';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
 
@@ -27,6 +28,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/routes', routesRouter);
 app.use('/api/stops', stopsRouter);
+app.use('/api/trips', tripsRouter);
 
 // Error handling
 app.use(errorHandler);

@@ -317,4 +317,96 @@ export class GTFSService {
       .map(routeId => this.data!.routes.find(r => r.route_id === routeId))
       .filter((route): route is Route => route !== undefined);
   }
+
+  public async findDirectTrips(
+    originStopId: string,
+    destinationStopId: string,
+    date: Date = new Date(),
+    limit: number = 10
+  ) {
+    const data = await this.getData();
+
+    const originStop = this.stopsByIdMap.get(originStopId);
+    const destinationStop = this.stopsByIdMap.get(destinationStopId);
+
+    if (!originStop || !destinationStop) {
+      throw new Error('One or both stops not found');
+    }
+
+    // Find routes that serve both stops
+    const originRoutes = this.routesByStopMap.get(originStopId) || new Set();
+    const destinationRoutes = this.routesByStopMap.get(destinationStopId) || new Set();
+    const commonRoutes = Array.from(originRoutes).filter(r => destinationRoutes.has(r));
+
+    if (commonRoutes.length === 0) {
+      return {
+        origin: originStop,
+        destination: destinationStop,
+        trips: []
+      };
+    }
+
+    const now = new Date();
+    const trips: Array<{
+      route: Route;
+      trip_id: string;
+      trip_headsign: string;
+      origin_departure: string;
+      destination_arrival: string;
+      duration_minutes: number;
+    }> = [];
+
+    // For each common route, find trips
+    for (const routeId of commonRoutes) {
+      const route = data.routes.find(r => r.route_id === routeId);
+      if (!route) continue;
+
+      const routeTrips = data.trips.filter(t => t.route_id === routeId);
+
+      for (const trip of routeTrips) {
+        // Check if service is active
+        if (!this.isServiceActiveOnDate(trip.service_id, date)) {
+          continue;
+        }
+
+        // Get stop times for this trip
+        const tripStopTimes = data.stopTimes
+          .filter(st => st.trip_id === trip.trip_id)
+          .sort((a, b) => a.stop_sequence - b.stop_sequence);
+
+        const originStopTime = tripStopTimes.find(st => st.stop_id === originStopId);
+        const destStopTime = tripStopTimes.find(st => st.stop_id === destinationStopId);
+
+        // Check if both stops are on this trip and in correct order
+        if (originStopTime && destStopTime && originStopTime.stop_sequence < destStopTime.stop_sequence) {
+          const departureTime = this.gtfsTimeToISO(originStopTime.departure_time, date);
+          const arrivalTime = this.gtfsTimeToISO(destStopTime.arrival_time, date);
+
+          // Only include future departures
+          if (new Date(departureTime) > now) {
+            const durationMs = new Date(arrivalTime).getTime() - new Date(departureTime).getTime();
+            const durationMinutes = Math.round(durationMs / 60000);
+
+            trips.push({
+              route,
+              trip_id: trip.trip_id,
+              trip_headsign: trip.trip_headsign,
+              origin_departure: departureTime,
+              destination_arrival: arrivalTime,
+              duration_minutes: durationMinutes
+            });
+          }
+        }
+      }
+    }
+
+    // Sort by departure time and limit
+    trips.sort((a, b) => new Date(a.origin_departure).getTime() - new Date(b.origin_departure).getTime());
+
+    return {
+      origin: originStop,
+      destination: destinationStop,
+      trips: trips.slice(0, limit)
+    };
+  }
 }

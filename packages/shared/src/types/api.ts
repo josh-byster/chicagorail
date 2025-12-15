@@ -29,6 +29,28 @@ export interface GetDeparturesResponse {
   timestamp: string;
 }
 
+// GET /api/trips/direct?origin=&destination=&limit=
+export interface FindDirectTripsRequest {
+  origin: string; // origin stop_id
+  destination: string; // destination stop_id
+  limit?: number;
+}
+
+export interface DirectTrip {
+  route: Route;
+  trip_id: string;
+  trip_headsign: string;
+  origin_departure: string; // ISO datetime
+  destination_arrival: string; // ISO datetime
+  duration_minutes: number;
+}
+
+export interface FindDirectTripsResponse {
+  origin: Stop;
+  destination: Stop;
+  trips: DirectTrip[];
+}
+
 // Error response
 export interface ApiError {
   error: string;

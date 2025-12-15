@@ -2,6 +2,7 @@ import type {
   GetRoutesResponse,
   SearchStopsResponse,
   GetDeparturesResponse,
+  FindDirectTripsResponse,
   ApiError
 } from '@chicagorail/shared';
 
@@ -33,6 +34,16 @@ class ApiClient {
 
     const endpoint = `/stops/${stopId}/departures?${params}`;
     return this.fetch<GetDeparturesResponse>(endpoint);
+  }
+
+  async findDirectTrips(originStopId: string, destinationStopId: string, limit: number = 10) {
+    const params = new URLSearchParams({
+      origin: originStopId,
+      destination: destinationStopId,
+      limit: limit.toString()
+    });
+
+    return this.fetch<FindDirectTripsResponse>(`/trips/direct?${params}`);
   }
 }
 
