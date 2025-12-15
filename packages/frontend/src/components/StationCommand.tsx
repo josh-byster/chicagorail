@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStationSearch } from '../hooks/useStations';
 import { useRecentStops } from '../hooks/useRecent';
 import {
@@ -23,27 +23,59 @@ export function StationCommand({
   selectedStation
 }: StationCommandProps) {
   const [inputValue, setInputValue] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
   const { stops, loading } = useStationSearch(inputValue);
   const { recentStops, addRecentStop } = useRecentStops();
+
+  // Update input value when selected station changes
+  useEffect(() => {
+    if (selectedStation) {
+      setInputValue(selectedStation.stop_name);
+      setIsOpen(false);
+    }
+  }, [selectedStation]);
 
   const handleSelect = (stop: Stop) => {
     addRecentStop(stop);
     onSelectStation(stop);
-    setInputValue('');
+    setInputValue(stop.stop_name);
+    setIsOpen(false);
   };
 
-  const showSearchResults = inputValue.length >= 2;
-  const showRecent = !showSearchResults && recentStops.length > 0;
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+    setIsOpen(true);
+  };
+
+  const handleInputFocus = () => {
+    if (!selectedStation) {
+      setIsOpen(true);
+    }
+  };
+
+  const handleInputClick = () => {
+    if (selectedStation) {
+      setInputValue('');
+      onSelectStation(null as any);
+      setIsOpen(true);
+    }
+  };
+
+  const showSearchResults = inputValue.length >= 2 && !selectedStation;
+  const showRecent = !showSearchResults && !selectedStation && recentStops.length > 0 && isOpen;
 
   return (
     <Command className="rounded-lg border shadow-md" shouldFilter={false}>
       <CommandInput
         placeholder={placeholder}
         value={inputValue}
-        onValueChange={setInputValue}
+        onValueChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onClick={handleInputClick}
       />
-      <CommandList>
-        {showSearchResults && (
+      {isOpen && (
+        <CommandList>
+          {showSearchResults && (
           <>
             {loading ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
@@ -87,7 +119,8 @@ export function StationCommand({
             ))}
           </CommandGroup>
         )}
-      </CommandList>
+        </CommandList>
+      )}
     </Command>
   );
 }

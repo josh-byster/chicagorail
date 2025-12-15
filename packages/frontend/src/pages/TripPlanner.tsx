@@ -60,11 +60,6 @@ export function TripPlanner() {
                 placeholder="Where are you starting from?"
                 selectedStation={origin}
               />
-              {origin && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Selected: {origin.stop_name}
-                </p>
-              )}
             </div>
 
             <div className="hidden md:flex items-center justify-center pt-8">
@@ -80,11 +75,6 @@ export function TripPlanner() {
                 placeholder="Where are you going?"
                 selectedStation={destination}
               />
-              {destination && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Selected: {destination.stop_name}
-                </p>
-              )}
             </div>
           </div>
 
