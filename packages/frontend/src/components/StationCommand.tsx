@@ -36,7 +36,7 @@ export function StationCommand({
   const showRecent = !showSearchResults && recentStops.length > 0;
 
   return (
-    <Command className="rounded-lg border shadow-md">
+    <Command className="rounded-lg border shadow-md" shouldFilter={false}>
       <CommandInput
         placeholder={placeholder}
         value={inputValue}
