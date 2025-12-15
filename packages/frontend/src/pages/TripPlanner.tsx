@@ -64,53 +64,42 @@ export function TripPlanner() {
 
   return (
     <div className="min-h-[calc(100vh-73px)] bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Plan Your Trip</h2>
-          <p className="text-muted-foreground">
-            Find trains between two stations
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-1">Plan Your Trip</h2>
+          <p className="text-sm text-muted-foreground">
+            Find direct trains between two stations
           </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-[1fr,auto,1fr] items-start">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Origin Station
-              </label>
+        <div className="space-y-4">
+          <div className="flex gap-3 items-center">
+            <div className="flex-1">
               <StationCommand
                 ref={originRef}
                 onSelectStation={handleOriginSelect}
-                placeholder="Where are you starting from?"
+                placeholder="Origin station..."
                 selectedStation={origin}
               />
             </div>
 
-            <div className="hidden md:flex items-center justify-center pt-8">
-              <ArrowRight className="h-6 w-6 text-muted-foreground" />
-            </div>
+            <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
 
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Destination Station
-              </label>
+            <div className="flex-1">
               <StationCommand
                 ref={destinationRef}
                 onSelectStation={setDestination}
-                placeholder="Where are you going?"
+                placeholder="Destination station..."
                 selectedStation={destination}
               />
             </div>
-          </div>
 
-          <Button
-            onClick={handleSearch}
-            disabled={!origin || !destination || loading}
-            className="w-full"
-            size="lg"
-          >
-            {loading ? 'Searching...' : 'Find Trains'}
-          </Button>
+            {loading && (
+              <div className="text-sm text-muted-foreground flex-shrink-0">
+                Searching...
+              </div>
+            )}
+          </div>
 
           {error && (
             <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
