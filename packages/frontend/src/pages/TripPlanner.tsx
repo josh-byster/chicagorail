@@ -73,7 +73,7 @@ export function TripPlanner() {
         </div>
 
         <div className="space-y-4">
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <div className="flex-1">
               <StationCommand
                 ref={originRef}
@@ -83,7 +83,7 @@ export function TripPlanner() {
               />
             </div>
 
-            <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0 hidden md:block" />
 
             <div className="flex-1">
               <StationCommand
