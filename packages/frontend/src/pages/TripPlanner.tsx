@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { StationCommand } from '../components/StationCommand';
 import { Button } from '../components/ui/button';
 import { ArrowRight, Clock } from 'lucide-react';
@@ -12,6 +12,16 @@ export function TripPlanner() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const destinationRef = useRef<HTMLInputElement>(null);
+
+  const handleOriginSelect = (stop: Stop) => {
+    setOrigin(stop);
+    // Focus destination input after selecting origin
+    setTimeout(() => {
+      destinationRef.current?.focus();
+    }, 100);
+  };
 
   const handleSearch = async () => {
     if (!origin || !destination) return;
@@ -56,7 +66,7 @@ export function TripPlanner() {
                 Origin Station
               </label>
               <StationCommand
-                onSelectStation={setOrigin}
+                onSelectStation={handleOriginSelect}
                 placeholder="Where are you starting from?"
                 selectedStation={origin}
               />
@@ -71,6 +81,7 @@ export function TripPlanner() {
                 Destination Station
               </label>
               <StationCommand
+                ref={destinationRef}
                 onSelectStation={setDestination}
                 placeholder="Where are you going?"
                 selectedStation={destination}

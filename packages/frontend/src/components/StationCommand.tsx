@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { useStationSearch } from '../hooks/useStations';
 import { useRecentStops } from '../hooks/useRecent';
 import {
@@ -17,11 +17,11 @@ interface StationCommandProps {
   selectedStation?: Stop | null;
 }
 
-export function StationCommand({
+export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(({
   onSelectStation,
   placeholder = "Search for a station...",
   selectedStation
-}: StationCommandProps) {
+}, ref) => {
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { stops, loading } = useStationSearch(inputValue);
@@ -67,6 +67,7 @@ export function StationCommand({
   return (
     <Command className="rounded-lg border shadow-md" shouldFilter={false}>
       <CommandInput
+        ref={ref}
         placeholder={placeholder}
         value={inputValue}
         onValueChange={handleInputChange}
@@ -123,4 +124,6 @@ export function StationCommand({
       )}
     </Command>
   );
-}
+});
+
+StationCommand.displayName = 'StationCommand';
