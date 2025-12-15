@@ -25,12 +25,7 @@ export function DepartureRow({ departure }: DepartureRowProps) {
 
       <div className="text-right">
         <div className="font-bold text-lg">
-          {utils.getRelativeTime(departure_time) === 'Now'
-            ? 'Now'
-            : `in ${utils.getRelativeTime(departure_time)}`}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Departs {utils.formatTime(departure_time)}
+          {utils.formatTime(departure_time)}
         </div>
       </div>
     </div>
