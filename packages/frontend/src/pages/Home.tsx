@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowLeftRight, Calendar } from 'lucide-react';
+import { ArrowRight, ArrowLeftRight } from 'lucide-react';
 
 const userFlows = [
   {
@@ -8,13 +8,6 @@ const userFlows = [
     icon: ArrowRight,
     path: '/departures',
     color: 'from-blue-500 to-blue-600',
-  },
-  {
-    title: 'View Arrivals',
-    description: 'See trains arriving at your station',
-    icon: Calendar,
-    path: '/arrivals',
-    color: 'from-green-500 to-green-600',
   },
   {
     title: 'Plan a Trip',
@@ -37,7 +30,7 @@ export function Home() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
           {userFlows.map((flow) => {
             const Icon = flow.icon;
             return (

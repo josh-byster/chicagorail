@@ -26,16 +26,6 @@ export function Header() {
                 Departures
               </Link>
               <Link
-                to="/arrivals"
-                className={`text-xs md:text-sm font-medium transition-colors hover:text-primary ${
-                  location.pathname === '/arrivals'
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                Arrivals
-              </Link>
-              <Link
                 to="/trip-planner"
                 className={`text-xs md:text-sm font-medium transition-colors hover:text-primary ${
                   location.pathname === '/trip-planner'
@@ -43,7 +33,7 @@ export function Header() {
                     : 'text-muted-foreground'
                 }`}
               >
-                Trip Planner
+                Plan a Trip
               </Link>
             </nav>
           )}
