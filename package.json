@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "pnpm --parallel --stream dev",
     "build": "pnpm --filter @chicagorail/shared build && pnpm --filter @chicagorail/backend build",
+    "heroku-postbuild": "pnpm --filter @chicagorail/shared build && pnpm --filter @chicagorail/backend build && ls -la packages/backend/dist/src/",
+    "heroku-cleanup": "echo 'Skipping cleanup'",
     "backend:dev": "pnpm --filter @chicagorail/backend dev",
     "frontend:dev": "pnpm --filter @chicagorail/frontend dev",
     "shared:build": "pnpm --filter @chicagorail/shared build",
