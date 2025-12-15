@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { StationSearch } from '../components/StationSearch';
+import { StationCommand } from '../components/StationCommand';
 import { Button } from '../components/ui/button';
-import { ArrowRight, Clock, Train } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import type { Stop, DirectTrip } from '@chicagorail/shared';
 import { api } from '../lib/api';
 
@@ -50,14 +50,15 @@ export function TripPlanner() {
         </div>
 
         <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-[1fr,auto,1fr] items-end">
+          <div className="grid gap-6 md:grid-cols-[1fr,auto,1fr] items-start">
             <div>
               <label className="block text-sm font-medium mb-2">
                 Origin Station
               </label>
-              <StationSearch
+              <StationCommand
                 onSelectStation={setOrigin}
                 placeholder="Where are you starting from?"
+                selectedStation={origin}
               />
               {origin && (
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -66,7 +67,7 @@ export function TripPlanner() {
               )}
             </div>
 
-            <div className="hidden md:flex items-center justify-center pb-3">
+            <div className="hidden md:flex items-center justify-center pt-8">
               <ArrowRight className="h-6 w-6 text-muted-foreground" />
             </div>
 
@@ -74,9 +75,10 @@ export function TripPlanner() {
               <label className="block text-sm font-medium mb-2">
                 Destination Station
               </label>
-              <StationSearch
+              <StationCommand
                 onSelectStation={setDestination}
                 placeholder="Where are you going?"
+                selectedStation={destination}
               />
               {destination && (
                 <p className="mt-2 text-sm text-muted-foreground">
