@@ -65,17 +65,21 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
   const showRecent = !showSearchResults && !selectedStation && recentStops.length > 0 && isOpen;
 
   return (
-    <Command className="rounded-lg border shadow-md" shouldFilter={false}>
-      <CommandInput
-        ref={ref}
-        placeholder={placeholder}
-        value={inputValue}
-        onValueChange={handleInputChange}
-        onFocus={handleInputFocus}
-        onClick={handleInputClick}
-      />
+    <div className="relative">
+      <Command className="rounded-lg border shadow-md" shouldFilter={false}>
+        <CommandInput
+          ref={ref}
+          placeholder={placeholder}
+          value={inputValue}
+          onValueChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onClick={handleInputClick}
+        />
+      </Command>
       {isOpen && (
-        <CommandList>
+        <div className="absolute z-50 w-full mt-1">
+          <Command className="rounded-lg border shadow-lg bg-popover" shouldFilter={false}>
+            <CommandList>
           {showSearchResults && (
           <>
             {loading ? (
@@ -120,9 +124,11 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
             ))}
           </CommandGroup>
         )}
-        </CommandList>
+            </CommandList>
+          </Command>
+        </div>
       )}
-    </Command>
+    </div>
   );
 });
 
