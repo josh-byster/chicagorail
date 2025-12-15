@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { GTFSService } from '../services/gtfsService';
 import type {
   SearchStopsRequest,
@@ -9,7 +9,7 @@ import type {
 } from '@chicagorail/shared';
 import { utils } from '@chicagorail/shared';
 
-const router = Router();
+const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
 
 // Search stops

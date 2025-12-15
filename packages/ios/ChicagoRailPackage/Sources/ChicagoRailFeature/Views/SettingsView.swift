@@ -30,7 +30,7 @@ public struct SettingsView: View {
                 } header: {
                     Text("API Configuration")
                 } footer: {
-                    Text("Change the API endpoint for development or testing. Default: https://www.chicagorail.app/api")
+                    Text("Change the API endpoint for development or testing. Default: https://api.chicagorail.app/api")
                 }
 
                 Section {

@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import type { FindDirectTripsResponse } from '@chicagorail/shared';
 import { GTFSService } from '../services/gtfsService';
 
-const router = Router();
+const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
 
 // GET /api/trips/direct?origin=STOP_ID&destination=STOP_ID&limit=10

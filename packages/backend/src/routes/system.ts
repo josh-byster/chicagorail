@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { GTFSService } from '../services/gtfsService';
 import type { GetSystemInfoResponse, ApiError } from '@chicagorail/shared';
 
-const router = Router();
+const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
 
 // Get system information including when GTFS data was last updated

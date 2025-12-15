@@ -28,7 +28,7 @@ public enum APIServiceError: Error, LocalizedError {
 public final class APIService: Sendable {
     public static let shared = APIService()
 
-    private static let defaultBaseURL = "https://www.chicagorail.app/api"
+    private static let defaultBaseURL = "https://api.chicagorail.app/api"
     private static let baseURLKey = "chicagorail_api_base_url"
 
     public var baseURL: String {

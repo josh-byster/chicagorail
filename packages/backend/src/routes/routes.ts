@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { GTFSService } from '../services/gtfsService';
 import type { GetRoutesResponse, ApiError } from '@chicagorail/shared';
 
-const router = Router();
+const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
 
 // Get all routes

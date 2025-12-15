@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Express } from 'express';
 import cors from 'cors';
 import routesRouter from '../../src/routes/routes.js';
 import stopsRouter from '../../src/routes/stops.js';
@@ -8,7 +8,7 @@ import { logger } from '../../src/middleware/logger.js';
 /**
  * Create Express app for testing (without starting the server)
  */
-export function createTestApp() {
+export function createTestApp(): Express {
   const app = express();
 
   app.use(cors());
