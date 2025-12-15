@@ -1,5 +1,5 @@
 // API Request/Response Types
-import { Route, Stop, Departure } from './gtfs';
+import { Route, Stop, Departure, TripStop } from './gtfs';
 
 // GET /api/routes
 export interface GetRoutesResponse {
@@ -54,6 +54,20 @@ export interface FindDirectTripsResponse {
 // GET /api/system
 export interface GetSystemInfoResponse {
   lastUpdated: string; // ISO datetime when GTFS data was last updated
+}
+
+// GET /api/trips/:tripId
+export interface GetTripDetailsRequest {
+  tripId: string;
+  date?: string; // ISO date string for time conversion
+}
+
+export interface GetTripDetailsResponse {
+  trip_id: string;
+  route: Route;
+  trip_headsign: string;
+  direction: 'inbound' | 'outbound';
+  stops: TripStop[];
 }
 
 // Error response

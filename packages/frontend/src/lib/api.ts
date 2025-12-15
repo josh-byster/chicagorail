@@ -4,6 +4,7 @@ import type {
   GetDeparturesResponse,
   FindDirectTripsResponse,
   GetSystemInfoResponse,
+  GetTripDetailsResponse,
   ApiError
 } from '@chicagorail/shared';
 
@@ -50,6 +51,15 @@ class ApiClient {
 
   async getSystemInfo() {
     return this.fetch<GetSystemInfoResponse>('/system');
+  }
+
+  async getTripDetails(tripId: string, date?: string) {
+    const params = new URLSearchParams();
+    if (date) params.set('date', date);
+
+    const query = params.toString();
+    const endpoint = `/trips/${encodeURIComponent(tripId)}${query ? `?${query}` : ''}`;
+    return this.fetch<GetTripDetailsResponse>(endpoint);
   }
 }
 

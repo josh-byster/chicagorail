@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import AdmZip from 'adm-zip';
-import type { Route, Stop, Trip, StopTime, Departure } from '@chicagorail/shared';
+import type { Route, Stop, Trip, StopTime, Departure, TripStop } from '@chicagorail/shared';
 import { winstonLogger } from '../middleware/logger';
 import fs from 'fs';
 import path from 'path';
@@ -417,6 +417,56 @@ export class GTFSService {
       origin: originStop,
       destination: destinationStop,
       trips: trips.slice(0, limit)
+    };
+  }
+
+  public async getTripDetails(
+    tripId: string,
+    date: Date = new Date()
+  ): Promise<{
+    trip_id: string;
+    route: Route;
+    trip_headsign: string;
+    direction: 'inbound' | 'outbound';
+    stops: TripStop[];
+  } | null> {
+    const data = await this.getData();
+
+    const trip = data.trips.find(t => t.trip_id === tripId);
+    if (!trip) {
+      return null;
+    }
+
+    const route = data.routes.find(r => r.route_id === trip.route_id);
+    if (!route) {
+      return null;
+    }
+
+    // Get all stop times for this trip, sorted by sequence
+    const tripStopTimes = data.stopTimes
+      .filter(st => st.trip_id === tripId)
+      .sort((a, b) => a.stop_sequence - b.stop_sequence);
+
+    const stops: TripStop[] = tripStopTimes
+      .map(st => {
+        const stop = this.stopsByIdMap.get(st.stop_id);
+        if (!stop) return null;
+
+        return {
+          stop,
+          arrival_time: this.gtfsTimeToISO(st.arrival_time, date),
+          departure_time: this.gtfsTimeToISO(st.departure_time, date),
+          stop_sequence: st.stop_sequence
+        };
+      })
+      .filter((s): s is TripStop => s !== null);
+
+    return {
+      trip_id: tripId,
+      route,
+      trip_headsign: trip.trip_headsign,
+      direction: trip.direction_id === 0 ? 'outbound' : 'inbound',
+      stops
     };
   }
 }

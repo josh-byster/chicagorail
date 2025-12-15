@@ -42,3 +42,10 @@ export interface Departure {
   direction: 'inbound' | 'outbound';
   trip_id: string;
 }
+
+export interface TripStop {
+  stop: Stop;
+  arrival_time: string;
+  departure_time: string;
+  stop_sequence: number;
+}

@@ -1,5 +1,5 @@
 import { Router, type Router as RouterType } from 'express';
-import type { FindDirectTripsResponse } from '@chicagorail/shared';
+import type { FindDirectTripsResponse, GetTripDetailsResponse } from '@chicagorail/shared';
 import { GTFSService } from '../services/gtfsService';
 
 const router: RouterType = Router();
@@ -37,6 +37,31 @@ router.get('/direct', async (req, res, next) => {
 
     const response: FindDirectTripsResponse = result;
 
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/trips/:tripId?date=YYYY-MM-DD
+router.get('/:tripId', async (req, res, next) => {
+  try {
+    const { tripId } = req.params;
+    const { date } = req.query;
+
+    const queryDate = date ? new Date(date as string) : new Date();
+
+    const result = await gtfsService.getTripDetails(tripId, queryDate);
+
+    if (!result) {
+      res.status(404).json({
+        error: 'Trip not found',
+        code: 'TRIP_NOT_FOUND'
+      });
+      return;
+    }
+
+    const response: GetTripDetailsResponse = result;
     res.json(response);
   } catch (error) {
     next(error);
