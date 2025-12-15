@@ -11,7 +11,7 @@
     "backend:dev": "pnpm --filter @chicagorail/backend dev",
     "frontend:dev": "pnpm --filter @chicagorail/frontend dev",
     "shared:build": "pnpm --filter @chicagorail/shared build",
-    "start": "node packages/backend/dist/index.js"
+    "start": "node packages/backend/dist/src/index.js"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
