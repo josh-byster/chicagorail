@@ -48,9 +48,17 @@ router.get('/:stopId/departures', async (req, res) => {
     const { stopId } = req.params;
     const { date, limit = '20', routeId } = req.query as Partial<GetDeparturesRequest>;
 
+    // Parse date as local time, not UTC
+    // Date string format: YYYY-MM-DD
+    let queryDate = new Date();
+    if (date) {
+      const [year, month, day] = date.split('-').map(Number);
+      queryDate = new Date(year, month - 1, day); // month is 0-indexed
+    }
+
     const departures = await gtfsService.getDeparturesForStop(
       stopId,
-      date ? new Date(date) : new Date(),
+      queryDate,
       Number(limit),
       routeId
     );

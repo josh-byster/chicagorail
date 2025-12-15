@@ -18,17 +18,19 @@ export function DepartureRow({ departure }: DepartureRowProps) {
         <div>
           <div className="font-medium">{route.route_short_name}</div>
           <div className="text-sm text-muted-foreground">
-            {trip_headsign}
+            to {trip_headsign}
           </div>
         </div>
       </div>
 
       <div className="text-right">
         <div className="font-bold text-lg">
-          {utils.getRelativeTime(departure_time)}
+          {utils.getRelativeTime(departure_time) === 'Now'
+            ? 'Now'
+            : `in ${utils.getRelativeTime(departure_time)}`}
         </div>
         <div className="text-xs text-muted-foreground">
-          {utils.formatTime(departure_time)}
+          Departs {utils.formatTime(departure_time)}
         </div>
       </div>
     </div>

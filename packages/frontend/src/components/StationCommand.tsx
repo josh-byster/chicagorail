@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStationSearch } from '../hooks/useStations';
 import { useRecentStops } from '../hooks/useRecent';
 import {
@@ -24,8 +24,21 @@ export function StationCommand({
 }: StationCommandProps) {
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { stops, loading } = useStationSearch(inputValue);
   const { recentStops, addRecentStop } = useRecentStops();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Update input value when selected station changes
   useEffect(() => {
@@ -67,7 +80,7 @@ export function StationCommand({
   const showDropdown = isOpen && (showSearchResults || showRecent);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <Command className="rounded-lg border shadow-md overflow-visible" shouldFilter={false}>
         <CommandInput
           placeholder={placeholder}

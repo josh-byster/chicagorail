@@ -4,10 +4,11 @@ import { DepartureRow } from './DepartureRow';
 interface DepartureBoardProps {
   stopId: string | null;
   routeFilter?: string;
+  date?: string;
 }
 
-export function DepartureBoard({ stopId, routeFilter }: DepartureBoardProps) {
-  const { stop, departures, loading } = useDepartures(stopId, routeFilter);
+export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProps) {
+  const { stop, departures, loading } = useDepartures(stopId, routeFilter, date);
 
   if (!stopId) {
     return (

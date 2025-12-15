@@ -10,7 +10,9 @@ export function getRelativeTime(departureTime: string): string {
 
   const hours = Math.floor(diffMin / 60);
   const mins = diffMin % 60;
-  return `${hours}h ${mins}m`;
+
+  if (mins === 0) return `${hours} hr`;
+  return `${hours} hr ${mins} min`;
 }
 
 export function formatTime(time: string): string {
