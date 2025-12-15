@@ -51,6 +51,11 @@ export interface FindDirectTripsResponse {
   trips: DirectTrip[];
 }
 
+// GET /api/system
+export interface GetSystemInfoResponse {
+  lastUpdated: string; // ISO datetime when GTFS data was last updated
+}
+
 // Error response
 export interface ApiError {
   error: string;

@@ -72,12 +72,6 @@ export function Home() {
             );
           })}
         </div>
-
-        <div className="mt-12 p-6 rounded-lg bg-muted/50 text-center">
-          <p className="text-sm text-muted-foreground">
-            Powered by real-time Metra GTFS data • Updates every 24 hours
-          </p>
-        </div>
       </div>
     </div>
   );

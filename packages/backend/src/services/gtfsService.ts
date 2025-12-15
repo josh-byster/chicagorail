@@ -199,6 +199,16 @@ export class GTFSService {
     return this.data;
   }
 
+  public async getLastUpdated(): Promise<string> {
+    if (!this.data) {
+      await this.loadData();
+    }
+    if (!this.data) {
+      throw new Error('Failed to load GTFS data');
+    }
+    return this.data.lastUpdated;
+  }
+
   // Convert GTFS time format (HH:MM:SS) to ISO datetime string
   private gtfsTimeToISO(gtfsTime: string, baseDate: Date): string {
     const [hours, minutes, seconds] = gtfsTime.split(':').map(Number);

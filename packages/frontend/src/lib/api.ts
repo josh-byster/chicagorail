@@ -3,6 +3,7 @@ import type {
   SearchStopsResponse,
   GetDeparturesResponse,
   FindDirectTripsResponse,
+  GetSystemInfoResponse,
   ApiError
 } from '@chicagorail/shared';
 
@@ -44,6 +45,10 @@ class ApiClient {
     });
 
     return this.fetch<FindDirectTripsResponse>(`/trips/direct?${params}`);
+  }
+
+  async getSystemInfo() {
+    return this.fetch<GetSystemInfoResponse>('/system');
   }
 }
 
