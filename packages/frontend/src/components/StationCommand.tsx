@@ -75,11 +75,8 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
           onFocus={handleInputFocus}
           onClick={handleInputClick}
         />
-      </Command>
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1">
-          <Command className="rounded-lg border shadow-lg bg-popover" shouldFilter={false}>
-            <CommandList>
+        {isOpen && (
+          <CommandList className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg bg-popover">
           {showSearchResults && (
           <>
             {loading ? (
@@ -124,10 +121,9 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
             ))}
           </CommandGroup>
         )}
-            </CommandList>
-          </Command>
-        </div>
-      )}
+          </CommandList>
+        )}
+      </Command>
     </div>
   );
 });
