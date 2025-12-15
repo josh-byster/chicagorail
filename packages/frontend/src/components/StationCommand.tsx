@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useStationSearch } from '../hooks/useStations';
 import { useRecentStops } from '../hooks/useRecent';
 import {
@@ -17,11 +17,11 @@ interface StationCommandProps {
   selectedStation?: Stop | null;
 }
 
-export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(({
+export function StationCommand({
   onSelectStation,
   placeholder = "Search for a station...",
   selectedStation
-}, ref) => {
+}: StationCommandProps) {
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { stops, loading } = useStationSearch(inputValue);
@@ -61,71 +61,70 @@ export const StationCommand = forwardRef<HTMLInputElement, StationCommandProps>(
     }
   };
 
+
   const showSearchResults = inputValue.length >= 2 && !selectedStation;
   const showRecent = !showSearchResults && !selectedStation && recentStops.length > 0 && isOpen;
+  const showDropdown = isOpen && (showSearchResults || showRecent);
 
   return (
     <div className="relative">
-      <Command className="rounded-lg border shadow-md h-auto" shouldFilter={false}>
+      <Command className="rounded-lg border shadow-md overflow-visible" shouldFilter={false}>
         <CommandInput
-          ref={ref}
           placeholder={placeholder}
           value={inputValue}
           onValueChange={handleInputChange}
           onFocus={handleInputFocus}
           onClick={handleInputClick}
         />
-        {isOpen && (
-          <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border shadow-lg bg-popover">
-          {showSearchResults && (
-          <>
-            {loading ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
-                Searching...
-              </div>
-            ) : stops.length === 0 ? (
-              <CommandEmpty>No stations found.</CommandEmpty>
-            ) : (
-              <CommandGroup heading="Stations">
-                {stops.map((stop) => (
+        {showDropdown && (
+          <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] rounded-lg border bg-popover shadow-lg">
+            {showSearchResults && (
+              <>
+                {loading ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    Searching...
+                  </div>
+                ) : stops.length === 0 ? (
+                  <CommandEmpty>No stations found.</CommandEmpty>
+                ) : (
+                  <CommandGroup heading="Stations">
+                    {stops.map((stop) => (
+                      <CommandItem
+                        key={stop.stop_id}
+                        value={stop.stop_id}
+                        onSelect={() => handleSelect(stop)}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{stop.stop_name}</span>
+                          {stop.stop_desc && (
+                            <span className="text-xs text-muted-foreground">
+                              {stop.stop_desc}
+                            </span>
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </>
+            )}
+
+            {showRecent && (
+              <CommandGroup heading="Recent Searches">
+                {recentStops.map((stop) => (
                   <CommandItem
                     key={stop.stop_id}
                     value={stop.stop_id}
                     onSelect={() => handleSelect(stop)}
                   >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{stop.stop_name}</span>
-                      {stop.stop_desc && (
-                        <span className="text-xs text-muted-foreground">
-                          {stop.stop_desc}
-                        </span>
-                      )}
-                    </div>
+                    <span className="font-medium">{stop.stop_name}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
             )}
-          </>
-        )}
-
-        {showRecent && (
-          <CommandGroup heading="Recent Searches">
-            {recentStops.map((stop) => (
-              <CommandItem
-                key={stop.stop_id}
-                value={stop.stop_id}
-                onSelect={() => handleSelect(stop)}
-              >
-                <span className="font-medium">{stop.stop_name}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
           </CommandList>
         )}
       </Command>
     </div>
   );
-});
-
-StationCommand.displayName = 'StationCommand';
+}

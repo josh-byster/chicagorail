@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { StationCommand } from '../components/StationCommand';
 import { ArrowRight, Clock } from 'lucide-react';
 import type { Stop, DirectTrip } from '@chicagorail/shared';
@@ -11,22 +11,6 @@ export function TripPlanner() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const originRef = useRef<HTMLInputElement>(null);
-  const destinationRef = useRef<HTMLInputElement>(null);
-
-  // Auto-focus origin input on mount
-  useEffect(() => {
-    originRef.current?.focus();
-  }, []);
-
-  const handleOriginSelect = (stop: Stop) => {
-    setOrigin(stop);
-    // Focus destination input after selecting origin
-    setTimeout(() => {
-      destinationRef.current?.focus();
-    }, 100);
-  };
 
   const handleSearch = async () => {
     if (!origin || !destination) return;
@@ -75,8 +59,7 @@ export function TripPlanner() {
           <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <div className="flex-1">
               <StationCommand
-                ref={originRef}
-                onSelectStation={handleOriginSelect}
+                onSelectStation={setOrigin}
                 placeholder="Origin station..."
                 selectedStation={origin}
               />
@@ -86,7 +69,6 @@ export function TripPlanner() {
 
             <div className="flex-1">
               <StationCommand
-                ref={destinationRef}
                 onSelectStation={setDestination}
                 placeholder="Destination station..."
                 selectedStation={destination}
