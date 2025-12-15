@@ -33,24 +33,26 @@ export function Departures() {
 
           {selectedStop && (
             <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <LineFilter onFilterChange={setRouteFilter} />
-                <div className="flex items-center gap-2">
-                  <DatePicker
-                    date={selectedDate}
-                    onDateChange={(date) => date && setSelectedDate(date)}
-                  />
-                  {!isToday && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedDate(new Date())}
-                    >
-                      Today
-                    </Button>
-                  )}
-                </div>
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  date={selectedDate}
+                  onDateChange={(date) => date && setSelectedDate(date)}
+                />
+                {!isToday && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedDate(new Date())}
+                  >
+                    Today
+                  </Button>
+                )}
               </div>
+              <LineFilter
+                onFilterChange={setRouteFilter}
+                stopId={selectedStop.stop_id}
+                date={dateString}
+              />
               <DepartureBoard
                 stopId={selectedStop.stop_id}
                 routeFilter={routeFilter}
