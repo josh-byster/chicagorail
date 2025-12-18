@@ -48,12 +48,14 @@ router.get('/:stopId/departures', async (req, res) => {
     const { stopId } = req.params;
     const { date, limit = '20', routeId } = req.query as Partial<GetDeparturesRequest>;
 
-    // Parse date as local time, not UTC
+    // Parse date in Chicago timezone (GTFS times are in Chicago local time)
     // Date string format: YYYY-MM-DD
     let queryDate = new Date();
     if (date) {
-      const [year, month, day] = date.split('-').map(Number);
-      queryDate = new Date(year, month - 1, day); // month is 0-indexed
+      // Create date at midnight Chicago time by parsing as ISO with Chicago offset
+      // Chicago is UTC-6 (CST) or UTC-5 (CDT)
+      const chicagoDate = new Date(`${date}T00:00:00-06:00`);
+      queryDate = chicagoDate;
     }
 
     const departures = await gtfsService.getDeparturesForStop(

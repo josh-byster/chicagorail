@@ -269,13 +269,20 @@ export class GTFSService {
 
     const now = new Date();
 
+    // Check if query date is today or in the future
+    // Compare dates only (not times) to determine if we should filter by current time
+    const todayStr = now.toISOString().slice(0, 10);
+    const queryDateStr = date.toISOString().slice(0, 10);
+    const isToday = todayStr === queryDateStr;
+    const isFutureDate = queryDateStr > todayStr;
+
     // Build departures with route info
     const departures = stopTimes
       .map(st => {
         const trip = data.trips.find(t => t.trip_id === st.trip_id);
         if (!trip) return null;
 
-        // Check if this trip's service is active today
+        // Check if this trip's service is active on the query date
         if (!this.isServiceActiveOnDate(trip.service_id, date)) {
           return null;
         }
@@ -302,7 +309,12 @@ export class GTFSService {
         // Only show trains departing FROM this station
         return !d.trip_headsign.toLowerCase().includes(stop.stop_name.toLowerCase());
       })
-      .filter(d => new Date(d.departure_time) > now) // Only future departures
+      .filter(d => {
+        // For today: only show future departures
+        // For future dates: show all departures for that day
+        if (isFutureDate) return true;
+        return new Date(d.departure_time) > now;
+      })
       .sort((a, b) => new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()) // Sort by time
       .slice(0, limit);
 
