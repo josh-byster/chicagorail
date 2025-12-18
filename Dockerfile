@@ -1,5 +1,9 @@
 FROM node:20-alpine
 
+# Set timezone to Chicago (GTFS data is in Chicago local time)
+RUN apk add --no-cache tzdata
+ENV TZ=America/Chicago
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 

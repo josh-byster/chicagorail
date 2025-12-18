@@ -269,18 +269,10 @@ export class GTFSService {
 
     const now = new Date();
 
-    // Check if query date is today or in the future (in Chicago time)
-    // Chicago is UTC-6, so we need to compare dates in Chicago timezone
-    const chicagoOffset = -6 * 60 * 60 * 1000; // -6 hours in ms
-    const nowInChicago = new Date(now.getTime() + chicagoOffset);
-    const todayChicagoStr = nowInChicago.toISOString().slice(0, 10);
-
-    // The query date was parsed with Chicago offset, extract just the date part
-    const queryDateChicago = new Date(date.getTime() + chicagoOffset);
-    const queryDateStr = queryDateChicago.toISOString().slice(0, 10);
-
-    const isToday = todayChicagoStr === queryDateStr;
-    const isFutureDate = queryDateStr > todayChicagoStr;
+    // Check if query date is in the future (compare date portions only)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const queryDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const isFutureDate = queryDay > today;
 
     // Build departures with route info
     const departures = stopTimes
@@ -316,8 +308,7 @@ export class GTFSService {
         return !d.trip_headsign.toLowerCase().includes(stop.stop_name.toLowerCase());
       })
       .filter(d => {
-        // For today: only show future departures
-        // For future dates: show all departures for that day
+        // For future dates, show all departures; for today, only show future ones
         if (isFutureDate) return true;
         return new Date(d.departure_time) > now;
       })
