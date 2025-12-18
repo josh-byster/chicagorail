@@ -269,12 +269,18 @@ export class GTFSService {
 
     const now = new Date();
 
-    // Check if query date is today or in the future
-    // Compare dates only (not times) to determine if we should filter by current time
-    const todayStr = now.toISOString().slice(0, 10);
-    const queryDateStr = date.toISOString().slice(0, 10);
-    const isToday = todayStr === queryDateStr;
-    const isFutureDate = queryDateStr > todayStr;
+    // Check if query date is today or in the future (in Chicago time)
+    // Chicago is UTC-6, so we need to compare dates in Chicago timezone
+    const chicagoOffset = -6 * 60 * 60 * 1000; // -6 hours in ms
+    const nowInChicago = new Date(now.getTime() + chicagoOffset);
+    const todayChicagoStr = nowInChicago.toISOString().slice(0, 10);
+
+    // The query date was parsed with Chicago offset, extract just the date part
+    const queryDateChicago = new Date(date.getTime() + chicagoOffset);
+    const queryDateStr = queryDateChicago.toISOString().slice(0, 10);
+
+    const isToday = todayChicagoStr === queryDateStr;
+    const isFutureDate = queryDateStr > todayChicagoStr;
 
     // Build departures with route info
     const departures = stopTimes
