@@ -6,6 +6,7 @@ import tripsRouter from './routes/trips';
 import systemRouter from './routes/system';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
+import { GTFSService } from './services/gtfsService';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,4 +38,8 @@ app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Backend running on port ${port}`);
+
+  // Start background GTFS data refresh (every hour)
+  const gtfsService = GTFSService.getInstance();
+  gtfsService.startBackgroundRefresh();
 });

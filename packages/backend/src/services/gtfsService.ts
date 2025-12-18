@@ -34,12 +34,13 @@ interface GTFSData {
 export class GTFSService {
   private static instance: GTFSService;
   private data: GTFSData | null = null;
-  private lastFetchTime: number | null = null;
-  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private lastDownloadTime: number | null = null;
+  private readonly DOWNLOAD_INTERVAL = 60 * 60 * 1000; // 1 hour for GTFS refresh
   private readonly GTFS_URL = 'https://schedules.metrarail.com/gtfs/schedule.zip';
   private readonly GTFS_DIR = path.join(__dirname, '..', '..', '..', '..', 'schedule');
   private stopsByIdMap: Map<string, Stop> = new Map();
   private routesByStopMap: Map<string, Set<string>> = new Map();
+  private refreshInterval: NodeJS.Timeout | null = null;
 
   private constructor() {
     if (!fs.existsSync(this.GTFS_DIR)) {
@@ -66,24 +67,48 @@ export class GTFSService {
       const zip = new AdmZip(zipBuffer);
       zip.extractAllTo(this.GTFS_DIR, true);
 
-      this.data = {
-        routes: [],
-        stops: [],
-        trips: [],
-        stopTimes: [],
-        servicePeriods: [],
-        lastUpdated: new Date().toISOString()
-      };
+      this.lastDownloadTime = Date.now();
+      winstonLogger.info('GTFS data downloaded successfully');
     } catch (error) {
       winstonLogger.error('Error downloading GTFS data:', error);
       throw error;
     }
   }
 
+  // Start periodic background refresh of GTFS data
+  public startBackgroundRefresh(): void {
+    if (this.refreshInterval) {
+      return; // Already running
+    }
+
+    winstonLogger.info(`Starting GTFS background refresh (every ${this.DOWNLOAD_INTERVAL / 60000} minutes)`);
+
+    this.refreshInterval = setInterval(async () => {
+      try {
+        winstonLogger.info('Running scheduled GTFS data refresh...');
+        await this.downloadGTFSData();
+        // Clear cached data to force reload on next request
+        this.data = null;
+        // Reload data immediately
+        await this.loadData();
+      } catch (error) {
+        winstonLogger.error('Scheduled GTFS refresh failed:', error);
+      }
+    }, this.DOWNLOAD_INTERVAL);
+  }
+
+  public stopBackgroundRefresh(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+      winstonLogger.info('Stopped GTFS background refresh');
+    }
+  }
+
   public async loadData(): Promise<void> {
     try {
-      if (this.data && this.lastFetchTime && Date.now() - this.lastFetchTime < this.CACHE_TTL) {
-        winstonLogger.info('Using cached GTFS data');
+      // Data is kept in memory and refreshed hourly by background job
+      if (this.data) {
         return;
       }
 
@@ -163,7 +188,6 @@ export class GTFSService {
         lastUpdated: new Date().toISOString()
       };
 
-      this.lastFetchTime = Date.now();
       winstonLogger.info('Loaded fresh GTFS data');
     } catch (error) {
       winstonLogger.error('Error loading GTFS data:', error);
