@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { format, parse } from 'date-fns';
 import { StationCommand } from '../components/StationCommand';
 import { ChicagoSkyline } from '../components/ChicagoSkyline';
+import { DatePicker } from '../components/DatePicker';
+import { Button } from '../components/ui/button';
 import { ArrowRight, ArrowDown, Clock } from 'lucide-react';
 import type { Stop, DirectTrip } from '@chicagorail/shared';
 import { api } from '../lib/api';
-import { format } from 'date-fns';
 
 export function TripPlanner() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [origin, setOrigin] = useState<Stop | null>(null);
   const [destination, setDestination] = useState<Stop | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [trips, setTrips] = useState<DirectTrip[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -21,6 +24,19 @@ export function TripPlanner() {
   useEffect(() => {
     const originId = searchParams.get('origin');
     const destinationId = searchParams.get('destination');
+    const dateParam = searchParams.get('date');
+
+    // Sync date
+    if (dateParam) {
+      try {
+        const parsedDate = parse(dateParam, 'yyyy-MM-dd', new Date());
+        setSelectedDate(parsedDate);
+      } catch {
+        setSelectedDate(new Date());
+      }
+    } else {
+      setSelectedDate(new Date());
+    }
 
     if (!originId && !destinationId) return;
 
@@ -64,7 +80,7 @@ export function TripPlanner() {
   }, []); // Only run on mount
 
   // Update URL when state changes
-  const updateUrlParams = useCallback((orig: Stop | null, dest: Stop | null) => {
+  const updateUrlParams = useCallback((orig: Stop | null, dest: Stop | null, date: Date, replace = false) => {
     const params = new URLSearchParams();
 
     if (orig) {
@@ -74,21 +90,37 @@ export function TripPlanner() {
       params.set('destination', dest.stop_id);
     }
 
-    setSearchParams(params, { replace: true });
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (dateStr !== todayStr) {
+      params.set('date', dateStr);
+    }
+
+    setSearchParams(params, { replace });
   }, [setSearchParams]);
 
   // Wrapper to update both state and URL
   const handleSelectOrigin = useCallback((stop: Stop | null) => {
     setOrigin(stop);
-    updateUrlParams(stop, destination);
-  }, [destination, updateUrlParams]);
+    updateUrlParams(stop, destination, selectedDate);
+  }, [destination, selectedDate, updateUrlParams]);
 
   const handleSelectDestination = useCallback((stop: Stop | null) => {
     setDestination(stop);
-    updateUrlParams(origin, stop);
-  }, [origin, updateUrlParams]);
+    updateUrlParams(origin, stop, selectedDate);
+  }, [origin, selectedDate, updateUrlParams]);
 
-  const handleSearch = async () => {
+  const handleDateChange = useCallback((date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      updateUrlParams(origin, destination, date, true);
+    }
+  }, [origin, destination, updateUrlParams]);
+
+  const dateString = format(selectedDate, 'yyyy-MM-dd');
+  const isToday = format(new Date(), 'yyyy-MM-dd') === dateString;
+
+  const handleSearch = useCallback(async () => {
     if (!origin || !destination) return;
 
     setLoading(true);
@@ -96,21 +128,21 @@ export function TripPlanner() {
     setSearched(true);
 
     try {
-      const result = await api.findDirectTrips(origin.stop_id, destination.stop_id);
+      const result = await api.findDirectTrips(origin.stop_id, destination.stop_id, dateString);
       setTrips(result.trips);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to find trips');
     } finally {
       setLoading(false);
     }
-  };
+  }, [origin, destination, dateString]);
 
-  // Auto-search when both origin and destination are selected
+  // Auto-search when both origin and destination are selected, or date changes
   useEffect(() => {
     if (origin && destination) {
       handleSearch();
     }
-  }, [origin, destination]);
+  }, [origin, destination, handleSearch]);
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
@@ -160,7 +192,7 @@ export function TripPlanner() {
           </h1>
           <p className="text-lg text-muted-foreground">
             {hasRoute
-              ? `${trips.length} direct train${trips.length !== 1 ? 's' : ''} available today`
+              ? `${isToday ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}'s departures`
               : 'Find direct trains between any two Metra stations'
             }
           </p>
@@ -199,6 +231,22 @@ export function TripPlanner() {
       }`}>
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <DatePicker
+                date={selectedDate}
+                onDateChange={handleDateChange}
+              />
+              {!isToday && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDateChange(new Date())}
+                >
+                  Today
+                </Button>
+              )}
+            </div>
+
             {loading && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Finding trains...</p>

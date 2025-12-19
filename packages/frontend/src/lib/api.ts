@@ -39,12 +39,13 @@ class ApiClient {
     return this.fetch<GetDeparturesResponse>(endpoint);
   }
 
-  async findDirectTrips(originStopId: string, destinationStopId: string, limit: number = 10) {
+  async findDirectTrips(originStopId: string, destinationStopId: string, date?: string, limit: number = 10) {
     const params = new URLSearchParams({
       origin: originStopId,
       destination: destinationStopId,
       limit: limit.toString()
     });
+    if (date) params.set('date', date);
 
     return this.fetch<FindDirectTripsResponse>(`/trips/direct?${params}`);
   }
