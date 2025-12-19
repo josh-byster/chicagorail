@@ -20,7 +20,7 @@ public struct TripStopsView: View {
                 .padding(.bottom, 8)
 
             ForEach(Array(stops.enumerated()), id: \.element.id) { index, tripStop in
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
                     // Timeline indicator
                     VStack(spacing: 0) {
                         Circle()
@@ -30,12 +30,13 @@ public struct TripStopsView: View {
                                     .strokeBorder(routeColor, lineWidth: 2)
                             )
                             .frame(width: 8, height: 8)
+                            .padding(.top, 5) // Align with text baseline
 
                         if index < stops.count - 1 {
                             Rectangle()
                                 .fill(routeColor.opacity(0.3))
                                 .frame(width: 2)
-                                .frame(height: 24)
+                                .frame(maxHeight: .infinity)
                         }
                     }
 
@@ -51,7 +52,6 @@ public struct TripStopsView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, index < stops.count - 1 ? 0 : 0)
                 }
                 .frame(minHeight: index < stops.count - 1 ? 32 : nil)
             }
