@@ -30,10 +30,11 @@ class ApiClient {
     return this.fetch<SearchStopsResponse>(`/stops/search?q=${encodeURIComponent(query)}`);
   }
 
-  async getDepartures(stopId: string, routeId?: string, date?: string) {
+  async getDepartures(stopId: string, routeId?: string, date?: string, limit: number = 100) {
     const params = new URLSearchParams();
     if (routeId) params.set('routeId', routeId);
     if (date) params.set('date', date);
+    params.set('limit', limit.toString());
 
     const endpoint = `/stops/${stopId}/departures?${params}`;
     return this.fetch<GetDeparturesResponse>(endpoint);
