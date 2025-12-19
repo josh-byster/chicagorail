@@ -131,7 +131,7 @@ export function Departures() {
       }`}>
         {/* Title */}
         <div className={`text-center mb-8 max-w-2xl ${!hasStation ? 'animate-fade-in-up' : ''}`}>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 whitespace-nowrap">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 md:whitespace-nowrap">
             {hasStation ? selectedStop.stop_name : 'Where are you departing from?'}
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -160,7 +160,7 @@ export function Departures() {
       </div>
 
       {/* Results panel - slides up from bottom */}
-      <div className={`bg-background/80 backdrop-blur-sm border-t transition-all duration-500 ease-out ${
+      <div className={`bg-background/80 backdrop-blur-sm border-t transition-all duration-500 ease-out min-h-[50vh] ${
         hasStation
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-full pointer-events-none'

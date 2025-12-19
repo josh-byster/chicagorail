@@ -227,7 +227,7 @@ export function TripPlanner() {
       </div>
 
       {/* Results panel - slides up from bottom */}
-      <div className={`bg-background/80 backdrop-blur-sm border-t transition-all duration-500 ease-out ${
+      <div className={`bg-background/80 backdrop-blur-sm border-t transition-all duration-500 ease-out min-h-[50vh] ${
         hasRoute
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-full pointer-events-none'
