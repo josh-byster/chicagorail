@@ -77,6 +77,14 @@ public final class APIService: Sendable {
         return try await fetch(path)
     }
 
+    /// Get details for a specific trip including all stops
+    public func getTripDetails(tripId: String) async throws -> GetTripDetailsResponse {
+        guard let encodedTripId = tripId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw APIServiceError.invalidURL
+        }
+        return try await fetch("/trips/\(encodedTripId)")
+    }
+
     // MARK: - Private Methods
 
     private nonisolated func fetch<T: Decodable>(_ path: String) async throws -> T {
