@@ -1,5 +1,5 @@
 import { useDepartures } from '../hooks/useDepartures';
-import { DepartureRow } from './DepartureRow';
+import { utils } from '@chicagorail/shared';
 
 interface DepartureBoardProps {
   stopId: string | null;
@@ -8,7 +8,7 @@ interface DepartureBoardProps {
 }
 
 export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProps) {
-  const { stop, departures, loading } = useDepartures(stopId, routeFilter, date);
+  const { departures, loading } = useDepartures(stopId, routeFilter, date);
 
   if (!stopId) {
     return (
@@ -26,28 +26,35 @@ export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProp
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {stop && (
-        <div className="border-b pb-4">
-          <h2 className="text-2xl font-bold">{stop.stop_name}</h2>
-          {stop.stop_desc && (
-            <p className="text-sm text-muted-foreground">{stop.stop_desc}</p>
-          )}
-        </div>
-      )}
+  if (departures.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        No departures found for this station
+      </div>
+    );
+  }
 
-      {departures.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          No departures found for this station
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+      {departures.map((departure, idx) => (
+        <div
+          key={`${departure.trip_id}-${idx}`}
+          className="border rounded-lg px-3 py-2.5 hover:bg-accent transition-colors bg-background/50"
+        >
+          <div className="flex items-center gap-1.5 justify-center mb-0.5">
+            <div
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: `#${departure.route.route_color}` }}
+            />
+            <span className="font-semibold text-lg tabular-nums">
+              {utils.formatTime(departure.departure_time)}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground text-center truncate">
+            to {departure.trip_headsign}
+          </div>
         </div>
-      ) : (
-        <div className="border rounded-lg overflow-hidden">
-          {departures.map((departure, idx) => (
-            <DepartureRow key={`${departure.trip_id}-${idx}`} departure={departure} />
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 }

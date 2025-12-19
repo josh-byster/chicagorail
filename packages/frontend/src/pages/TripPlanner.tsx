@@ -5,7 +5,7 @@ import { StationCommand } from '../components/StationCommand';
 import { ChicagoSkyline } from '../components/ChicagoSkyline';
 import { DatePicker } from '../components/DatePicker';
 import { Button } from '../components/ui/button';
-import { ArrowRight, ArrowDown, Clock } from 'lucide-react';
+import { ArrowRight, ArrowDown } from 'lucide-react';
 import type { Stop, DirectTrip } from '@chicagorail/shared';
 import { api } from '../lib/api';
 
@@ -15,6 +15,7 @@ export function TripPlanner() {
   const [destination, setDestination] = useState<Stop | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [trips, setTrips] = useState<DirectTrip[]>([]);
+  const [routeFilter, setRouteFilter] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,11 +103,13 @@ export function TripPlanner() {
   // Wrapper to update both state and URL
   const handleSelectOrigin = useCallback((stop: Stop | null) => {
     setOrigin(stop);
+    setRouteFilter(undefined); // Reset filter when changing stations
     updateUrlParams(stop, destination, selectedDate);
   }, [destination, selectedDate, updateUrlParams]);
 
   const handleSelectDestination = useCallback((stop: Stop | null) => {
     setDestination(stop);
+    setRouteFilter(undefined); // Reset filter when changing stations
     updateUrlParams(origin, stop, selectedDate);
   }, [origin, selectedDate, updateUrlParams]);
 
@@ -128,7 +131,7 @@ export function TripPlanner() {
     setSearched(true);
 
     try {
-      const result = await api.findDirectTrips(origin.stop_id, destination.stop_id, dateString);
+      const result = await api.findDirectTrips(origin.stop_id, destination.stop_id, dateString, 50);
       setTrips(result.trips);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to find trips');
@@ -269,63 +272,73 @@ export function TripPlanner() {
               </div>
             )}
 
-            {trips.length > 0 && !loading && (
-              <>
-                {trips.map((trip, index) => (
-                  <div
-                    key={`${trip.trip_id}-${index}`}
-                    className="border rounded-lg p-4 hover:bg-accent transition-colors bg-background/50"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: `#${trip.route.route_color}` }}
-                        />
-                        <div>
-                          <div className="font-semibold">{trip.route.route_long_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            to {trip.trip_headsign}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {trip.duration_minutes} min
-                      </div>
-                    </div>
+            {trips.length > 0 && !loading && (() => {
+              const uniqueRoutes = Array.from(new Map(trips.map(t => [t.route.route_id, t.route])).values());
+              const filteredTrips = routeFilter
+                ? trips.filter(t => t.route.route_id === routeFilter)
+                : trips;
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Departs</div>
-                        <div className="font-semibold text-lg">
-                          {formatTime(trip.origin_departure)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {origin?.stop_name}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Arrives</div>
-                        <div className="font-semibold text-lg">
-                          {formatTime(trip.destination_arrival)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {destination?.stop_name}
-                        </div>
-                      </div>
-                    </div>
+              return (
+                <>
+                  {/* Route filter buttons */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <button
+                      className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
+                        !routeFilter
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary hover:bg-secondary/80'
+                      }`}
+                      onClick={() => setRouteFilter(undefined)}
+                    >
+                      All Lines
+                    </button>
+                    {uniqueRoutes.map((route) => {
+                      const isSelected = routeFilter === route.route_id;
+                      return (
+                        <button
+                          key={route.route_id}
+                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all ${
+                            isSelected ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-80 hover:opacity-100'
+                          }`}
+                          style={{
+                            backgroundColor: `#${route.route_color}`,
+                            color: `#${route.route_text_color || 'FFFFFF'}`,
+                          }}
+                          onClick={() => setRouteFilter(route.route_id)}
+                        >
+                          {route.route_short_name}
+                        </button>
+                      );
+                    })}
+                    <span className="text-sm text-muted-foreground self-center ml-2">
+                      ~{filteredTrips[0]?.duration_minutes} min
+                    </span>
                   </div>
-                ))}
 
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-xs text-muted-foreground">
-                    Showing direct trains only • Times are approximate based on schedule
-                  </p>
-                </div>
-              </>
-            )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {filteredTrips.map((trip, index) => (
+                      <div
+                        key={`${trip.trip_id}-${index}`}
+                        className="border rounded-lg px-3 py-2.5 hover:bg-accent transition-colors bg-background/50"
+                      >
+                        <div className="flex items-center gap-1.5 justify-center mb-0.5">
+                          <div
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: `#${trip.route.route_color}` }}
+                          />
+                          <span className="font-semibold text-lg tabular-nums">
+                            {formatTime(trip.origin_departure)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground text-center">
+                          arr. {formatTime(trip.destination_arrival)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
