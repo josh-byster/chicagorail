@@ -76,7 +76,9 @@ public struct TripPlannerView: View {
             Divider()
 
             // Results
-            if let error = viewModel.errorMessage {
+            if viewModel.isLoading {
+                loadingView
+            } else if let error = viewModel.errorMessage {
                 errorView(error)
             } else if viewModel.hasSearched && viewModel.trips.isEmpty {
                 emptyResultsView
@@ -113,6 +115,17 @@ public struct TripPlannerView: View {
             }
             .padding()
         }
+    }
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+            Text("Finding trains...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
 
     private func errorView(_ message: String) -> some View {

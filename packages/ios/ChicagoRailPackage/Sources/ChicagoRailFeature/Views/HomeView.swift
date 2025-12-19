@@ -39,15 +39,6 @@ public struct HomeView: View {
                         }
 
                         FeatureCard(
-                            title: "View Arrivals",
-                            description: "See trains arriving at your destination",
-                            iconName: "arrow.down.left.circle.fill",
-                            gradient: .arrivalsGradient
-                        ) {
-                            ArrivalsView()
-                        }
-
-                        FeatureCard(
                             title: "Plan a Trip",
                             description: "Find direct trains between two stations",
                             iconName: "arrow.left.arrow.right.circle.fill",

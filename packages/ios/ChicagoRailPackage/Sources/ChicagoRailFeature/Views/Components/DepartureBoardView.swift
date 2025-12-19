@@ -39,7 +39,7 @@ public struct DepartureBoardView: View {
                     Divider()
 
                     // Content
-                    if isLoading && departures.isEmpty {
+                    if isLoading {
                         loadingView
                     } else if let error = errorMessage {
                         errorView(error)
