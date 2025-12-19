@@ -109,7 +109,7 @@ export function Departures() {
   // Loading state when loading from URL
   if (loading || initialLoad) {
     return (
-      <div className="min-h-[calc(100vh-57px)] flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
       </div>
     );
@@ -118,11 +118,11 @@ export function Departures() {
   const hasStation = !!selectedStop;
 
   return (
-    <div className="min-h-[calc(100vh-57px)] relative overflow-x-hidden bg-gradient-to-b from-metra-blue/5 via-background to-background">
+    <div className="flex-1 relative overflow-x-hidden bg-gradient-to-b from-metra-blue/5 via-background to-background">
 
       {/* Skyline - fixed at bottom, always visible */}
       <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-        <ChicagoSkyline className={`w-full opacity-10 ${!hasStation ? 'animate-slide-up animation-delay-200' : ''}`} />
+        <ChicagoSkyline className={`w-full opacity-10 ${!hasStation ? 'animate-slide-up-only' : ''}`} />
       </div>
 
       {/* Hero section - always at top */}
@@ -159,12 +159,9 @@ export function Departures() {
         </p>
       </div>
 
-      {/* Results panel - slides up from bottom */}
-      <div className={`bg-background/80 backdrop-blur-sm border-t transition-all duration-500 ease-out min-h-[50vh] ${
-        hasStation
-          ? 'opacity-100 translate-y-0'
-          : 'opacity-0 translate-y-full pointer-events-none'
-      }`}>
+      {/* Results panel - only rendered when station selected */}
+      {hasStation && (
+      <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -182,23 +179,20 @@ export function Departures() {
                 </Button>
               )}
             </div>
-            {hasStation && (
-              <>
-                <LineFilter
-                  onFilterChange={handleRouteFilterChange}
-                  stopId={selectedStop.stop_id}
-                  date={dateString}
-                />
-                <DepartureBoard
-                  stopId={selectedStop.stop_id}
-                  routeFilter={routeFilter}
-                  date={dateString}
-                />
-              </>
-            )}
+            <LineFilter
+              onFilterChange={handleRouteFilterChange}
+              stopId={selectedStop.stop_id}
+              date={dateString}
+            />
+            <DepartureBoard
+              stopId={selectedStop.stop_id}
+              routeFilter={routeFilter}
+              date={dateString}
+            />
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

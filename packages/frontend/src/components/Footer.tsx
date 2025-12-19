@@ -30,7 +30,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="mt-auto border-t bg-background">
+    <footer className="mt-auto border-t bg-background relative z-10">
       <div className="container mx-auto px-4 py-6">
         <div className="text-center text-xs text-muted-foreground space-y-2">
           <p>
