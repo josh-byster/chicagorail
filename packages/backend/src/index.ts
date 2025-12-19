@@ -16,7 +16,8 @@ app.use(cors({
     'https://www.chicagorail.app',
     'https://chicagorail.app',
     'http://localhost:3001',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'http://localhost:5174'
   ],
   credentials: true
 }));
@@ -36,10 +37,11 @@ app.use('/api/system', systemRouter);
 // Error handling
 app.use(errorHandler);
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Backend running on port ${port}`);
 
-  // Start background GTFS data refresh (every hour)
+  // Initialize GTFS service with fresh data and start background refresh
   const gtfsService = GTFSService.getInstance();
+  await gtfsService.initialize();
   gtfsService.startBackgroundRefresh();
 });
