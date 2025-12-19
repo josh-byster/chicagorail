@@ -1,16 +1,91 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { StationCommand } from '../components/StationCommand';
 import { ArrowRight, Clock } from 'lucide-react';
 import type { Stop, DirectTrip } from '@chicagorail/shared';
 import { api } from '../lib/api';
+import { format } from 'date-fns';
 
 export function TripPlanner() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [origin, setOrigin] = useState<Stop | null>(null);
   const [destination, setDestination] = useState<Stop | null>(null);
   const [trips, setTrips] = useState<DirectTrip[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(false);
+
+  // Load state from URL params on mount
+  useEffect(() => {
+    const originId = searchParams.get('origin');
+    const destinationId = searchParams.get('destination');
+
+    if (!originId && !destinationId) return;
+
+    setInitialLoading(true);
+    const today = format(new Date(), 'yyyy-MM-dd');
+
+    // Fetch both stops in parallel if they exist in URL
+    const promises: Promise<void>[] = [];
+
+    if (originId) {
+      promises.push(
+        api.getDepartures(originId, undefined, today)
+          .then((response) => {
+            setOrigin(response.stop);
+          })
+          .catch(() => {
+            // Origin not found, clear the param
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('origin');
+            setSearchParams(newParams, { replace: true });
+          })
+      );
+    }
+
+    if (destinationId) {
+      promises.push(
+        api.getDepartures(destinationId, undefined, today)
+          .then((response) => {
+            setDestination(response.stop);
+          })
+          .catch(() => {
+            // Destination not found, clear the param
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('destination');
+            setSearchParams(newParams, { replace: true });
+          })
+      );
+    }
+
+    Promise.all(promises).finally(() => setInitialLoading(false));
+  }, []); // Only run on mount
+
+  // Update URL when state changes
+  const updateUrlParams = useCallback((orig: Stop | null, dest: Stop | null) => {
+    const params = new URLSearchParams();
+
+    if (orig) {
+      params.set('origin', orig.stop_id);
+    }
+    if (dest) {
+      params.set('destination', dest.stop_id);
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [setSearchParams]);
+
+  // Wrapper to update both state and URL
+  const handleSelectOrigin = useCallback((stop: Stop | null) => {
+    setOrigin(stop);
+    updateUrlParams(stop, destination);
+  }, [destination, updateUrlParams]);
+
+  const handleSelectDestination = useCallback((stop: Stop | null) => {
+    setDestination(stop);
+    updateUrlParams(origin, stop);
+  }, [origin, updateUrlParams]);
 
   const handleSearch = async () => {
     if (!origin || !destination) return;
@@ -45,6 +120,15 @@ export function TripPlanner() {
     });
   };
 
+  // Loading state when loading from URL
+  if (initialLoading) {
+    return (
+      <div className="min-h-[calc(100vh-73px)] flex items-center justify-center">
+        <p className="text-muted-foreground">Loading trip...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[calc(100vh-73px)] bg-background">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -59,7 +143,7 @@ export function TripPlanner() {
           <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <div className="flex-1">
               <StationCommand
-                onSelectStation={setOrigin}
+                onSelectStation={handleSelectOrigin}
                 placeholder="Origin station..."
                 selectedStation={origin}
               />
@@ -69,7 +153,7 @@ export function TripPlanner() {
 
             <div className="flex-1">
               <StationCommand
-                onSelectStation={setDestination}
+                onSelectStation={handleSelectDestination}
                 placeholder="Destination station..."
                 selectedStation={destination}
               />

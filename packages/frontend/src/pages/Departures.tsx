@@ -107,14 +107,14 @@ export function Departures() {
   // Hero view when no station selected
   if (!selectedStop) {
     return (
-      <div className="min-h-[calc(100vh-73px)] flex flex-col relative overflow-hidden">
+      <div className="h-[calc(100vh-57px)] flex flex-col relative overflow-hidden">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-metra-blue/5 via-background to-metra-orange/5" />
+        <div className="absolute inset-0 bg-gradient-to-b from-metra-blue/5 via-background to-background" />
 
         {/* Main content - centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">
           <div className="text-center mb-8 max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-metra-blue to-metra-blue/70 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 whitespace-nowrap">
               Where are you departing from?
             </h1>
             <p className="text-lg text-muted-foreground">
@@ -140,8 +140,6 @@ export function Departures() {
         {/* Skyline at bottom */}
         <div className="relative h-40 md:h-56">
           <ChicagoSkyline className="absolute bottom-0 left-0 right-0 w-full opacity-10" />
-          {/* Subtle train line accent */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-metra-blue via-metra-orange to-metra-blue opacity-30" />
         </div>
       </div>
     );
