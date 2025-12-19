@@ -106,7 +106,10 @@ public struct DepartureBoardView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(departures) { departure in
-                    DepartureRowView(departure: departure)
+                    DepartureRowView(
+                        departure: departure,
+                        stationName: stop?.stopName ?? ""
+                    )
 
                     if departure.id != departures.last?.id {
                         Divider()

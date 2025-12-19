@@ -2,13 +2,17 @@ import SwiftUI
 
 public struct DepartureRowView: View {
     let departure: Departure
+    let stationName: String
     @State private var isExpanded = false
     @State private var tripDetails: GetTripDetailsResponse?
     @State private var isLoading = false
     @State private var loadError: String?
+    @State private var showTrackingError = false
+    @State private var trackingErrorMessage = ""
 
-    public init(departure: Departure) {
+    public init(departure: Departure, stationName: String = "") {
         self.departure = departure
+        self.stationName = stationName
     }
 
     public var body: some View {
@@ -62,6 +66,19 @@ public struct DepartureRowView: View {
             // Expandable stops section
             if isExpanded {
                 VStack(spacing: 0) {
+                    // Track Train button
+                    if LiveActivityService.shared.isSupported {
+                        TrackTrainButton(
+                            departure: departure,
+                            stationName: stationName,
+                            showError: $showTrackingError,
+                            errorMessage: $trackingErrorMessage
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color(.secondarySystemBackground))
+                    }
+
                     if isLoading {
                         HStack {
                             ProgressView()
@@ -94,6 +111,11 @@ public struct DepartureRowView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 0))
+        .alert("Tracking Error", isPresented: $showTrackingError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(trackingErrorMessage)
+        }
     }
 
     private func toggleExpanded() {
@@ -127,4 +149,54 @@ public struct DepartureRowView: View {
         }
     }
 
+}
+
+// MARK: - Track Train Button
+
+private struct TrackTrainButton: View {
+    let departure: Departure
+    let stationName: String
+    @Binding var showError: Bool
+    @Binding var errorMessage: String
+
+    private var isTracking: Bool {
+        LiveActivityService.shared.trackingTripId == departure.tripId
+    }
+
+    var body: some View {
+        Button {
+            Task {
+                if isTracking {
+                    LiveActivityService.shared.stopTracking()
+                } else {
+                    do {
+                        try await LiveActivityService.shared.startTracking(
+                            departure: departure,
+                            stationName: stationName
+                        )
+                    } catch {
+                        errorMessage = error.localizedDescription
+                        showError = true
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: isTracking ? "stop.circle.fill" : "location.circle.fill")
+                    .font(.subheadline)
+
+                Text(isTracking ? "Stop Tracking" : "Track This Train")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(isTracking ? .red : .blue)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                (isTracking ? Color.red : Color.blue).opacity(0.1),
+                in: RoundedRectangle(cornerRadius: 8)
+            )
+        }
+        .buttonStyle(.plain)
+    }
 }

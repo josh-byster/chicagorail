@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		8B41F6832DEDD23B001A66F9 /* ChicagoRailFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 8B41F6822DEDD23B001A66F9 /* ChicagoRailFeature */; };
 		8B41F6852DEDD25C001A66F9 /* ChicagoRailFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 8B41F6842DEDD25C001A66F9 /* ChicagoRailFeature */; };
+		8BWIDGET01000000000001 /* ChicagoRailWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8BWIDGET02000000000001 /* ChicagoRailWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -19,11 +20,33 @@
 			remoteGlobalIDString = 8B41F6442DEDD0D5001A66F9;
 			remoteInfo = ChicagoRail;
 		};
+		8BWIDGET03000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8B41F63D2DEDD0D5001A66F9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8BWIDGET04000000000001;
+			remoteInfo = ChicagoRailWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8BWIDGET05000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8BWIDGET01000000000001 /* ChicagoRailWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		8B41F6452DEDD0D5001A66F9 /* ChicagoRail.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChicagoRail.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B41F65C2DEDD0D6001A66F9 /* ChicagoRail.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChicagoRail.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8BWIDGET02000000000001 /* ChicagoRailWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ChicagoRailWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +59,14 @@
 				Tests.xcconfig,
 			);
 			target = 8B41F6442DEDD0D5001A66F9 /* ChicagoRail */;
+		};
+		8BWIDGET0E000000000001 /* Exceptions for "ChicagoRailWidget" folder in "ChicagoRailWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				ChicagoRailWidget.entitlements,
+			);
+			target = 8BWIDGET04000000000001 /* ChicagoRailWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -58,6 +89,14 @@
 			path = Config;
 			sourceTree = "<group>";
 		};
+		8BWIDGET06000000000001 /* ChicagoRailWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8BWIDGET0E000000000001 /* Exceptions for "ChicagoRailWidget" folder in "ChicagoRailWidgetExtension" target */,
+			);
+			path = ChicagoRailWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +116,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8BWIDGET07000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -86,6 +132,7 @@
 				8BD71C052DEE41D800CEDD92 /* Config */,
 				8B41F6472DEDD0D5001A66F9 /* ChicagoRail */,
 				8B41F65F2DEDD0D6001A66F9 /* ChicagoRailUITests */,
+				8BWIDGET06000000000001 /* ChicagoRailWidget */,
 				8B41F6812DEDD23B001A66F9 /* Frameworks */,
 				8B41F6462DEDD0D5001A66F9 /* Products */,
 			);
@@ -96,6 +143,7 @@
 			children = (
 				8B41F6452DEDD0D5001A66F9 /* ChicagoRail.app */,
 				8B41F65C2DEDD0D6001A66F9 /* ChicagoRail.xctest */,
+				8BWIDGET02000000000001 /* ChicagoRailWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -117,10 +165,12 @@
 				8B41F6412DEDD0D5001A66F9 /* Sources */,
 				8B41F6422DEDD0D5001A66F9 /* Frameworks */,
 				8B41F6432DEDD0D5001A66F9 /* Resources */,
+				8BWIDGET05000000000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8BWIDGET08000000000001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8B41F6472DEDD0D5001A66F9 /* ChicagoRail */,
@@ -158,6 +208,26 @@
 			productReference = 8B41F65C2DEDD0D6001A66F9 /* ChicagoRail.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		8BWIDGET04000000000001 /* ChicagoRailWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8BWIDGET09000000000001 /* Build configuration list for PBXNativeTarget "ChicagoRailWidgetExtension" */;
+			buildPhases = (
+				8BWIDGET0A000000000001 /* Sources */,
+				8BWIDGET07000000000001 /* Frameworks */,
+				8BWIDGET0B000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8BWIDGET06000000000001 /* ChicagoRailWidget */,
+			);
+			name = ChicagoRailWidgetExtension;
+			productName = ChicagoRailWidgetExtension;
+			productReference = 8BWIDGET02000000000001 /* ChicagoRailWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -174,6 +244,9 @@
 					8B41F65B2DEDD0D6001A66F9 = {
 						CreatedOnToolsVersion = 16.3;
 						TestTargetID = 8B41F6442DEDD0D5001A66F9;
+					};
+					8BWIDGET04000000000001 = {
+						CreatedOnToolsVersion = 16.3;
 					};
 				};
 			};
@@ -193,6 +266,7 @@
 			targets = (
 				8B41F6442DEDD0D5001A66F9 /* ChicagoRail */,
 				8B41F65B2DEDD0D6001A66F9 /* ChicagoRailUITests */,
+				8BWIDGET04000000000001 /* ChicagoRailWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -206,6 +280,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		8B41F65A2DEDD0D6001A66F9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8BWIDGET0B000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -229,6 +310,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8BWIDGET0A000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -236,6 +324,11 @@
 			isa = PBXTargetDependency;
 			target = 8B41F6442DEDD0D5001A66F9 /* ChicagoRail */;
 			targetProxy = 8B41F65D2DEDD0D6001A66F9 /* PBXContainerItemProxy */;
+		};
+		8BWIDGET08000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8BWIDGET04000000000001 /* ChicagoRailWidgetExtension */;
+			targetProxy = 8BWIDGET03000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -292,7 +385,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -350,7 +443,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -437,6 +530,62 @@
 			};
 			name = Release;
 		};
+		8BWIDGET0C000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 8BD71C052DEE41D800CEDD92 /* Config */;
+			baseConfigurationReferenceRelativePath = Shared.xcconfig;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ChicagoRailWidget/ChicagoRailWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NNRCE2P2EA;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChicagoRailWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chicago Rail Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.chicagorail.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8BWIDGET0D000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 8BD71C052DEE41D800CEDD92 /* Config */;
+			baseConfigurationReferenceRelativePath = Shared.xcconfig;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ChicagoRailWidget/ChicagoRailWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NNRCE2P2EA;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChicagoRailWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chicago Rail Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.chicagorail.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -463,6 +612,15 @@
 			buildConfigurations = (
 				8B41F66D2DEDD0D6001A66F9 /* Debug */,
 				8B41F66E2DEDD0D6001A66F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8BWIDGET09000000000001 /* Build configuration list for PBXNativeTarget "ChicagoRailWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8BWIDGET0C000000000001 /* Debug */,
+				8BWIDGET0D000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
