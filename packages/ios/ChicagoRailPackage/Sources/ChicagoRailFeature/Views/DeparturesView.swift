@@ -54,6 +54,18 @@ public struct DeparturesView: View {
         }
         .navigationTitle("Departures")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let stop = viewModel.selectedStop {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        FavoritesService.shared.toggleFavorite(stop)
+                    } label: {
+                        Image(systemName: FavoritesService.shared.isFavorite(stop.stopId) ? "star.fill" : "star")
+                            .foregroundStyle(FavoritesService.shared.isFavorite(stop.stopId) ? .yellow : .secondary)
+                    }
+                }
+            }
+        }
         .refreshable {
             await viewModel.loadDepartures()
         }

@@ -31,9 +31,10 @@ public struct ArrivalsView: View {
             }
             .padding()
 
-            // Line filter
-            if viewModel.selectedStop != nil {
+            // Line filter - only show routes that serve this station
+            if viewModel.selectedStop != nil && !viewModel.availableRoutes.isEmpty {
                 LineFilterView(
+                    routes: viewModel.availableRoutes,
                     selectedRouteId: viewModel.routeFilter
                 ) { routeId in
                     Task {

@@ -27,6 +27,12 @@ public struct HomeView: View {
                     .padding(.top, 32)
                     .padding(.bottom, 24)
 
+                    // Favorites Section - show if user has favorites
+                    if !FavoritesService.shared.favorites.isEmpty {
+                        FavoritesSection()
+                            .padding(.bottom, 8)
+                    }
+
                     // Feature Cards
                     VStack(spacing: 12) {
                         FeatureCard(

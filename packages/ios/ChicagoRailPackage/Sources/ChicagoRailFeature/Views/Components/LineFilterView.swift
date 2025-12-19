@@ -1,16 +1,16 @@
 import SwiftUI
 
 public struct LineFilterView: View {
-    @State private var routes: [Route] = []
-    @State private var isLoading = true
-
+    let routes: [Route]
     let selectedRouteId: String?
     let onFilterChange: (String?) -> Void
 
     public init(
+        routes: [Route],
         selectedRouteId: String?,
         onFilterChange: @escaping (String?) -> Void
     ) {
+        self.routes = routes
         self.selectedRouteId = selectedRouteId
         self.onFilterChange = onFilterChange
     }
@@ -27,7 +27,7 @@ public struct LineFilterView: View {
                     onFilterChange(nil)
                 }
 
-                // Route buttons
+                // Route buttons - only routes that serve this station
                 ForEach(routes) { route in
                     FilterButton(
                         title: route.routeShortName,
@@ -37,29 +37,11 @@ public struct LineFilterView: View {
                         onFilterChange(route.routeId)
                     }
                 }
-
-                if isLoading {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .padding(.horizontal, 8)
-                }
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
         .background(Color(.systemGray6))
-        .task {
-            await loadRoutes()
-        }
-    }
-
-    private func loadRoutes() async {
-        do {
-            routes = try await APIService.shared.getRoutes()
-        } catch {
-            routes = []
-        }
-        isLoading = false
     }
 }
 
