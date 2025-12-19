@@ -16,6 +16,7 @@ export function Departures() {
   const [routeFilter, setRouteFilter] = useState<string | undefined>();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Load state from URL params on mount
   useEffect(() => {
@@ -49,12 +50,17 @@ export function Departures() {
           newParams.delete('stop');
           setSearchParams(newParams, { replace: true });
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          setLoading(false);
+          setInitialLoad(false);
+        });
+    } else {
+      setInitialLoad(false);
     }
   }, []); // Only run on mount
 
   // Update URL when state changes
-  const updateUrlParams = useCallback((stop: Stop | null, route: string | undefined, date: Date) => {
+  const updateUrlParams = useCallback((stop: Stop | null, route: string | undefined, date: Date, replace = false) => {
     const params = new URLSearchParams();
 
     if (stop) {
@@ -70,7 +76,7 @@ export function Departures() {
       params.set('date', dateStr);
     }
 
-    setSearchParams(params, { replace: true });
+    setSearchParams(params, { replace });
   }, [setSearchParams]);
 
   // Wrapper to update both state and URL
@@ -82,13 +88,13 @@ export function Departures() {
 
   const handleRouteFilterChange = useCallback((route: string | undefined) => {
     setRouteFilter(route);
-    updateUrlParams(selectedStop, route, selectedDate);
+    updateUrlParams(selectedStop, route, selectedDate, true); // replace for filter changes
   }, [selectedStop, selectedDate, updateUrlParams]);
 
   const handleDateChange = useCallback((date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
-      updateUrlParams(selectedStop, routeFilter, date);
+      updateUrlParams(selectedStop, routeFilter, date, true); // replace for date changes
     }
   }, [selectedStop, routeFilter, updateUrlParams]);
 
@@ -96,107 +102,96 @@ export function Departures() {
   const isToday = format(new Date(), 'yyyy-MM-dd') === dateString;
 
   // Loading state when loading from URL
-  if (loading) {
+  if (loading || initialLoad) {
     return (
-      <div className="min-h-[calc(100vh-73px)] flex items-center justify-center">
-        <p className="text-muted-foreground">Loading station...</p>
+      <div className="min-h-[calc(100vh-57px)] flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
-  // Hero view when no station selected
-  if (!selectedStop) {
-    return (
-      <div className="h-[calc(100vh-57px)] flex flex-col relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-metra-blue/5 via-background to-background" />
+  const hasStation = !!selectedStop;
 
-        {/* Main content - centered */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">
-          <div className="text-center mb-8 max-w-2xl animate-fade-in-up">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 whitespace-nowrap">
-              Where are you departing from?
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Search for any Metra station to see real-time departures
-            </p>
-          </div>
+  return (
+    <div className="min-h-[calc(100vh-57px)] relative overflow-x-hidden bg-gradient-to-b from-metra-blue/5 via-background to-background">
 
-          {/* Large search bar */}
-          <div className="w-full max-w-xl animate-fade-in-up animation-delay-150">
-            <StationCommand
-              onSelectStation={handleSelectStop}
-              selectedStation={selectedStop}
-              placeholder="Search stations..."
-            />
-          </div>
+      {/* Skyline - fixed at bottom, always visible */}
+      <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
+        <ChicagoSkyline className={`w-full opacity-10 ${!hasStation ? 'animate-slide-up animation-delay-200' : ''}`} />
+      </div>
 
-          {/* Subtle hint */}
-          <p className="mt-6 text-sm text-muted-foreground/60 animate-fade-in animation-delay-300 -z-10 relative">
-            Try "Union Station", "Ogilvie", or "La Grange"
+      {/* Hero section - always at top */}
+      <div className={`flex flex-col items-center pt-24 pb-8 px-4 transition-all duration-500 ${
+        hasStation ? 'pt-12 pb-4' : ''
+      }`}>
+        {/* Title */}
+        <div className={`text-center mb-8 max-w-2xl ${!hasStation ? 'animate-fade-in-up' : ''}`}>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 whitespace-nowrap">
+            {hasStation ? selectedStop.stop_name : 'Where are you departing from?'}
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            {hasStation
+              ? `${isToday ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}'s departures`
+              : 'Search for any Metra station to see real-time departures'
+            }
           </p>
         </div>
 
-        {/* Skyline at bottom */}
-        <div className="relative h-40 md:h-56 animate-slide-up animation-delay-200">
-          <ChicagoSkyline className="absolute bottom-0 left-0 right-0 w-full opacity-10" />
+        {/* Search bar */}
+        <div className={`w-full max-w-xl ${!hasStation ? 'animate-fade-in-up animation-delay-150' : ''}`}>
+          <StationCommand
+            onSelectStation={handleSelectStop}
+            selectedStation={selectedStop}
+            placeholder={hasStation ? 'Change station...' : 'Search stations...'}
+          />
         </div>
-      </div>
-    );
-  }
 
-  // Results view when station is selected
-  return (
-    <div className="min-h-[calc(100vh-73px)] bg-background">
-      {/* Compact header with gradient accent */}
-      <div className="border-b bg-gradient-to-r from-metra-blue/5 to-metra-orange/5">
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
-          <div className="flex flex-col gap-4">
-            <div>
-              <h2 className="text-2xl font-bold">{selectedStop.stop_name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {isToday ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}'s departures
-              </p>
+        {/* Hint text */}
+        <p className={`mt-6 text-sm text-muted-foreground/60 transition-all duration-300 -z-10 relative ${
+          hasStation ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 animate-fade-in animation-delay-300'
+        }`}>
+          Try "Union Station", "Ogilvie", or "La Grange"
+        </p>
+      </div>
+
+      {/* Results panel - slides up from bottom */}
+      <div className={`bg-background/80 backdrop-blur-sm border-t transition-all duration-500 ease-out ${
+        hasStation
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-full pointer-events-none'
+      }`}>
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <DatePicker
+                date={selectedDate}
+                onDateChange={handleDateChange}
+              />
+              {!isToday && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDateChange(new Date())}
+                >
+                  Today
+                </Button>
+              )}
             </div>
-
-            {/* Search bar to change station */}
-            <StationCommand
-              onSelectStation={handleSelectStop}
-              selectedStation={selectedStop}
-              placeholder="Change station..."
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Results */}
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <DatePicker
-              date={selectedDate}
-              onDateChange={handleDateChange}
-            />
-            {!isToday && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDateChange(new Date())}
-              >
-                Today
-              </Button>
+            {hasStation && (
+              <>
+                <LineFilter
+                  onFilterChange={handleRouteFilterChange}
+                  stopId={selectedStop.stop_id}
+                  date={dateString}
+                />
+                <DepartureBoard
+                  stopId={selectedStop.stop_id}
+                  routeFilter={routeFilter}
+                  date={dateString}
+                />
+              </>
             )}
           </div>
-          <LineFilter
-            onFilterChange={handleRouteFilterChange}
-            stopId={selectedStop.stop_id}
-            date={dateString}
-          />
-          <DepartureBoard
-            stopId={selectedStop.stop_id}
-            routeFilter={routeFilter}
-            date={dateString}
-          />
         </div>
       </div>
     </div>

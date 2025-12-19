@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
 import { useStationSearch } from '../hooks/useStations';
 import { useRecentStops } from '../hooks/useRecent';
 import {
@@ -12,7 +13,7 @@ import {
 import type { Stop } from '@chicagorail/shared';
 
 interface StationCommandProps {
-  onSelectStation: (stop: Stop) => void;
+  onSelectStation: (stop: Stop | null) => void;
   placeholder?: string;
   selectedStation?: Stop | null;
 }
@@ -33,18 +34,24 @@ export function StationCommand({
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        // Reset input to selected station name when closing
+        if (selectedStation) {
+          setInputValue(selectedStation.stop_name);
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [selectedStation]);
 
-  // Update input value when selected station changes
+  // Update input value when selected station changes externally
   useEffect(() => {
     if (selectedStation) {
       setInputValue(selectedStation.stop_name);
       setIsOpen(false);
+    } else {
+      setInputValue('');
     }
   }, [selectedStation]);
 
@@ -61,34 +68,44 @@ export function StationCommand({
   };
 
   const handleInputFocus = () => {
-    if (!selectedStation) {
-      setIsOpen(true);
-    }
-  };
-
-  const handleInputClick = () => {
+    setIsOpen(true);
+    // Clear input when focusing to search, but don't clear the station yet
     if (selectedStation) {
       setInputValue('');
-      onSelectStation(null as any);
-      setIsOpen(true);
     }
   };
 
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInputValue('');
+    onSelectStation(null);
+    setIsOpen(false);
+  };
 
-  const showSearchResults = inputValue.length >= 2 && !selectedStation;
-  const showRecent = !showSearchResults && !selectedStation && recentStops.length > 0 && isOpen;
+  const showSearchResults = inputValue.length >= 2;
+  const showRecent = !showSearchResults && recentStops.length > 0 && isOpen;
   const showDropdown = isOpen && (showSearchResults || showRecent);
 
   return (
     <div className="relative" ref={containerRef}>
       <Command className="rounded-lg border shadow-md overflow-visible" shouldFilter={false}>
-        <CommandInput
-          placeholder={placeholder}
-          value={inputValue}
-          onValueChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onClick={handleInputClick}
-        />
+        <div className="relative">
+          <CommandInput
+            placeholder={placeholder}
+            value={inputValue}
+            onValueChange={handleInputChange}
+            onFocus={handleInputFocus}
+          />
+          {selectedStation && !isOpen && (
+            <button
+              onClick={handleClear}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-accent transition-colors"
+              aria-label="Clear station"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
         {showDropdown && (
           <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] rounded-lg border bg-popover shadow-lg">
             {showSearchResults && (
