@@ -18,46 +18,51 @@ export function Departures() {
   const [loading, setLoading] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
 
-  // Load state from URL params on mount
+  // Sync state with URL params (runs on mount and when URL changes via back/forward)
   useEffect(() => {
     const stopId = searchParams.get('stop');
     const route = searchParams.get('route');
     const date = searchParams.get('date');
 
-    if (route) {
-      setRouteFilter(route);
-    }
+    // Sync route filter
+    setRouteFilter(route || undefined);
 
+    // Sync date
     if (date) {
       try {
         const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
         setSelectedDate(parsedDate);
       } catch {
         // Invalid date, use today
+        setSelectedDate(new Date());
       }
+    } else {
+      setSelectedDate(new Date());
     }
 
-    // Fetch stop data if stopId is in URL
-    if (stopId && !selectedStop) {
+    // Sync stop - need to fetch if we have a stopId but no matching selectedStop
+    if (stopId && selectedStop?.stop_id !== stopId) {
       setLoading(true);
       api.getDepartures(stopId, undefined, date || format(new Date(), 'yyyy-MM-dd'))
         .then((response) => {
           setSelectedStop(response.stop);
         })
         .catch(() => {
-          // Stop not found, clear the param
-          const newParams = new URLSearchParams(searchParams);
-          newParams.delete('stop');
-          setSearchParams(newParams, { replace: true });
+          // Stop not found, clear state
+          setSelectedStop(null);
         })
         .finally(() => {
           setLoading(false);
           setInitialLoad(false);
         });
+    } else if (!stopId && selectedStop) {
+      // URL has no stop but we have one selected - clear it (back button case)
+      setSelectedStop(null);
+      setInitialLoad(false);
     } else {
       setInitialLoad(false);
     }
-  }, []); // Only run on mount
+  }, [searchParams]); // Re-run when URL changes
 
   // Update URL when state changes
   const updateUrlParams = useCallback((stop: Stop | null, route: string | undefined, date: Date, replace = false) => {
