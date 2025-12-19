@@ -113,7 +113,7 @@ export function Departures() {
 
         {/* Main content - centered */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">
-          <div className="text-center mb-8 max-w-2xl">
+          <div className="text-center mb-8 max-w-2xl animate-fade-in-up">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 whitespace-nowrap">
               Where are you departing from?
             </h1>
@@ -123,7 +123,7 @@ export function Departures() {
           </div>
 
           {/* Large search bar */}
-          <div className="w-full max-w-xl">
+          <div className="w-full max-w-xl animate-fade-in-up animation-delay-150">
             <StationCommand
               onSelectStation={handleSelectStop}
               selectedStation={selectedStop}
@@ -132,13 +132,13 @@ export function Departures() {
           </div>
 
           {/* Subtle hint */}
-          <p className="mt-6 text-sm text-muted-foreground/60">
+          <p className="mt-6 text-sm text-muted-foreground/60 animate-fade-in animation-delay-300 -z-10 relative">
             Try "Union Station", "Ogilvie", or "La Grange"
           </p>
         </div>
 
         {/* Skyline at bottom */}
-        <div className="relative h-40 md:h-56">
+        <div className="relative h-40 md:h-56 animate-slide-up animation-delay-200">
           <ChicagoSkyline className="absolute bottom-0 left-0 right-0 w-full opacity-10" />
         </div>
       </div>
