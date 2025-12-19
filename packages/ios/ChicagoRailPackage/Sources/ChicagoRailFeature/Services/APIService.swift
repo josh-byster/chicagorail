@@ -63,11 +63,24 @@ public final class APIService: Sendable {
     }
 
     /// Get departures from a station
-    public func getDepartures(stopId: String, routeId: String? = nil) async throws -> GetDeparturesResponse {
+    public func getDepartures(stopId: String, routeId: String? = nil, date: Date? = nil) async throws -> GetDeparturesResponse {
         var path = "/stops/\(stopId)/departures"
+        var queryParams: [String] = []
+
         if let routeId = routeId {
-            path += "?routeId=\(routeId)"
+            queryParams.append("routeId=\(routeId)")
         }
+
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            queryParams.append("date=\(formatter.string(from: date))")
+        }
+
+        if !queryParams.isEmpty {
+            path += "?" + queryParams.joined(separator: "&")
+        }
+
         return try await fetch(path)
     }
 

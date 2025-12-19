@@ -33,30 +33,17 @@ public struct DepartureRowView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 4))
 
                     // Destination
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(departure.tripHeadsign)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-
-                        Text(formatTime(departure.departureTime))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(departure.tripHeadsign)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
 
                     Spacer()
 
-                    // Relative time and chevron
+                    // Time and chevron
                     HStack(spacing: 8) {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(getRelativeTime(departure.departureTime))
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(relativeTimeColor)
-
-                            Text(departure.direction.rawValue.capitalized)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text(formatTime(departure.departureTime))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
 
                         Image(systemName: "chevron.down")
                             .font(.caption)
@@ -140,13 +127,4 @@ public struct DepartureRowView: View {
         }
     }
 
-    private var relativeTimeColor: Color {
-        let relativeTime = getRelativeTime(departure.departureTime)
-        if relativeTime == "Now" {
-            return .green
-        } else if relativeTime.contains("min"), let minutes = Int(relativeTime.components(separatedBy: " ").first ?? "0"), minutes <= 5 {
-            return .orange
-        }
-        return .primary
-    }
 }
