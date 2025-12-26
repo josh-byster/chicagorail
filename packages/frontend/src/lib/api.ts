@@ -12,7 +12,9 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 class ApiClient {
   private async fetch<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`);
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      cache: 'no-store'
+    });
 
     if (!response.ok) {
       const error: ApiError = await response.json();
