@@ -32,12 +32,19 @@ interface ServicePeriod {
   end_date: string;
 }
 
+interface ServiceException {
+  service_id: string;
+  date: string; // YYYYMMDD
+  exception_type: number; // 1 = added, 2 = removed
+}
+
 interface GTFSData {
   routes: Route[];
   stops: Stop[];
   trips: Trip[];
   stopTimes: StopTime[];
   servicePeriods: ServicePeriod[];
+  serviceExceptions: ServiceException[];
   lastUpdated: string;
 }
 
@@ -189,6 +196,13 @@ export class GTFSService {
         end_date: row.end_date
       }));
 
+      // Parse calendar_dates.txt for service exceptions
+      const calendarDates = this.parseCSVFile<ServiceException>('calendar_dates.txt', (row: any) => ({
+        service_id: row.service_id,
+        date: row.date,
+        exception_type: parseInt(row.exception_type)
+      }));
+
       // Create indexes
       this.stopsByIdMap = new Map(stops.map(stop => [stop.stop_id, stop]));
 
@@ -208,6 +222,7 @@ export class GTFSService {
         routes,
         stops,
         servicePeriods: calendar,
+        serviceExceptions: calendarDates,
         stopTimes,
         lastUpdated: new Date().toISOString()
       };
@@ -273,10 +288,23 @@ export class GTFSService {
     return date.toISOString();
   }
 
-  // Check if a service is active on a given date
+  // Check if a service is active on a given date (considering calendar_dates exceptions)
   private isServiceActiveOnDate(serviceId: string, date: Date): boolean {
     if (!this.data) return false;
 
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+
+    // First check calendar_dates.txt for exceptions
+    const exception = this.data.serviceExceptions.find(
+      ex => ex.service_id === serviceId && ex.date === dateStr
+    );
+
+    if (exception) {
+      // exception_type 1 = service added, 2 = service removed
+      return exception.exception_type === 1;
+    }
+
+    // No exception, fall back to regular calendar logic
     const servicePeriod = this.data.servicePeriods.find(sp => sp.service_id === serviceId);
     if (!servicePeriod) return false;
 
@@ -295,7 +323,6 @@ export class GTFSService {
     if (!isActive) return false;
 
     // Check date range (YYYYMMDD format)
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
     return dateStr >= servicePeriod.start_date && dateStr <= servicePeriod.end_date;
   }
 

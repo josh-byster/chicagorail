@@ -90,8 +90,13 @@ export function StationCommand({
     [closeDropdown]
   );
 
-  const showSearchResults = searchQuery.length >= APP_CONFIG.search.minQueryLength;
-  const showRecent = !showSearchResults && recentStops.length > 0 && isSearching;
+  const hasSearchQuery = searchQuery.length >= APP_CONFIG.search.minQueryLength;
+  const searchComplete = hasSearchQuery && !isLoading;
+  const hasSearchResults = searchComplete && stops.length > 0;
+  const hasNoResults = searchComplete && stops.length === 0;
+  // Show recent stops until search completes (with or without results)
+  const showRecent = recentStops.length > 0 && isSearching && !searchComplete;
+  const showSearchResults = hasSearchResults || hasNoResults || (hasSearchQuery && error);
   const showDropdown = isSearching && (showSearchResults || showRecent);
 
   const isSecondary = variant === 'secondary';
@@ -135,9 +140,7 @@ export function StationCommand({
           <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] rounded-lg border bg-popover shadow-lg">
             {showSearchResults && (
               <>
-                {isLoading ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
-                ) : error ? (
+                {error ? (
                   <div className="py-6 text-center text-sm text-red-600 dark:text-red-400">
                     Search failed. Please try again.
                   </div>

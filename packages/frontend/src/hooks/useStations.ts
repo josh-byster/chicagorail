@@ -7,7 +7,7 @@
  * - Cached search results
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useDeferredValue } from 'react';
 import { api } from '@/lib/api';
 import { queryKeys, getErrorMessage } from '@/shared/lib';
@@ -17,6 +17,7 @@ import type { Stop } from '@chicagorail/shared';
 export interface UseStationSearchResult {
   data: Stop[];
   isLoading: boolean;
+  isFetching: boolean;
   isError: boolean;
   error: string | null;
 }
@@ -42,12 +43,21 @@ export function useStationSearch(query: string): UseStationSearchResult {
     queryFn: () => api.searchStops(deferredQuery),
     enabled: deferredQuery.length >= APP_CONFIG.search.minQueryLength,
     staleTime: QUERY_CONFIG.staleTime.search,
+    // Keep showing previous results while fetching new ones
+    placeholderData: keepPreviousData,
   });
+
+  // Query meets min length but deferred value hasn't caught up yet
+  const isPendingDeferred =
+    query.length >= APP_CONFIG.search.minQueryLength &&
+    deferredQuery.length < APP_CONFIG.search.minQueryLength;
 
   return {
     data: result.data?.stops ?? [],
-    // Show loading when deferred value is pending OR query is loading
-    isLoading: result.isLoading || query !== deferredQuery,
+    // isLoading: true on initial load OR when waiting for deferred value to enable query
+    isLoading: (result.isLoading && !result.isPlaceholderData) || isPendingDeferred,
+    // isFetching: true during any fetch (including background)
+    isFetching: result.isFetching || query !== deferredQuery,
     isError: result.isError,
     error: result.error ? getErrorMessage(result.error) : null,
   };
