@@ -1,32 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Stop } from '@chicagorail/shared';
+import { useDeferredValue } from 'react';
 
 export function useStationSearch(query: string) {
-  const [stops, setStops] = useState<Stop[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Defer the query value to avoid blocking UI during rapid typing
+  const deferredQuery = useDeferredValue(query);
 
-  useEffect(() => {
-    if (query.length < 2) {
-      setStops([]);
-      return;
-    }
+  const result = useQuery({
+    queryKey: ['stations', 'search', deferredQuery],
+    queryFn: () => api.searchStops(deferredQuery),
+    enabled: deferredQuery.length >= 2,
+    staleTime: 60000, // Cache search results for 1 minute
+  });
 
-    const search = async () => {
-      setLoading(true);
-      try {
-        const result = await api.searchStops(query);
-        setStops(result.stops);
-      } catch (error) {
-        console.error('Search failed:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const debounce = setTimeout(search, 150);
-    return () => clearTimeout(debounce);
-  }, [query]);
-
-  return { stops, loading };
+  return {
+    stops: result.data?.stops ?? [],
+    loading: result.isLoading || query !== deferredQuery,
+    error: result.error?.message ?? null,
+  };
 }

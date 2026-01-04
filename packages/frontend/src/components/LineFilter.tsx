@@ -1,54 +1,16 @@
-import { useState, useEffect } from 'react';
-import { api } from '../lib/api';
-import type { Route } from '@chicagorail/shared';
+import { useRoutesFromDepartures } from '../hooks/useRoutes';
 
 interface LineFilterProps {
+  selectedRoute: string | undefined;
   onFilterChange: (routeId: string | undefined) => void;
   stopId?: string;
   date?: string;
 }
 
-export function LineFilter({ onFilterChange, stopId, date }: LineFilterProps) {
-  const [routes, setRoutes] = useState<Route[]>([]);
-  const [selectedRoute, setSelectedRoute] = useState<string | undefined>();
+export function LineFilter({ selectedRoute, onFilterChange, stopId, date }: LineFilterProps) {
+  const { routes, loading } = useRoutesFromDepartures(stopId ?? null, date);
 
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        if (stopId) {
-          // Fetch departures to get unique routes that have service
-          const result = await api.getDepartures(stopId, undefined, date);
-          const uniqueRoutes = new Map<string, Route>();
-          result.departures.forEach(dep => {
-            if (!uniqueRoutes.has(dep.route.route_id)) {
-              uniqueRoutes.set(dep.route.route_id, dep.route);
-            }
-          });
-          setRoutes(Array.from(uniqueRoutes.values()));
-        } else {
-          const result = await api.getRoutes();
-          setRoutes(result.routes);
-        }
-      } catch (error) {
-        console.error('Failed to fetch routes:', error);
-      }
-    };
-
-    fetchRoutes();
-  }, [stopId, date]);
-
-  const handleFilterChange = (routeId: string | undefined) => {
-    setSelectedRoute(routeId);
-    onFilterChange(routeId);
-  };
-
-  // Reset filter when stop/date changes
-  useEffect(() => {
-    setSelectedRoute(undefined);
-    // Don't call onFilterChange here - let the parent handle route param
-  }, [stopId, date]);
-
-  if (routes.length === 0) {
+  if (loading || routes.length === 0) {
     return null;
   }
 
@@ -60,7 +22,7 @@ export function LineFilter({ onFilterChange, stopId, date }: LineFilterProps) {
             ? 'bg-primary text-primary-foreground'
             : 'bg-secondary hover:bg-secondary/80'
         }`}
-        onClick={() => handleFilterChange(undefined)}
+        onClick={() => onFilterChange(undefined)}
       >
         All Lines
       </button>
@@ -79,7 +41,7 @@ export function LineFilter({ onFilterChange, stopId, date }: LineFilterProps) {
               backgroundColor: bgColor,
               color: textColor,
             }}
-            onClick={() => handleFilterChange(route.route_id)}
+            onClick={() => onFilterChange(route.route_id)}
           >
             {route.route_short_name}
           </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format, parse } from 'date-fns';
 import { StationCommand } from '../components/StationCommand';
@@ -9,8 +9,9 @@ import { ChicagoSkyline } from '../components/ChicagoSkyline';
 import { Button } from '../components/ui/button';
 import { useRecentStops } from '../hooks/useRecent';
 import { useStop } from '../hooks/useStop';
-import { api } from '../lib/api';
-import type { Stop, DirectTrip } from '@chicagorail/shared';
+import { useDirectTrips } from '../hooks/useTrips';
+import type { Stop } from '@chicagorail/shared';
+import { utils } from '@chicagorail/shared';
 
 export function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,10 +42,8 @@ export function Home() {
   const { stop: fromStop } = useStop(fromId);
   const { stop: toStop } = useStop(toId);
 
-  // Trip-specific state (when both from and to are set)
-  const [trips, setTrips] = useState<DirectTrip[]>([]);
-  const [tripsLoading, setTripsLoading] = useState(false);
-  const [tripsError, setTripsError] = useState<string | null>(null);
+  // Fetch trips when both from and to are selected (via React Query)
+  const { trips, loading: tripsLoading, error: tripsError } = useDirectTrips(fromId, toId, dateString);
 
   // URL update helper - uses functional update to avoid searchParams dependency
   const updateUrl = useCallback((updates: {
@@ -107,53 +106,20 @@ export function Home() {
     updateUrl({ from: stop.stop_id, route: null });
   }, [updateUrl, addRecentStop]);
 
-  // Fetch trips when both from and to are selected
-  useEffect(() => {
-    if (!fromId || !toId) {
-      setTrips([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const fetchTrips = async () => {
-      setTripsLoading(true);
-      setTripsError(null);
-      try {
-        const result = await api.findDirectTrips(fromId, toId, dateString, 50);
-        if (!cancelled) {
-          setTrips(result.trips);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setTripsError(err instanceof Error ? err.message : 'Failed to find trips');
-        }
-      } finally {
-        if (!cancelled) {
-          setTripsLoading(false);
-        }
-      }
-    };
-
-    fetchTrips();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fromId, toId, dateString]);
-
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
   const showTrips = !!fromId && !!toId;
   const showDepartures = !!fromId && !toId;
   const showEmpty = !fromId;
+
+  // Filter trips by route if selected
+  const filteredTrips = useMemo(() => {
+    if (!routeParam) return trips;
+    return trips.filter(t => t.route.route_id === routeParam);
+  }, [trips, routeParam]);
+
+  // Get unique routes from trips for the filter
+  const tripRoutes = useMemo(() => {
+    return Array.from(new Map(trips.map(t => [t.route.route_id, t.route])).values());
+  }, [trips]);
 
   return (
     <div className="flex-1 relative overflow-x-hidden bg-gradient-to-b from-metra-blue/5 via-background to-background">
@@ -238,6 +204,7 @@ export function Home() {
                 )}
               </div>
               <LineFilter
+                selectedRoute={routeParam || undefined}
                 onFilterChange={handleRouteFilterChange}
                 stopId={fromId}
                 date={dateString}
@@ -295,75 +262,68 @@ export function Home() {
                 </div>
               )}
 
-              {trips.length > 0 && !tripsLoading && (() => {
-                const uniqueRoutes = Array.from(new Map(trips.map(t => [t.route.route_id, t.route])).values());
-                const filteredTrips = routeParam
-                  ? trips.filter(t => t.route.route_id === routeParam)
-                  : trips;
-
-                return (
-                  <>
-                    {/* Route filter buttons */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <button
-                        className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
-                          !routeParam
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                        onClick={() => handleRouteFilterChange(undefined)}
-                      >
-                        All Lines
-                      </button>
-                      {uniqueRoutes.map((route) => {
-                        const isSelected = routeParam === route.route_id;
-                        return (
-                          <button
-                            key={route.route_id}
-                            className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all ${
-                              isSelected ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-80 hover:opacity-100'
-                            }`}
-                            style={{
-                              backgroundColor: `#${route.route_color}`,
-                              color: `#${route.route_text_color || 'FFFFFF'}`,
-                            }}
-                            onClick={() => handleRouteFilterChange(route.route_id)}
-                          >
-                            {route.route_short_name}
-                          </button>
-                        );
-                      })}
-                      {filteredTrips[0]?.duration_minutes && (
-                        <span className="text-sm text-muted-foreground self-center ml-2">
-                          ~{filteredTrips[0].duration_minutes} min
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {filteredTrips.map((trip, index) => (
-                        <div
-                          key={`${trip.trip_id}-${index}`}
-                          className="border rounded-lg px-3 py-2.5 hover:bg-accent transition-colors bg-background/50"
+              {trips.length > 0 && !tripsLoading && (
+                <>
+                  {/* Route filter buttons */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <button
+                      className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
+                        !routeParam
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary hover:bg-secondary/80'
+                      }`}
+                      onClick={() => handleRouteFilterChange(undefined)}
+                    >
+                      All Lines
+                    </button>
+                    {tripRoutes.map((route) => {
+                      const isSelected = routeParam === route.route_id;
+                      return (
+                        <button
+                          key={route.route_id}
+                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all ${
+                            isSelected ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-80 hover:opacity-100'
+                          }`}
+                          style={{
+                            backgroundColor: `#${route.route_color}`,
+                            color: `#${route.route_text_color || 'FFFFFF'}`,
+                          }}
+                          onClick={() => handleRouteFilterChange(route.route_id)}
                         >
-                          <div className="flex items-center gap-1.5 justify-center mb-0.5">
-                            <div
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: `#${trip.route.route_color}` }}
-                            />
-                            <span className="font-semibold text-lg tabular-nums">
-                              {formatTime(trip.origin_departure)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground text-center">
-                            arr. {formatTime(trip.destination_arrival)}
-                          </div>
+                          {route.route_short_name}
+                        </button>
+                      );
+                    })}
+                    {filteredTrips[0]?.duration_minutes && (
+                      <span className="text-sm text-muted-foreground self-center ml-2">
+                        ~{filteredTrips[0].duration_minutes} min
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {filteredTrips.map((trip, index) => (
+                      <div
+                        key={`${trip.trip_id}-${index}`}
+                        className="border rounded-lg px-3 py-2.5 hover:bg-accent transition-colors bg-background/50"
+                      >
+                        <div className="flex items-center gap-1.5 justify-center mb-0.5">
+                          <div
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: `#${trip.route.route_color}` }}
+                          />
+                          <span className="font-semibold text-lg tabular-nums">
+                            {utils.formatTime(trip.origin_departure)}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
+                        <div className="text-xs text-muted-foreground text-center">
+                          arr. {utils.formatTime(trip.destination_arrival)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

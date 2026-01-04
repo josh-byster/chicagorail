@@ -180,6 +180,7 @@ export function Departures() {
               )}
             </div>
             <LineFilter
+              selectedRoute={routeFilter}
               onFilterChange={handleRouteFilterChange}
               stopId={selectedStop.stop_id}
               date={dateString}

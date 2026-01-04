@@ -1,33 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Stop, Departure } from '@chicagorail/shared';
 
 export function useDepartures(stopId: string | null, routeFilter?: string, date?: string) {
-  const [departures, setDepartures] = useState<Departure[]>([]);
-  const [stop, setStop] = useState<Stop | null>(null);
-  const [loading, setLoading] = useState(false);
+  const query = useQuery({
+    queryKey: ['departures', stopId, routeFilter, date],
+    queryFn: () => api.getDepartures(stopId!, routeFilter, date),
+    enabled: !!stopId,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 10000, // Consider data fresh for 10 seconds
+  });
 
-  useEffect(() => {
-    if (!stopId) return;
-
-    const fetchDepartures = async () => {
-      setLoading(true);
-      try {
-        const result = await api.getDepartures(stopId, routeFilter, date);
-        setStop(result.stop);
-        setDepartures(result.departures);
-      } catch (error) {
-        console.error('Failed to fetch departures:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDepartures();
-    const interval = setInterval(fetchDepartures, 30000); // Refresh every 30s
-
-    return () => clearInterval(interval);
-  }, [stopId, routeFilter, date]);
-
-  return { stop, departures, loading };
+  return {
+    stop: query.data?.stop ?? null,
+    departures: query.data?.departures ?? [],
+    loading: query.isLoading,
+    error: query.error?.message ?? null,
+    refetch: query.refetch,
+  };
 }

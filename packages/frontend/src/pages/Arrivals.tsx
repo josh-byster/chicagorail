@@ -29,7 +29,7 @@ export function Arrivals() {
                 </p>
               </div>
 
-              <LineFilter onFilterChange={setRouteFilter} />
+              <LineFilter selectedRoute={routeFilter} onFilterChange={setRouteFilter} stopId={selectedStop.stop_id} />
               <DepartureBoard
                 stopId={selectedStop.stop_id}
                 routeFilter={routeFilter}
