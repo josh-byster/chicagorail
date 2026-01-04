@@ -9,9 +9,10 @@ const gtfsService = GTFSService.getInstance();
 router.get('/', async (req, res) => {
   try {
     const data = await gtfsService.getData();
-    res.json({
+    const response: GetRoutesResponse = {
       routes: data.routes
-    } as GetRoutesResponse);
+    };
+    res.json(response);
   } catch (error) {
     res.status(500).json({
       error: 'Failed to fetch routes',

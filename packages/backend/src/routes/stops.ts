@@ -31,9 +31,10 @@ router.get('/search', async (req, res) => {
 
     const rankedStops = utils.rankSearchResults(q, matchingStops);
 
-    res.json({
+    const response: SearchStopsResponse = {
       stops: rankedStops.slice(0, 10)
-    } as SearchStopsResponse);
+    };
+    res.json(response);
   } catch (error) {
     res.status(500).json({
       error: 'Failed to search stops',
@@ -63,11 +64,12 @@ router.get('/:stopId/departures', async (req, res) => {
       routeId
     );
 
-    res.json({
+    const response: GetDeparturesResponse = {
       stop: departures.stop,
       departures: departures.departures,
       timestamp: new Date().toISOString()
-    } as GetDeparturesResponse);
+    };
+    res.json(response);
   } catch (error) {
     res.status(500).json({
       error: 'Failed to fetch departures',

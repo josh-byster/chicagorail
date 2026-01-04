@@ -1,6 +1,16 @@
 import fetch from 'node-fetch';
 import AdmZip from 'adm-zip';
-import type { Route, Stop, Trip, StopTime, Departure, TripStop } from '@chicagorail/shared';
+import type {
+  Route,
+  Stop,
+  Trip,
+  StopTime,
+  Departure,
+  TripStop,
+  DirectTrip,
+  FindDirectTripsResponse,
+  GetTripDetailsResponse,
+} from '@chicagorail/shared';
 import { winstonLogger } from '../middleware/logger';
 import fs from 'fs';
 import path from 'path';
@@ -380,7 +390,7 @@ export class GTFSService {
     destinationStopId: string,
     date: Date = new Date(),
     limit: number = 10
-  ) {
+  ): Promise<FindDirectTripsResponse> {
     const data = await this.getData();
 
     const originStop = this.stopsByIdMap.get(originStopId);
@@ -404,14 +414,7 @@ export class GTFSService {
     }
 
     const now = new Date();
-    const trips: Array<{
-      route: Route;
-      trip_id: string;
-      trip_headsign: string;
-      origin_departure: string;
-      destination_arrival: string;
-      duration_minutes: number;
-    }> = [];
+    const trips: DirectTrip[] = [];
 
     // For each common route, find trips
     for (const routeId of commonRoutes) {
@@ -470,13 +473,7 @@ export class GTFSService {
   public async getTripDetails(
     tripId: string,
     date: Date = new Date()
-  ): Promise<{
-    trip_id: string;
-    route: Route;
-    trip_headsign: string;
-    direction: 'inbound' | 'outbound';
-    stops: TripStop[];
-  } | null> {
+  ): Promise<GetTripDetailsResponse | null> {
     const data = await this.getData();
 
     const trip = data.trips.find(t => t.trip_id === tripId);

@@ -34,7 +34,8 @@ export function useDirectTrips(
   date?: string
 ): UseDirectTripsResult {
   const query = useQuery({
-    queryKey: queryKeys.trips.direct(originStopId!, destinationStopId!, date),
+    // Query key uses empty strings as fallback - query won't execute when disabled
+    queryKey: queryKeys.trips.direct(originStopId ?? '', destinationStopId ?? '', date),
     queryFn: () =>
       api.findDirectTrips(originStopId!, destinationStopId!, {
         date,

@@ -10,7 +10,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { format, parse } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { StationCommand } from '@/components/StationCommand';
 import { DepartureBoard } from '@/components/DepartureBoard';
 import { LineFilter } from '@/components/LineFilter';
@@ -36,11 +36,9 @@ export function Home() {
   // Derive date from URL
   const selectedDate = useMemo(() => {
     if (dateParam) {
-      try {
-        return parse(dateParam, APP_CONFIG.dateFormats.url, new Date());
-      } catch {
-        return new Date();
-      }
+      const parsed = parse(dateParam, APP_CONFIG.dateFormats.url, new Date());
+      // parse() returns Invalid Date for malformed input rather than throwing
+      return isValid(parsed) ? parsed : new Date();
     }
     return new Date();
   }, [dateParam]);

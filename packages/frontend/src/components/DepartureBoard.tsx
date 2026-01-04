@@ -18,6 +18,8 @@ export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProp
   const {
     data: { departures },
     isLoading,
+    isError,
+    error,
   } = useDepartures(stopId, { routeId: routeFilter, date });
 
   if (!stopId) {
@@ -32,6 +34,19 @@ export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProp
     return (
       <div className="text-center py-12" role="status" aria-label="Loading departures">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div
+        className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg"
+        role="alert"
+      >
+        <p className="text-sm text-red-800 dark:text-red-200">
+          {error || 'Failed to load departures. Please try again.'}
+        </p>
       </div>
     );
   }

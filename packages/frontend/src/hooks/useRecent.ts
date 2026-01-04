@@ -9,6 +9,18 @@ import { logger } from '@/shared/lib';
 
 const { storage, limits } = APP_CONFIG;
 
+/**
+ * Type guard to validate a Stop object shape
+ */
+function isValidStop(value: unknown): value is Stop {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Stop).stop_id === 'string' &&
+    typeof (value as Stop).stop_name === 'string'
+  );
+}
+
 export interface UseRecentStopsResult {
   data: Stop[];
   addRecentStop: (stop: Stop) => void;
@@ -31,7 +43,13 @@ export function useRecentStops(): UseRecentStopsResult {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          setRecentStops(parsed);
+          // Validate each item is a proper Stop object
+          const validStops = parsed.filter(isValidStop);
+          setRecentStops(validStops);
+          // Clean up invalid entries by re-saving only valid ones
+          if (validStops.length !== parsed.length) {
+            localStorage.setItem(storage.recentStops, JSON.stringify(validStops));
+          }
         }
       }
     } catch (error) {
@@ -39,6 +57,8 @@ export function useRecentStops(): UseRecentStopsResult {
         'Failed to parse recent stops from localStorage',
         error instanceof Error ? error : undefined
       );
+      // Clear corrupted data
+      localStorage.removeItem(storage.recentStops);
     }
   }, []);
 

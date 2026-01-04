@@ -31,6 +31,7 @@ export function useStop(stopId: string | null): UseStopResult {
   const queryClient = useQueryClient();
 
   // Try to find stop in any cached departures query
+  // Note: queryClient is a stable reference from context, no need in deps
   const cachedStop = useMemo(() => {
     if (!stopId) return null;
 
@@ -47,11 +48,13 @@ export function useStop(stopId: string | null): UseStopResult {
     }
 
     return null;
-  }, [queryClient, stopId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopId]);
 
   // Only fetch if not in cache
   const query = useQuery({
-    queryKey: queryKeys.stops.detail(stopId!),
+    // Query key uses empty string as fallback - query won't execute when disabled
+    queryKey: queryKeys.stops.detail(stopId ?? ''),
     queryFn: () => api.getDepartures(stopId!, { limit: 1 }),
     enabled: !!stopId && !cachedStop,
     staleTime: QUERY_CONFIG.staleTime.stops,

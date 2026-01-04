@@ -27,6 +27,7 @@ export function RouteFilterButtons({
             : 'bg-secondary hover:bg-secondary/80'
         }`}
         onClick={() => onFilterChange(undefined)}
+        aria-pressed={!selectedRoute}
       >
         All Lines
       </button>
@@ -43,6 +44,7 @@ export function RouteFilterButtons({
               color: `#${route.route_text_color || 'FFFFFF'}`,
             }}
             onClick={() => onFilterChange(route.route_id)}
+            aria-pressed={isSelected}
           >
             {route.route_short_name}
           </button>

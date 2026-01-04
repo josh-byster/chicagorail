@@ -43,7 +43,8 @@ export function useDepartures(
   options?: UseDeparturesOptions
 ): UseDeparturesResult {
   const query = useQuery({
-    queryKey: queryKeys.departures.byStop(stopId!, {
+    // Query key uses empty string as fallback - query won't execute when disabled
+    queryKey: queryKeys.departures.byStop(stopId ?? '', {
       date: options?.date,
       routeId: options?.routeId,
     }),

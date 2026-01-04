@@ -63,18 +63,19 @@ export function useRoutesFromDepartures(
       )
     : null;
 
+  const departures = cachedData?.departures;
   const routes = useMemo(() => {
-    if (!cachedData?.departures) return [];
+    if (!departures) return [];
 
     const uniqueRoutes = new Map<string, Route>();
-    cachedData.departures.forEach((dep) => {
+    departures.forEach((dep) => {
       if (!uniqueRoutes.has(dep.route.route_id)) {
         uniqueRoutes.set(dep.route.route_id, dep.route);
       }
     });
 
     return Array.from(uniqueRoutes.values());
-  }, [cachedData?.departures]);
+  }, [departures]);
 
   return {
     data: routes,
