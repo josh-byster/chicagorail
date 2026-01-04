@@ -75,6 +75,20 @@ export class GTFSService {
     }
   }
 
+  // Initialize service with fresh GTFS data download
+  public async initialize(): Promise<void> {
+    winstonLogger.info('Initializing GTFS service with fresh data...');
+    try {
+      await this.downloadGTFSData();
+      await this.loadData();
+      winstonLogger.info('GTFS service initialized successfully');
+    } catch (error) {
+      winstonLogger.error('Failed to initialize GTFS service with fresh data, falling back to cached data:', error);
+      // Fall back to cached data if download fails
+      await this.loadData();
+    }
+  }
+
   // Start periodic background refresh of GTFS data
   public startBackgroundRefresh(): void {
     if (this.refreshInterval) {

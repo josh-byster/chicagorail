@@ -16,12 +16,16 @@ interface StationCommandProps {
   onSelectStation: (stop: Stop | null) => void;
   placeholder?: string;
   selectedStation?: Stop | null;
+  label?: string;
+  variant?: 'default' | 'secondary';
 }
 
 export function StationCommand({
   onSelectStation,
   placeholder = "Search for a station...",
-  selectedStation
+  selectedStation,
+  label,
+  variant = 'default'
 }: StationCommandProps) {
   const [inputValue, setInputValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -86,15 +90,23 @@ export function StationCommand({
   const showRecent = !showSearchResults && recentStops.length > 0 && isOpen;
   const showDropdown = isOpen && (showSearchResults || showRecent);
 
+  const isSecondary = variant === 'secondary';
+
   return (
-    <div className="relative" ref={containerRef}>
-      <Command className="rounded-lg border shadow-md overflow-visible" shouldFilter={false}>
+    <div className={`relative ${showDropdown ? 'z-50' : ''}`} ref={containerRef}>
+      {label && (
+        <label className={`block text-sm font-medium mb-1.5 ${isSecondary ? 'text-muted-foreground' : ''}`}>
+          {label}
+        </label>
+      )}
+      <Command className={`rounded-lg border overflow-visible ${isSecondary ? 'border-dashed' : 'shadow-md'}`} shouldFilter={false}>
         <div className="relative">
           <CommandInput
             placeholder={placeholder}
             value={inputValue}
             onValueChange={handleInputChange}
             onFocus={handleInputFocus}
+            className={isSecondary ? 'text-muted-foreground' : ''}
           />
           {selectedStation && !isOpen && (
             <button

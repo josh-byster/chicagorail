@@ -5,10 +5,10 @@ import { GTFSService } from '../services/gtfsService';
 const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
 
-// GET /api/trips/direct?origin=STOP_ID&destination=STOP_ID&limit=10
+// GET /api/trips/direct?origin=STOP_ID&destination=STOP_ID&limit=10&date=YYYY-MM-DD
 router.get('/direct', async (req, res, next) => {
   try {
-    const { origin, destination, limit } = req.query;
+    const { origin, destination, limit, date } = req.query;
 
     if (!origin || !destination) {
       res.status(400).json({
@@ -28,10 +28,17 @@ router.get('/direct', async (req, res, next) => {
 
     const limitNum = limit ? parseInt(limit as string) : 10;
 
+    // Parse date parameter - if provided, use start of that day in local time
+    let queryDate = new Date();
+    if (date) {
+      const [year, month, day] = (date as string).split('-').map(Number);
+      queryDate = new Date(year, month - 1, day, 2, 0, 0); // 2am local time
+    }
+
     const result = await gtfsService.findDirectTrips(
       origin as string,
       destination as string,
-      new Date(),
+      queryDate,
       limitNum
     );
 

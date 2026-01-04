@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 .vercel
 packages/ios/build/
+
+# Auto Claude data directory
+.auto-claude/
