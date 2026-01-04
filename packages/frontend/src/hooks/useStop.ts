@@ -48,14 +48,10 @@ export function useStop(stopId: string | null): UseStopResult {
     };
   }, [stopId]);
 
-  // Return null immediately if stopId doesn't match cached data
-  // This prevents flash when navigating away
   if (!stopId) {
     return { stop: null, loading: false, error: null };
   }
 
-  // Return cached stop only if it matches current stopId
   const stop = data?.stopId === stopId ? data.stop : null;
-
   return { stop, loading, error };
 }

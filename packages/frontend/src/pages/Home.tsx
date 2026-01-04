@@ -38,8 +38,8 @@ export function Home() {
   const isToday = format(new Date(), 'yyyy-MM-dd') === dateString;
 
   // Fetch stop data based on URL params
-  const { stop: fromStop, loading: fromLoading } = useStop(fromId);
-  const { stop: toStop, loading: toLoading } = useStop(toId);
+  const { stop: fromStop } = useStop(fromId);
+  const { stop: toStop } = useStop(toId);
 
   // Trip-specific state (when both from and to are set)
   const [trips, setTrips] = useState<DirectTrip[]>([]);
@@ -151,10 +151,8 @@ export function Home() {
     });
   };
 
-  const hasFrom = !!fromStop;
-  const hasTo = !!toStop;
-  const showTrips = hasFrom && hasTo;
-  const showDepartures = hasFrom && !hasTo;
+  const showTrips = !!fromId && !!toId;
+  const showDepartures = !!fromId && !toId;
   const showEmpty = !fromId;
 
   return (
@@ -171,13 +169,13 @@ export function Home() {
         {/* Title */}
         <div className={`text-center mb-8 max-w-2xl ${showEmpty ? 'animate-fade-in-up' : ''}`}>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {showEmpty ? 'Where are you traveling?' : (fromStop?.stop_name || 'Loading...')}
+            {showEmpty ? 'Where are you traveling?' : (fromStop?.stop_name || '\u00A0')}
           </h1>
           <p className="text-lg text-muted-foreground">
             {showEmpty
               ? 'Search for any Metra station to see departures'
               : showTrips
-                ? `to ${toStop?.stop_name}`
+                ? (toStop?.stop_name ? `to ${toStop.stop_name}` : '\u00A0')
                 : `${isToday ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}'s departures`
             }
           </p>
@@ -188,7 +186,7 @@ export function Home() {
           <StationCommand
             onSelectStation={handleSelectFrom}
             selectedStation={fromStop}
-            placeholder={hasFrom ? 'Change station...' : 'From...'}
+            placeholder={fromId ? 'Change station...' : 'From...'}
             label="From"
           />
           <StationCommand
@@ -220,7 +218,7 @@ export function Home() {
       </div>
 
       {/* Results panel - Departures mode */}
-      {showDepartures && fromStop && (
+      {showDepartures && fromId && (
         <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="space-y-4">
@@ -241,11 +239,11 @@ export function Home() {
               </div>
               <LineFilter
                 onFilterChange={handleRouteFilterChange}
-                stopId={fromStop.stop_id}
+                stopId={fromId}
                 date={dateString}
               />
               <DepartureBoard
-                stopId={fromStop.stop_id}
+                stopId={fromId}
                 routeFilter={routeParam || undefined}
                 date={dateString}
               />
@@ -255,7 +253,7 @@ export function Home() {
       )}
 
       {/* Results panel - Trips mode */}
-      {showTrips && fromStop && toStop && (
+      {showTrips && (
         <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="space-y-4">
@@ -291,7 +289,7 @@ export function Home() {
                 <div className="p-6 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                   <h3 className="font-semibold mb-2">No Direct Trains Found</h3>
                   <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    There are no direct trains between {fromStop.stop_name} and {toStop.stop_name}.
+                    There are no direct trains between these stations.
                     You may need to transfer at a connection point.
                   </p>
                 </div>
