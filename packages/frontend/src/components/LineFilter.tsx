@@ -42,10 +42,10 @@ export function LineFilter({ onFilterChange, stopId, date }: LineFilterProps) {
     onFilterChange(routeId);
   };
 
-  // Reset filter when routes change
+  // Reset filter when stop/date changes
   useEffect(() => {
     setSelectedRoute(undefined);
-    onFilterChange(undefined);
+    // Don't call onFilterChange here - let the parent handle route param
   }, [stopId, date]);
 
   if (routes.length === 0) {
