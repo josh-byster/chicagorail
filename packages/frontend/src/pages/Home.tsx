@@ -6,12 +6,13 @@ import { DepartureBoard } from '../components/DepartureBoard';
 import { LineFilter } from '../components/LineFilter';
 import { DatePicker } from '../components/DatePicker';
 import { ChicagoSkyline } from '../components/ChicagoSkyline';
+import { TripCard } from '../components/TripCard';
+import { RouteFilterButtons } from '../components/RouteFilterButtons';
 import { Button } from '../components/ui/button';
 import { useRecentStops } from '../hooks/useRecent';
 import { useStop } from '../hooks/useStop';
 import { useDirectTrips } from '../hooks/useTrips';
 import type { Stop } from '@chicagorail/shared';
-import { utils } from '@chicagorail/shared';
 
 export function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -264,62 +265,22 @@ export function Home() {
 
               {trips.length > 0 && !tripsLoading && (
                 <>
-                  {/* Route filter buttons */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <button
-                      className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
-                        !routeParam
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary hover:bg-secondary/80'
-                      }`}
-                      onClick={() => handleRouteFilterChange(undefined)}
-                    >
-                      All Lines
-                    </button>
-                    {tripRoutes.map((route) => {
-                      const isSelected = routeParam === route.route_id;
-                      return (
-                        <button
-                          key={route.route_id}
-                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all ${
-                            isSelected ? 'ring-2 ring-offset-2 ring-primary' : 'opacity-80 hover:opacity-100'
-                          }`}
-                          style={{
-                            backgroundColor: `#${route.route_color}`,
-                            color: `#${route.route_text_color || 'FFFFFF'}`,
-                          }}
-                          onClick={() => handleRouteFilterChange(route.route_id)}
-                        >
-                          {route.route_short_name}
-                        </button>
-                      );
-                    })}
-                    {filteredTrips[0]?.duration_minutes && (
-                      <span className="text-sm text-muted-foreground self-center ml-2">
-                        ~{filteredTrips[0].duration_minutes} min
-                      </span>
-                    )}
-                  </div>
+                  <RouteFilterButtons
+                    routes={tripRoutes}
+                    selectedRoute={routeParam || undefined}
+                    onFilterChange={handleRouteFilterChange}
+                    suffix={
+                      filteredTrips[0]?.duration_minutes && (
+                        <span className="text-sm text-muted-foreground self-center ml-2">
+                          ~{filteredTrips[0].duration_minutes} min
+                        </span>
+                      )
+                    }
+                  />
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {filteredTrips.map((trip, index) => (
-                      <div
-                        key={`${trip.trip_id}-${index}`}
-                        className="border rounded-lg px-3 py-2.5 hover:bg-accent transition-colors bg-background/50"
-                      >
-                        <div className="flex items-center gap-1.5 justify-center mb-0.5">
-                          <div
-                            className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: `#${trip.route.route_color}` }}
-                          />
-                          <span className="font-semibold text-lg tabular-nums">
-                            {utils.formatTime(trip.origin_departure)}
-                          </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground text-center">
-                          arr. {utils.formatTime(trip.destination_arrival)}
-                        </div>
-                      </div>
+                      <TripCard key={`${trip.trip_id}-${index}`} trip={trip} />
                     ))}
                   </div>
                 </>
