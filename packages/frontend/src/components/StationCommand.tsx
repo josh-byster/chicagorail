@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { useStationSearch } from '../hooks/useStations';
 import { useRecentStops } from '../hooks/useRecent';
@@ -27,73 +27,62 @@ export function StationCommand({
   label,
   variant = 'default'
 }: StationCommandProps) {
-  const [inputValue, setInputValue] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
+  // isSearching: true when user is actively typing/searching
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { stops, loading } = useStationSearch(inputValue);
+  const { stops, loading } = useStationSearch(searchQuery);
   const { recentStops, addRecentStop } = useRecentStops();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        // Reset input to selected station name when closing
-        if (selectedStation) {
-          setInputValue(selectedStation.stop_name);
-        }
-      }
-    };
+  // Derive display value: show search query when searching, otherwise show selected station
+  const displayValue = isSearching ? searchQuery : (selectedStation?.stop_name ?? '');
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [selectedStation]);
+  const closeDropdown = useCallback(() => {
+    setIsSearching(false);
+    setSearchQuery('');
+  }, []);
 
-  // Update input value when selected station changes externally
-  useEffect(() => {
-    if (selectedStation) {
-      setInputValue(selectedStation.stop_name);
-      setIsOpen(false);
-    } else {
-      setInputValue('');
-    }
-  }, [selectedStation]);
-
-  const handleSelect = (stop: Stop) => {
+  const handleSelect = useCallback((stop: Stop) => {
     addRecentStop(stop);
     onSelectStation(stop);
-    setInputValue(stop.stop_name);
-    setIsOpen(false);
-  };
+    closeDropdown();
+  }, [addRecentStop, onSelectStation, closeDropdown]);
 
-  const handleInputChange = (value: string) => {
-    setInputValue(value);
-    setIsOpen(true);
-  };
+  const handleInputChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setIsSearching(true);
+  }, []);
 
-  const handleInputFocus = () => {
-    setIsOpen(true);
-    // Clear input when focusing to search, but don't clear the station yet
-    if (selectedStation) {
-      setInputValue('');
-    }
-  };
+  const handleInputFocus = useCallback(() => {
+    setIsSearching(true);
+    setSearchQuery('');
+  }, []);
 
-  const handleClear = (e: React.MouseEvent) => {
+  const handleClear = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setInputValue('');
     onSelectStation(null);
-    setIsOpen(false);
-  };
+    closeDropdown();
+  }, [onSelectStation, closeDropdown]);
 
-  const showSearchResults = inputValue.length >= 2;
-  const showRecent = !showSearchResults && recentStops.length > 0 && isOpen;
-  const showDropdown = isOpen && (showSearchResults || showRecent);
+  const handleBlur = useCallback((e: React.FocusEvent) => {
+    // Only close if focus moved outside container
+    if (containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+      closeDropdown();
+    }
+  }, [closeDropdown]);
+
+  const showSearchResults = searchQuery.length >= 2;
+  const showRecent = !showSearchResults && recentStops.length > 0 && isSearching;
+  const showDropdown = isSearching && (showSearchResults || showRecent);
 
   const isSecondary = variant === 'secondary';
 
   return (
-    <div className={`relative ${showDropdown ? 'z-50' : ''}`} ref={containerRef}>
+    <div
+      className={`relative ${showDropdown ? 'z-50' : ''}`}
+      ref={containerRef}
+      onBlur={handleBlur}
+    >
       {label && (
         <label className={`block text-sm font-medium mb-1.5 ${isSecondary ? 'text-muted-foreground' : ''}`}>
           {label}
@@ -103,12 +92,12 @@ export function StationCommand({
         <div className="relative">
           <CommandInput
             placeholder={placeholder}
-            value={inputValue}
+            value={displayValue}
             onValueChange={handleInputChange}
             onFocus={handleInputFocus}
             className={isSecondary ? 'text-muted-foreground' : ''}
           />
-          {selectedStation && !isOpen && (
+          {selectedStation && !isSearching && (
             <button
               onClick={handleClear}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-accent transition-colors"
