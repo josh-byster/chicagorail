@@ -1,4 +1,11 @@
-import { useRoutesFromDepartures } from '../hooks/useRoutes';
+/**
+ * Line filter component
+ *
+ * Shows route filter buttons based on available routes at a station.
+ * Reads route data from the departures cache to avoid redundant API calls.
+ */
+
+import { useRoutesFromDepartures } from '@/hooks/useRoutes';
 import { RouteFilterButtons } from './RouteFilterButtons';
 
 interface LineFilterProps {
@@ -9,17 +16,13 @@ interface LineFilterProps {
 }
 
 export function LineFilter({ selectedRoute, onFilterChange, stopId, date }: LineFilterProps) {
-  const { routes, loading } = useRoutesFromDepartures(stopId ?? null, date);
+  const { data: routes, isLoading } = useRoutesFromDepartures(stopId ?? null, date);
 
-  if (loading || routes.length === 0) {
+  if (isLoading || routes.length === 0) {
     return null;
   }
 
   return (
-    <RouteFilterButtons
-      routes={routes}
-      selectedRoute={selectedRoute}
-      onFilterChange={onFilterChange}
-    />
+    <RouteFilterButtons routes={routes} selectedRoute={selectedRoute} onFilterChange={onFilterChange} />
   );
 }

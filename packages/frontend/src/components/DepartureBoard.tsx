@@ -1,4 +1,11 @@
-import { useDepartures } from '../hooks/useDepartures';
+/**
+ * Departure board component
+ *
+ * Displays a grid of upcoming departures from a station.
+ * Uses auto-refresh to keep departures current.
+ */
+
+import { useDepartures } from '@/hooks/useDepartures';
 import { TimeCard } from './TimeCard';
 
 interface DepartureBoardProps {
@@ -8,7 +15,10 @@ interface DepartureBoardProps {
 }
 
 export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProps) {
-  const { departures, loading } = useDepartures(stopId, routeFilter, date);
+  const {
+    data: { departures },
+    isLoading,
+  } = useDepartures(stopId, { routeId: routeFilter, date });
 
   if (!stopId) {
     return (
@@ -18,9 +28,9 @@ export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProp
     );
   }
 
-  if (loading && !departures.length) {
+  if (isLoading && departures.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12" role="status" aria-label="Loading departures">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
       </div>
     );
@@ -35,7 +45,11 @@ export function DepartureBoard({ stopId, routeFilter, date }: DepartureBoardProp
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+    <div
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"
+      role="list"
+      aria-label="Departure times"
+    >
       {departures.map((departure) => (
         <TimeCard
           key={`${departure.trip_id}-${departure.departure_time}`}

@@ -1,45 +1,85 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
-import type { Route } from '@chicagorail/shared';
-import { useMemo } from 'react';
+/**
+ * Hooks for fetching route data
+ *
+ * Provides two hooks:
+ * - useRoutes: Fetch all Metra routes
+ * - useRoutesFromDepartures: Extract routes from cached departures data
+ */
 
-export function useRoutes() {
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { api } from '@/lib/api';
+import { queryKeys, getErrorMessage } from '@/shared/lib';
+import { QUERY_CONFIG } from '@/config';
+import type { Route, GetDeparturesResponse } from '@chicagorail/shared';
+
+export interface UseRoutesResult {
+  data: Route[];
+  isLoading: boolean;
+  isError: boolean;
+  error: string | null;
+}
+
+/**
+ * Fetch all Metra routes
+ *
+ * Routes rarely change, so we cache aggressively.
+ */
+export function useRoutes(): UseRoutesResult {
   const query = useQuery({
-    queryKey: ['routes'],
+    queryKey: queryKeys.routes.list(),
     queryFn: () => api.getRoutes(),
-    staleTime: 300000, // Routes rarely change, cache for 5 minutes
+    staleTime: QUERY_CONFIG.staleTime.routes,
   });
 
   return {
-    routes: query.data?.routes ?? [],
-    loading: query.isLoading,
-    error: query.error?.message ?? null,
+    data: query.data?.routes ?? [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error ? getErrorMessage(query.error) : null,
   };
 }
 
-// Extract unique routes from departures data (for filtering by what's available at a stop)
-export function useRoutesFromDepartures(stopId: string | null, date?: string) {
-  const query = useQuery({
-    queryKey: ['departures', stopId, undefined, date],
-    queryFn: () => api.getDepartures(stopId!, undefined, date),
-    enabled: !!stopId,
-    staleTime: 30000,
-  });
+/**
+ * Extract unique routes from existing departures cache
+ *
+ * This avoids a redundant API call by reading from the departures
+ * data that's already been fetched. Falls back to loading state
+ * if departures haven't been fetched yet.
+ *
+ * @param stopId - Station ID to get routes for
+ * @param date - Optional date to match cached query
+ */
+export function useRoutesFromDepartures(
+  stopId: string | null,
+  date?: string
+): UseRoutesResult {
+  const queryClient = useQueryClient();
+
+  // Read from the departures cache instead of making a new request
+  const cachedData = stopId
+    ? queryClient.getQueryData<GetDeparturesResponse>(
+        queryKeys.departures.byStop(stopId, { date })
+      )
+    : null;
 
   const routes = useMemo(() => {
-    if (!query.data?.departures) return [];
+    if (!cachedData?.departures) return [];
+
     const uniqueRoutes = new Map<string, Route>();
-    query.data.departures.forEach(dep => {
+    cachedData.departures.forEach((dep) => {
       if (!uniqueRoutes.has(dep.route.route_id)) {
         uniqueRoutes.set(dep.route.route_id, dep.route);
       }
     });
+
     return Array.from(uniqueRoutes.values());
-  }, [query.data?.departures]);
+  }, [cachedData?.departures]);
 
   return {
-    routes,
-    loading: query.isLoading,
-    error: query.error?.message ?? null,
+    data: routes,
+    isLoading: !cachedData && !!stopId,
+    isError: false,
+    error: null,
   };
 }

@@ -1,20 +1,31 @@
+/**
+ * Home page - Main unified search interface
+ *
+ * Uses URL as the source of truth for all state:
+ * - from: Origin station ID
+ * - to: Destination station ID
+ * - date: Selected date (YYYY-MM-DD)
+ * - route: Route filter
+ */
+
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format, parse } from 'date-fns';
-import { StationCommand } from '../components/StationCommand';
-import { DepartureBoard } from '../components/DepartureBoard';
-import { LineFilter } from '../components/LineFilter';
-import { DateControls } from '../components/DateControls';
-import { ChicagoSkyline } from '../components/ChicagoSkyline';
-import { TripsResults } from '../components/TripsResults';
-import { useRecentStops } from '../hooks/useRecent';
-import { useStop } from '../hooks/useStop';
-import { useDirectTrips } from '../hooks/useTrips';
+import { StationCommand } from '@/components/StationCommand';
+import { DepartureBoard } from '@/components/DepartureBoard';
+import { LineFilter } from '@/components/LineFilter';
+import { DateControls } from '@/components/DateControls';
+import { ChicagoSkyline } from '@/components/ChicagoSkyline';
+import { TripsResults } from '@/components/TripsResults';
+import { useRecentStops } from '@/hooks/useRecent';
+import { useStop } from '@/hooks/useStop';
+import { useDirectTrips } from '@/hooks/useTrips';
+import { APP_CONFIG } from '@/config';
 import type { Stop } from '@chicagorail/shared';
 
 export function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { recentStops, addRecentStop } = useRecentStops();
+  const { data: recentStops, addRecentStop } = useRecentStops();
 
   // URL is the source of truth
   const fromId = searchParams.get('from');
@@ -26,7 +37,7 @@ export function Home() {
   const selectedDate = useMemo(() => {
     if (dateParam) {
       try {
-        return parse(dateParam, 'yyyy-MM-dd', new Date());
+        return parse(dateParam, APP_CONFIG.dateFormats.url, new Date());
       } catch {
         return new Date();
       }
@@ -34,71 +45,96 @@ export function Home() {
     return new Date();
   }, [dateParam]);
 
-  const dateString = format(selectedDate, 'yyyy-MM-dd');
-  const isToday = format(new Date(), 'yyyy-MM-dd') === dateString;
+  const dateString = format(selectedDate, APP_CONFIG.dateFormats.url);
+  const isToday = format(new Date(), APP_CONFIG.dateFormats.url) === dateString;
 
   // Fetch stop data based on URL params
-  const { stop: fromStop } = useStop(fromId);
-  const { stop: toStop } = useStop(toId);
+  const { data: fromStop } = useStop(fromId);
+  const { data: toStop } = useStop(toId);
 
-  // Fetch trips when both from and to are selected (via React Query)
-  const { trips, loading: tripsLoading, error: tripsError } = useDirectTrips(fromId, toId, dateString);
+  // Fetch trips when both from and to are selected
+  const {
+    data: trips,
+    isLoading: tripsLoading,
+    error: tripsError,
+  } = useDirectTrips(fromId, toId, dateString);
 
   // URL update helper - uses functional update to avoid searchParams dependency
-  const updateUrl = useCallback((updates: {
-    from?: string | null;
-    to?: string | null;
-    date?: string | null;
-    route?: string | null;
-  }, replace = false) => {
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
+  const updateUrl = useCallback(
+    (
+      updates: {
+        from?: string | null;
+        to?: string | null;
+        date?: string | null;
+        route?: string | null;
+      },
+      replace = false
+    ) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null) {
-          params.delete(key);
-        } else if (value !== undefined) {
-          params.set(key, value);
-        }
-      });
+          Object.entries(updates).forEach(([key, value]) => {
+            if (value === null) {
+              params.delete(key);
+            } else if (value !== undefined) {
+              params.set(key, value);
+            }
+          });
 
-      // Remove date if it's today
-      const dateVal = params.get('date');
-      if (dateVal === format(new Date(), 'yyyy-MM-dd')) {
-        params.delete('date');
+          // Remove date if it's today (cleaner URLs)
+          const dateVal = params.get('date');
+          if (dateVal === format(new Date(), APP_CONFIG.dateFormats.url)) {
+            params.delete('date');
+          }
+
+          return params;
+        },
+        { replace }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const handleSelectFrom = useCallback(
+    (stop: Stop | null) => {
+      if (stop) {
+        addRecentStop(stop);
+        updateUrl({ from: stop.stop_id, route: null });
+      } else {
+        updateUrl({ from: null, route: null });
       }
+    },
+    [updateUrl, addRecentStop]
+  );
 
-      return params;
-    }, { replace });
-  }, [setSearchParams]);
+  const handleSelectTo = useCallback(
+    (stop: Stop | null) => {
+      if (stop) {
+        addRecentStop(stop);
+        updateUrl({ to: stop.stop_id, route: null });
+      } else {
+        updateUrl({ to: null, route: null });
+      }
+    },
+    [updateUrl, addRecentStop]
+  );
 
-  const handleSelectFrom = useCallback((stop: Stop | null) => {
-    if (stop) {
-      addRecentStop(stop);
-      updateUrl({ from: stop.stop_id, route: null });
-    } else {
-      updateUrl({ from: null, route: null });
-    }
-  }, [updateUrl, addRecentStop]);
+  const handleRouteFilterChange = useCallback(
+    (route: string | undefined) => {
+      updateUrl({ route: route || null }, true);
+    },
+    [updateUrl]
+  );
 
-  const handleSelectTo = useCallback((stop: Stop | null) => {
-    if (stop) {
-      addRecentStop(stop);
-      updateUrl({ to: stop.stop_id, route: null });
-    } else {
-      updateUrl({ to: null, route: null });
-    }
-  }, [updateUrl, addRecentStop]);
-
-  const handleRouteFilterChange = useCallback((route: string | undefined) => {
-    updateUrl({ route: route || null }, true);
-  }, [updateUrl]);
-
-  const handleDateChange = useCallback((date: Date | undefined) => {
-    if (date) {
-      updateUrl({ date: format(date, 'yyyy-MM-dd') }, true);
-    }
-  }, [updateUrl]);
+  const handleDateChange = useCallback(
+    (date: Date | undefined) => {
+      if (date) {
+        updateUrl({ date: format(date, APP_CONFIG.dateFormats.url) }, true);
+      }
+    },
+    [updateUrl]
+  );
 
   const showTrips = !!fromId && !!toId;
   const showDepartures = !!fromId && !toId;
@@ -107,12 +143,12 @@ export function Home() {
   // Filter trips by route if selected
   const filteredTrips = useMemo(() => {
     if (!routeParam) return trips;
-    return trips.filter(t => t.route.route_id === routeParam);
+    return trips.filter((t) => t.route.route_id === routeParam);
   }, [trips, routeParam]);
 
   // Get unique routes from trips for the filter
   const tripRoutes = useMemo(() => {
-    return Array.from(new Map(trips.map(t => [t.route.route_id, t.route])).values());
+    return Array.from(new Map(trips.map((t) => [t.route.route_id, t.route])).values());
   }, [trips]);
 
   return (
@@ -123,26 +159,31 @@ export function Home() {
       </div>
 
       {/* Hero section */}
-      <div className={`flex flex-col items-center pt-24 pb-8 px-4 transition-all duration-500 ${
-        fromId ? 'pt-12 pb-4' : ''
-      }`}>
+      <div
+        className={`flex flex-col items-center pt-24 pb-8 px-4 transition-all duration-500 ${
+          fromId ? 'pt-12 pb-4' : ''
+        }`}
+      >
         {/* Title */}
         <div className={`text-center mb-8 max-w-2xl ${showEmpty ? 'animate-fade-in-up' : ''}`}>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {showEmpty ? 'Where are you traveling?' : (fromStop?.stop_name || '\u00A0')}
+            {showEmpty ? 'Where are you traveling?' : fromStop?.stop_name || '\u00A0'}
           </h1>
           <p className="text-lg text-muted-foreground">
             {showEmpty
               ? 'Search for any Metra station to see departures'
               : showTrips
-                ? (toStop?.stop_name ? `to ${toStop.stop_name}` : '\u00A0')
-                : `${isToday ? 'Today' : format(selectedDate, 'EEEE, MMMM d')}'s departures`
-            }
+                ? toStop?.stop_name
+                  ? `to ${toStop.stop_name}`
+                  : '\u00A0'
+                : `${isToday ? 'Today' : format(selectedDate, APP_CONFIG.dateFormats.display)}'s departures`}
           </p>
         </div>
 
         {/* Search inputs */}
-        <div className={`w-full max-w-xl space-y-3 relative z-20 ${showEmpty ? 'animate-fade-in-up animation-delay-150' : ''}`}>
+        <div
+          className={`w-full max-w-xl space-y-3 relative z-20 ${showEmpty ? 'animate-fade-in-up animation-delay-150' : ''}`}
+        >
           <StationCommand
             onSelectStation={handleSelectFrom}
             selectedStation={fromStop}
@@ -160,7 +201,7 @@ export function Home() {
 
         {/* Recent stations - only in empty state */}
         {showEmpty && recentStops.length > 0 && (
-          <div className={`w-full max-w-xl mt-8 relative z-10 animate-fade-in animation-delay-300`}>
+          <div className="w-full max-w-xl mt-8 relative z-10 animate-fade-in animation-delay-300">
             <p className="text-sm font-medium text-muted-foreground mb-3">Recent</p>
             <div className="flex flex-wrap gap-2">
               {recentStops.map((stop) => (
@@ -193,11 +234,7 @@ export function Home() {
                 stopId={fromId}
                 date={dateString}
               />
-              <DepartureBoard
-                stopId={fromId}
-                routeFilter={routeParam || undefined}
-                date={dateString}
-              />
+              <DepartureBoard stopId={fromId} routeFilter={routeParam || undefined} date={dateString} />
             </div>
           </div>
         </div>
@@ -217,7 +254,7 @@ export function Home() {
                 trips={trips}
                 filteredTrips={filteredTrips}
                 tripRoutes={tripRoutes}
-                loading={tripsLoading}
+                isLoading={tripsLoading}
                 error={tripsError}
                 selectedRoute={routeParam || undefined}
                 onRouteFilterChange={handleRouteFilterChange}

@@ -1,6 +1,12 @@
-import { useSystemInfo } from '../hooks/useSystemInfo';
+/**
+ * Footer component
+ *
+ * Displays data attribution and last update time.
+ */
 
-function formatLastUpdated(isoString: string) {
+import { useSystemInfo } from '@/hooks/useSystemInfo';
+
+function formatLastUpdated(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleString('en-US', {
     month: 'short',
@@ -8,12 +14,15 @@ function formatLastUpdated(isoString: string) {
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    timeZoneName: 'short'
+    timeZoneName: 'short',
   });
 }
 
 export function Footer() {
-  const { lastUpdated, error } = useSystemInfo();
+  const {
+    data: { lastUpdated },
+    error,
+  } = useSystemInfo();
 
   return (
     <footer className="mt-auto border-t bg-background relative z-10">
@@ -28,11 +37,12 @@ export function Footer() {
             ) : null}
           </p>
           <p>
-            Schedule data provided "AS IS" and may not be accurate, complete, or timely.
-            Always verify departure times with official Metra sources.
+            Schedule data provided "AS IS" and may not be accurate, complete, or timely. Always
+            verify departure times with official Metra sources.
           </p>
           <p>
-            Not affiliated with, sponsored by, or operated by Metra or the Regional Transportation Authority.
+            Not affiliated with, sponsored by, or operated by Metra or the Regional Transportation
+            Authority.
           </p>
         </div>
       </div>

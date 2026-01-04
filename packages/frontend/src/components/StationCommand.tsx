@@ -1,7 +1,17 @@
+/**
+ * Station search command palette
+ *
+ * Features:
+ * - Fuzzy search for stations
+ * - Recent searches display
+ * - Keyboard navigation via cmdk
+ */
+
 import { useState, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
-import { useStationSearch } from '../hooks/useStations';
-import { useRecentStops } from '../hooks/useRecent';
+import { useStationSearch } from '@/hooks/useStations';
+import { useRecentStops } from '@/hooks/useRecent';
+import { APP_CONFIG } from '@/config';
 import {
   Command,
   CommandEmpty,
@@ -9,7 +19,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from './ui/command';
+} from '@/components/ui/command';
 import type { Stop } from '@chicagorail/shared';
 
 interface StationCommandProps {
@@ -22,31 +32,34 @@ interface StationCommandProps {
 
 export function StationCommand({
   onSelectStation,
-  placeholder = "Search for a station...",
+  placeholder = 'Search for a station...',
   selectedStation,
   label,
-  variant = 'default'
+  variant = 'default',
 }: StationCommandProps) {
-  // isSearching: true when user is actively typing/searching
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { stops, loading, error } = useStationSearch(searchQuery);
-  const { recentStops, addRecentStop } = useRecentStops();
+
+  const { data: stops, isLoading, error } = useStationSearch(searchQuery);
+  const { data: recentStops, addRecentStop } = useRecentStops();
 
   // Derive display value: show search query when searching, otherwise show selected station
-  const displayValue = isSearching ? searchQuery : (selectedStation?.stop_name ?? '');
+  const displayValue = isSearching ? searchQuery : selectedStation?.stop_name ?? '';
 
   const closeDropdown = useCallback(() => {
     setIsSearching(false);
     setSearchQuery('');
   }, []);
 
-  const handleSelect = useCallback((stop: Stop) => {
-    addRecentStop(stop);
-    onSelectStation(stop);
-    closeDropdown();
-  }, [addRecentStop, onSelectStation, closeDropdown]);
+  const handleSelect = useCallback(
+    (stop: Stop) => {
+      addRecentStop(stop);
+      onSelectStation(stop);
+      closeDropdown();
+    },
+    [addRecentStop, onSelectStation, closeDropdown]
+  );
 
   const handleInputChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -58,20 +71,26 @@ export function StationCommand({
     setSearchQuery('');
   }, []);
 
-  const handleClear = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSelectStation(null);
-    closeDropdown();
-  }, [onSelectStation, closeDropdown]);
-
-  const handleBlur = useCallback((e: React.FocusEvent) => {
-    // Only close if focus moved outside container
-    if (containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+  const handleClear = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onSelectStation(null);
       closeDropdown();
-    }
-  }, [closeDropdown]);
+    },
+    [onSelectStation, closeDropdown]
+  );
 
-  const showSearchResults = searchQuery.length >= 2;
+  const handleBlur = useCallback(
+    (e: React.FocusEvent) => {
+      // Only close if focus moved outside container
+      if (containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+        closeDropdown();
+      }
+    },
+    [closeDropdown]
+  );
+
+  const showSearchResults = searchQuery.length >= APP_CONFIG.search.minQueryLength;
   const showRecent = !showSearchResults && recentStops.length > 0 && isSearching;
   const showDropdown = isSearching && (showSearchResults || showRecent);
 
@@ -84,11 +103,16 @@ export function StationCommand({
       onBlur={handleBlur}
     >
       {label && (
-        <label className={`block text-sm font-medium mb-1.5 ${isSecondary ? 'text-muted-foreground' : ''}`}>
+        <label
+          className={`block text-sm font-medium mb-1.5 ${isSecondary ? 'text-muted-foreground' : ''}`}
+        >
           {label}
         </label>
       )}
-      <Command className={`rounded-lg border overflow-visible ${isSecondary ? 'border-dashed' : 'shadow-md'}`} shouldFilter={false}>
+      <Command
+        className={`rounded-lg border overflow-visible ${isSecondary ? 'border-dashed' : 'shadow-md'}`}
+        shouldFilter={false}
+      >
         <div className="relative">
           <CommandInput
             placeholder={placeholder}
@@ -111,10 +135,8 @@ export function StationCommand({
           <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] rounded-lg border bg-popover shadow-lg">
             {showSearchResults && (
               <>
-                {loading ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    Searching...
-                  </div>
+                {isLoading ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
                 ) : error ? (
                   <div className="py-6 text-center text-sm text-red-600 dark:text-red-400">
                     Search failed. Please try again.
@@ -124,17 +146,11 @@ export function StationCommand({
                 ) : (
                   <CommandGroup heading="Stations">
                     {stops.map((stop) => (
-                      <CommandItem
-                        key={stop.stop_id}
-                        value={stop.stop_id}
-                        onSelect={() => handleSelect(stop)}
-                      >
+                      <CommandItem key={stop.stop_id} value={stop.stop_id} onSelect={() => handleSelect(stop)}>
                         <div className="flex flex-col">
                           <span className="font-medium">{stop.stop_name}</span>
                           {stop.stop_desc && (
-                            <span className="text-xs text-muted-foreground">
-                              {stop.stop_desc}
-                            </span>
+                            <span className="text-xs text-muted-foreground">{stop.stop_desc}</span>
                           )}
                         </div>
                       </CommandItem>
@@ -147,11 +163,7 @@ export function StationCommand({
             {showRecent && (
               <CommandGroup heading="Recent Searches">
                 {recentStops.map((stop) => (
-                  <CommandItem
-                    key={stop.stop_id}
-                    value={stop.stop_id}
-                    onSelect={() => handleSelect(stop)}
-                  >
+                  <CommandItem key={stop.stop_id} value={stop.stop_id} onSelect={() => handleSelect(stop)}>
                     <span className="font-medium">{stop.stop_name}</span>
                   </CommandItem>
                 ))}
