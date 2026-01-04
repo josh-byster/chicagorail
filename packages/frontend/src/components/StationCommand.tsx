@@ -31,7 +31,7 @@ export function StationCommand({
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { stops, loading } = useStationSearch(searchQuery);
+  const { stops, loading, error } = useStationSearch(searchQuery);
   const { recentStops, addRecentStop } = useRecentStops();
 
   // Derive display value: show search query when searching, otherwise show selected station
@@ -114,6 +114,10 @@ export function StationCommand({
                 {loading ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">
                     Searching...
+                  </div>
+                ) : error ? (
+                  <div className="py-6 text-center text-sm text-red-600 dark:text-red-400">
+                    Search failed. Please try again.
                   </div>
                 ) : stops.length === 0 ? (
                   <CommandEmpty>No stations found.</CommandEmpty>

@@ -4,11 +4,9 @@ import { format, parse } from 'date-fns';
 import { StationCommand } from '../components/StationCommand';
 import { DepartureBoard } from '../components/DepartureBoard';
 import { LineFilter } from '../components/LineFilter';
-import { DatePicker } from '../components/DatePicker';
+import { DateControls } from '../components/DateControls';
 import { ChicagoSkyline } from '../components/ChicagoSkyline';
-import { TripCard } from '../components/TripCard';
-import { RouteFilterButtons } from '../components/RouteFilterButtons';
-import { Button } from '../components/ui/button';
+import { TripsResults } from '../components/TripsResults';
 import { useRecentStops } from '../hooks/useRecent';
 import { useStop } from '../hooks/useStop';
 import { useDirectTrips } from '../hooks/useTrips';
@@ -102,11 +100,6 @@ export function Home() {
     }
   }, [updateUrl]);
 
-  const handleRecentClick = useCallback((stop: Stop) => {
-    addRecentStop(stop);
-    updateUrl({ from: stop.stop_id, route: null });
-  }, [updateUrl, addRecentStop]);
-
   const showTrips = !!fromId && !!toId;
   const showDepartures = !!fromId && !toId;
   const showEmpty = !fromId;
@@ -173,7 +166,7 @@ export function Home() {
               {recentStops.map((stop) => (
                 <button
                   key={stop.stop_id}
-                  onClick={() => handleRecentClick(stop)}
+                  onClick={() => handleSelectFrom(stop)}
                   className="px-4 py-2 rounded-full border bg-background hover:bg-muted transition-colors text-sm"
                 >
                   {stop.stop_name}
@@ -189,21 +182,11 @@ export function Home() {
         <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <DatePicker
-                  date={selectedDate}
-                  onDateChange={handleDateChange}
-                />
-                {!isToday && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDateChange(new Date())}
-                  >
-                    Today
-                  </Button>
-                )}
-              </div>
+              <DateControls
+                selectedDate={selectedDate}
+                isToday={isToday}
+                onDateChange={handleDateChange}
+              />
               <LineFilter
                 selectedRoute={routeParam || undefined}
                 onFilterChange={handleRouteFilterChange}
@@ -225,66 +208,20 @@ export function Home() {
         <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <DatePicker
-                  date={selectedDate}
-                  onDateChange={handleDateChange}
-                />
-                {!isToday && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDateChange(new Date())}
-                  >
-                    Today
-                  </Button>
-                )}
-              </div>
-
-              {tripsLoading && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Finding trains...</p>
-                </div>
-              )}
-
-              {tripsError && (
-                <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-sm text-red-800 dark:text-red-200">{tripsError}</p>
-                </div>
-              )}
-
-              {!tripsLoading && trips.length === 0 && !tripsError && (
-                <div className="p-6 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                  <h3 className="font-semibold mb-2">No Direct Trains Found</h3>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    There are no direct trains between these stations.
-                    You may need to transfer at a connection point.
-                  </p>
-                </div>
-              )}
-
-              {trips.length > 0 && !tripsLoading && (
-                <>
-                  <RouteFilterButtons
-                    routes={tripRoutes}
-                    selectedRoute={routeParam || undefined}
-                    onFilterChange={handleRouteFilterChange}
-                    suffix={
-                      filteredTrips[0]?.duration_minutes && (
-                        <span className="text-sm text-muted-foreground self-center ml-2">
-                          ~{filteredTrips[0].duration_minutes} min
-                        </span>
-                      )
-                    }
-                  />
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {filteredTrips.map((trip, index) => (
-                      <TripCard key={`${trip.trip_id}-${index}`} trip={trip} />
-                    ))}
-                  </div>
-                </>
-              )}
+              <DateControls
+                selectedDate={selectedDate}
+                isToday={isToday}
+                onDateChange={handleDateChange}
+              />
+              <TripsResults
+                trips={trips}
+                filteredTrips={filteredTrips}
+                tripRoutes={tripRoutes}
+                loading={tripsLoading}
+                error={tripsError}
+                selectedRoute={routeParam || undefined}
+                onRouteFilterChange={handleRouteFilterChange}
+              />
             </div>
           </div>
         </div>

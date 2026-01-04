@@ -1,33 +1,19 @@
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { useSystemInfo } from '../hooks/useSystemInfo';
+
+function formatLastUpdated(isoString: string) {
+  const date = new Date(isoString);
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+}
 
 export function Footer() {
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchSystemInfo = async () => {
-      try {
-        const data = await api.getSystemInfo();
-        setLastUpdated(data.lastUpdated);
-      } catch (error) {
-        console.error('Failed to fetch system info:', error);
-      }
-    };
-
-    fetchSystemInfo();
-  }, []);
-
-  const formatLastUpdated = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    });
-  };
+  const { lastUpdated, error } = useSystemInfo();
 
   return (
     <footer className="mt-auto border-t bg-background relative z-10">
@@ -35,9 +21,11 @@ export function Footer() {
         <div className="text-center text-xs text-muted-foreground space-y-2">
           <p>
             Data obtained from Metra GTFS schedule
-            {lastUpdated && (
+            {error ? (
+              <span className="text-red-600 dark:text-red-400"> • Unable to load update time</span>
+            ) : lastUpdated ? (
               <span> • Last updated: {formatLastUpdated(lastUpdated)}</span>
-            )}
+            ) : null}
           </p>
           <p>
             Schedule data provided "AS IS" and may not be accurate, complete, or timely.
