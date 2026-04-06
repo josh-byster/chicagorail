@@ -20,6 +20,7 @@ import { TripsResults } from '@/components/TripsResults';
 import { useRecentStops } from '@/hooks/useRecent';
 import { useStop } from '@/hooks/useStop';
 import { useDirectTrips } from '@/hooks/useTrips';
+import { useSEO } from '@/hooks/useSEO';
 import { APP_CONFIG } from '@/config';
 import type { Stop } from '@chicagorail/shared';
 
@@ -138,6 +139,25 @@ export function Home() {
   const showDepartures = !!fromId && !toId;
   const showEmpty = !fromId;
 
+  // Dynamic SEO based on current view
+  useSEO(
+    useMemo(() => {
+      if (showTrips && fromStop && toStop) {
+        return {
+          title: `${fromStop.stop_name} to ${toStop.stop_name} - Metra Schedule`,
+          description: `View Metra train schedule from ${fromStop.stop_name} to ${toStop.stop_name}. Find departure times, travel duration, and plan your Chicago commuter train trip.`,
+        };
+      }
+      if (showDepartures && fromStop) {
+        return {
+          title: `${fromStop.stop_name} Departures - Metra Schedule`,
+          description: `Real-time Metra departures from ${fromStop.stop_name} station. View upcoming trains, schedules, and track your Chicago commuter rail connection.`,
+        };
+      }
+      return {};
+    }, [showTrips, showDepartures, fromStop, toStop])
+  );
+
   // Filter trips by route if selected
   const filteredTrips = useMemo(() => {
     if (!routeParam) return trips;
@@ -218,7 +238,7 @@ export function Home() {
 
       {/* Results panel - Departures mode */}
       {showDepartures && fromId && (
-        <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
+        <section className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]" aria-label={`Departures from ${fromStop?.stop_name || 'station'}`}>
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="space-y-4">
               <DateControls
@@ -235,12 +255,12 @@ export function Home() {
               <DepartureBoard stopId={fromId} routeFilter={routeParam || undefined} date={dateString} />
             </div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* Results panel - Trips mode */}
       {showTrips && (
-        <div className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]">
+        <section className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]" aria-label={`Trips from ${fromStop?.stop_name || 'origin'} to ${toStop?.stop_name || 'destination'}`}>
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="space-y-4">
               <DateControls
@@ -259,7 +279,7 @@ export function Home() {
               />
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

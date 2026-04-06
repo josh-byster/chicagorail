@@ -1,0 +1,17 @@
+{
+  "name": "Chicago Rail - Metra Train Tracker",
+  "short_name": "Chicago Rail",
+  "description": "Track Metra train departures and arrivals in real-time. View schedules, plan trips, and never miss your Chicago commuter train.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5BC2E7",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

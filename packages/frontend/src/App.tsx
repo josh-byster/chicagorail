@@ -40,15 +40,17 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          {/* Redirects from old routes for backwards compatibility */}
-          <Route path="/departures" element={<DeparturesRedirect />} />
-          <Route path="/trip-planner" element={<TripPlannerRedirect />} />
-          <Route path="/arrivals" element={<Navigate to="/" replace />} />
-          {/* Catch-all redirect to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <main id="main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            {/* Redirects from old routes for backwards compatibility */}
+            <Route path="/departures" element={<DeparturesRedirect />} />
+            <Route path="/trip-planner" element={<TripPlannerRedirect />} />
+            <Route path="/arrivals" element={<Navigate to="/" replace />} />
+            {/* Catch-all redirect to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
         <Footer />
       </div>
     </BrowserRouter>
