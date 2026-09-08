@@ -482,4 +482,47 @@ describe('GTFSService', () => {
       });
     });
   });
+  describe('findDirectTrips date handling', () => {
+    // A weekday evening: most of the day's trains have already gone
+    const EVENING = new Date(2026, 5, 10, 22, 0, 0); // Wed 10 Jun 2026, 22:00 local
+    const FUTURE_WEEKDAY = new Date(2026, 5, 12, 2, 0, 0); // Fri 12 Jun 2026
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('returns the whole day for a future date, not just trains later than right now', async () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(EVENING);
+
+      const result = await gtfsService.findDirectTrips('CUS', 'NAPERVILLE', FUTURE_WEEKDAY, 100);
+
+      expect(result.trips.length).toBeGreaterThan(0);
+
+      // The morning trains matter most: they are the ones a "later than now"
+      // filter would wrongly drop when you are looking at a future date.
+      const morningTrips = result.trips.filter(
+        (trip) => new Date(trip.origin_departure).getHours() < 12
+      );
+      expect(morningTrips.length).toBeGreaterThan(0);
+
+      // And everything returned belongs to the day that was asked for, allowing
+      // for after-midnight service, which GTFS expresses as 24:00 and later
+      result.trips.forEach((trip) => {
+        const day = new Date(trip.origin_departure).getDate();
+        expect([FUTURE_WEEKDAY.getDate(), FUTURE_WEEKDAY.getDate() + 1]).toContain(day);
+      });
+    });
+
+    it('still hides trains that have already left when the date is today', async () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(EVENING);
+
+      const result = await gtfsService.findDirectTrips('CUS', 'NAPERVILLE', EVENING, 100);
+
+      result.trips.forEach((trip) => {
+        expect(new Date(trip.origin_departure).getTime()).toBeGreaterThan(EVENING.getTime());
+      });
+    });
+  });
 });

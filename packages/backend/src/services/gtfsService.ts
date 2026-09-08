@@ -522,6 +522,13 @@ export class GTFSService {
     }
 
     const now = new Date();
+
+    // On a future date the whole day is still ahead, so return all of it.
+    // Only today's results should hide trains that have already left.
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const queryDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const isFutureDate = queryDay > today;
+
     const trips: DirectTrip[] = [];
 
     // For each common route, find trips
@@ -550,8 +557,7 @@ export class GTFSService {
           const departureTime = this.gtfsTimeToISO(originStopTime.departure_time, date);
           const arrivalTime = this.gtfsTimeToISO(destStopTime.arrival_time, date);
 
-          // Only include future departures
-          if (new Date(departureTime) > now) {
+          if (isFutureDate || new Date(departureTime) > now) {
             const durationMs = new Date(arrivalTime).getTime() - new Date(departureTime).getTime();
             const durationMinutes = Math.round(durationMs / 60000);
 
