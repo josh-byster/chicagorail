@@ -1,9 +1,12 @@
 import { Router, type Router as RouterType } from 'express';
 import type { FindDirectTripsResponse, GetTripDetailsResponse } from '@chicagorail/shared';
 import { GTFSService } from '../services/gtfsService';
+import { RealtimeService } from '../services/realtimeService';
+import { enrichDirectTrips, enrichTripDetails } from '../services/realtimeEnrichment';
 
 const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
+const realtimeService = RealtimeService.getInstance();
 
 // GET /api/trips/direct?origin=STOP_ID&destination=STOP_ID&limit=10&date=YYYY-MM-DD
 router.get('/direct', async (req, res, next) => {
@@ -42,7 +45,17 @@ router.get('/direct', async (req, res, next) => {
       limitNum
     );
 
-    const response: FindDirectTripsResponse = result;
+    const snapshot = await realtimeService.getSnapshot();
+
+    const response: FindDirectTripsResponse = {
+      ...result,
+      trips: enrichDirectTrips(
+        result.trips,
+        origin as string,
+        destination as string,
+        snapshot
+      )
+    };
 
     res.json(response);
   } catch (error) {
@@ -68,7 +81,8 @@ router.get('/:tripId', async (req, res, next) => {
       return;
     }
 
-    const response: GetTripDetailsResponse = result;
+    const snapshot = await realtimeService.getSnapshot();
+    const response: GetTripDetailsResponse = enrichTripDetails(result, snapshot);
     res.json(response);
   } catch (error) {
     next(error);

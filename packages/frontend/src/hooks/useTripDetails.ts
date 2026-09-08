@@ -21,7 +21,9 @@ export function useTripDetails(tripId: string | null, date?: string): UseTripDet
     queryKey: queryKeys.trips.details(tripId ?? '', date),
     queryFn: () => api.getTripDetails(tripId!, date),
     enabled: !!tripId,
-    staleTime: QUERY_CONFIG.staleTime.trips,
+    // A running train's position and delay change while you watch
+    refetchInterval: QUERY_CONFIG.refetchInterval.departures,
+    staleTime: QUERY_CONFIG.staleTime.departures,
   });
 
   return {

@@ -19,9 +19,11 @@ function formatLastUpdated(isoString: string): string {
 
 export function Footer() {
   const {
-    data: { lastUpdated },
+    data: { lastUpdated, realtime },
     error,
   } = useSystemInfo();
+
+  const isLive = realtime.enabled && realtime.lastUpdated !== null;
 
   return (
     <footer className="mt-auto" role="contentinfo">
@@ -40,7 +42,9 @@ export function Footer() {
             ) : null}
           </p>
           <p>
-            Times are scheduled, not live &mdash; always verify with{' '}
+            {isLive
+              ? 'Live estimates from Metra’s realtime feed, where it reports one; scheduled times otherwise. Always verify with '
+              : 'Times are scheduled, not live — always verify with '}
             <a
               href="https://metra.com"
               target="_blank"

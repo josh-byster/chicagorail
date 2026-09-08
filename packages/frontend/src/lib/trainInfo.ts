@@ -3,6 +3,7 @@
  */
 
 import { utils } from '@chicagorail/shared';
+import type { RealtimePrediction } from '@chicagorail/shared';
 
 /**
  * Metra encodes the train number in the trip id's second segment,
@@ -36,6 +37,28 @@ export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+}
+
+/**
+ * How a realtime prediction should read, e.g. "On time" / "4 min late".
+ * Rounds to the nearest minute, since the feed's second-level precision is
+ * more than a rider needs.
+ */
+export function delayLabel(realtime: RealtimePrediction): string {
+  if (realtime.status === 'on_time') return 'On time';
+  const minutes = Math.max(1, Math.round(Math.abs(realtime.delay_seconds) / 60));
+  return `${minutes} min ${realtime.status === 'late' ? 'late' : 'early'}`;
+}
+
+/** Tailwind text colour for a realtime status */
+export function delayColor(realtime: RealtimePrediction): string {
+  if (realtime.status === 'late') return 'text-amber-500';
+  return 'text-emerald-500';
+}
+
+/** The time a rider should actually plan around */
+export function effectiveTime(scheduled: string, realtime?: RealtimePrediction): string {
+  return realtime?.predicted_time ?? scheduled;
 }
 
 export function secondsAgo(timestamp: number, now: number = Date.now()): number {

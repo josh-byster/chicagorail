@@ -1,5 +1,6 @@
 // API Request/Response Types
 import { Route, Stop, Departure, TripStop } from './gtfs';
+import { RealtimePrediction, RealtimeStatusInfo, VehiclePosition } from './realtime';
 
 // GET /api/routes
 export interface GetRoutesResponse {
@@ -43,6 +44,10 @@ export interface DirectTrip {
   origin_departure: string; // ISO datetime
   destination_arrival: string; // ISO datetime
   duration_minutes: number;
+  /** Departure from the origin, as actually running. Realtime feed only. */
+  realtime?: RealtimePrediction;
+  /** Arrival at the destination, as actually running. Realtime feed only. */
+  realtime_arrival?: RealtimePrediction;
 }
 
 export interface FindDirectTripsResponse {
@@ -54,6 +59,7 @@ export interface FindDirectTripsResponse {
 // GET /api/system
 export interface GetSystemInfoResponse {
   lastUpdated: string; // ISO datetime when GTFS data was last updated
+  realtime: RealtimeStatusInfo;
 }
 
 // GET /api/trips/:tripId
@@ -68,6 +74,8 @@ export interface GetTripDetailsResponse {
   trip_headsign: string;
   direction: 'inbound' | 'outbound';
   stops: TripStop[];
+  /** Where the train reported itself to be. Realtime feed only. */
+  vehicle?: VehiclePosition;
 }
 
 // Error response

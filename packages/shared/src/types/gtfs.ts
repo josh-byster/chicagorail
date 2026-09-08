@@ -1,4 +1,6 @@
 // GTFS Domain Types
+import { RealtimePrediction } from './realtime';
+
 export interface Route {
   route_id: string;
   route_short_name: string;
@@ -41,6 +43,8 @@ export interface Departure {
   arrival_time: string;
   direction: 'inbound' | 'outbound';
   trip_id: string;
+  /** Present only when the realtime feed has this trip */
+  realtime?: RealtimePrediction;
 }
 
 export interface TripStop {
@@ -48,4 +52,6 @@ export interface TripStop {
   arrival_time: string;
   departure_time: string;
   stop_sequence: number;
+  /** Present only when the realtime feed has this trip */
+  realtime?: RealtimePrediction;
 }

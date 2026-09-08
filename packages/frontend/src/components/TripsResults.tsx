@@ -12,7 +12,15 @@ import { utils } from '@chicagorail/shared';
 import { RouteFilterButtons } from './RouteFilterButtons';
 import { RouteBadge } from './RouteBadge';
 import { useSavedTrips } from '@/hooks/useSavedTrips';
-import { formatClock, formatDuration, relativeDeparture, trainNumber } from '@/lib/trainInfo';
+import {
+  delayColor,
+  delayLabel,
+  effectiveTime,
+  formatClock,
+  formatDuration,
+  relativeDeparture,
+  trainNumber,
+} from '@/lib/trainInfo';
 
 /** Backups are a fallback, not the answer — only a few earn a row up front */
 const BACKUPS_SHOWN = 5;
@@ -126,13 +134,22 @@ export function TripsResults({
                   className="grid w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3.5 border-t border-foreground/[.06] py-2.5 text-left transition-opacity hover:opacity-70"
                 >
                   <span className="text-base font-semibold tabular-nums">
-                    {utils.formatTime(trip.origin_departure)}
+                    {utils.formatTime(effectiveTime(trip.origin_departure, trip.realtime))}
                   </span>
                   <span className="text-[13.5px] tabular-nums text-ink-subtle">
-                    &rarr; {utils.formatTime(trip.destination_arrival)}
+                    &rarr;{' '}
+                    {utils.formatTime(
+                      effectiveTime(trip.destination_arrival, trip.realtime_arrival)
+                    )}
                   </span>
                   <span className="truncate text-[13px] text-muted-foreground">
-                    {formatDuration(trip.duration_minutes)}
+                    {trip.realtime ? (
+                      <span className={delayColor(trip.realtime)}>
+                        {delayLabel(trip.realtime)}
+                      </span>
+                    ) : (
+                      formatDuration(trip.duration_minutes)
+                    )}
                   </span>
                   <span className="text-xs tabular-nums text-muted-foreground">
                     {trainNumber(trip.trip_id) ? `#${trainNumber(trip.trip_id)}` : ''}
@@ -201,11 +218,22 @@ function NextTrainCard({ trip, fromStop, toStop, isToday, onTrack }: NextTrainCa
             Departs
           </span>
           <span className="text-[44px] font-bold leading-none tracking-[-0.04em] tabular-nums">
-            {formatClock(trip.origin_departure)}
+            {formatClock(effectiveTime(trip.origin_departure, trip.realtime))}
           </span>
           {isToday && (
             <span className="text-[12.5px] text-emerald-500">
-              {relativeDeparture(trip.origin_departure)}
+              {relativeDeparture(effectiveTime(trip.origin_departure, trip.realtime))}
+              {trip.realtime && (
+                <>
+                  {' · '}
+                  <span className={delayColor(trip.realtime)}>{delayLabel(trip.realtime)}</span>
+                </>
+              )}
+            </span>
+          )}
+          {trip.realtime && trip.realtime.status !== 'on_time' && (
+            <span className="text-[11.5px] tabular-nums text-muted-foreground line-through">
+              {formatClock(trip.origin_departure)} scheduled
             </span>
           )}
         </div>
@@ -214,7 +242,7 @@ function NextTrainCard({ trip, fromStop, toStop, isToday, onTrack }: NextTrainCa
             Arrives
           </span>
           <span className="text-[26px] font-bold tracking-[-0.03em] tabular-nums">
-            {utils.formatTime(trip.destination_arrival)}
+            {utils.formatTime(effectiveTime(trip.destination_arrival, trip.realtime_arrival))}
           </span>
           <span className="text-[12.5px] tabular-nums text-muted-foreground">
             {formatDuration(trip.duration_minutes)} ride

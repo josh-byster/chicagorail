@@ -1,3 +1,6 @@
+// Loads packages/backend/.env for local development. Real environment
+// variables take precedence, so hosted deployments are unaffected.
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import routesRouter from './routes/routes';

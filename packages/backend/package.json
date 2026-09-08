@@ -18,7 +18,9 @@
     "@chicagorail/shared": "workspace:*",
     "adm-zip": "^0.5.16",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.18.2",
+    "gtfs-realtime-bindings": "^2.2.0",
     "node-fetch": "^2.7.0",
     "winston": "^3.11.0"
   },

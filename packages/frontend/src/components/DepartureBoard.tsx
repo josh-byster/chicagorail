@@ -10,7 +10,13 @@ import { useNavigate } from 'react-router-dom';
 import { utils } from '@chicagorail/shared';
 import { useDepartures } from '@/hooks/useDepartures';
 import { RouteBadge } from './RouteBadge';
-import { relativeDeparture, trainNumber } from '@/lib/trainInfo';
+import {
+  delayColor,
+  delayLabel,
+  effectiveTime,
+  relativeDeparture,
+  trainNumber,
+} from '@/lib/trainInfo';
 import { APP_CONFIG } from '@/config';
 
 interface DepartureBoardProps {
@@ -82,21 +88,36 @@ export function DepartureBoard({ stopId, routeFilter, date, isToday = true }: De
             >
               <div className="flex flex-col gap-px">
                 <span className="whitespace-nowrap text-base font-semibold tracking-[-0.02em] tabular-nums">
-                  {utils.formatTime(departure.departure_time)}
+                  {utils.formatTime(
+                    effectiveTime(departure.departure_time, departure.realtime)
+                  )}
                 </span>
                 {isToday && (
                   <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
-                    {relativeDeparture(departure.departure_time)}
+                    {relativeDeparture(
+                      effectiveTime(departure.departure_time, departure.realtime)
+                    )}
                   </span>
                 )}
               </div>
               <div>
                 <RouteBadge route={departure.route} wide />
               </div>
-              <div className="min-w-0">
-                <span className="block truncate text-sm font-medium">
-                  {departure.trip_headsign}
-                </span>
+              <div className="flex min-w-0 flex-col gap-px">
+                <span className="truncate text-sm font-medium">{departure.trip_headsign}</span>
+                {departure.realtime && (
+                  <span
+                    className={`truncate text-[11.5px] tabular-nums ${delayColor(departure.realtime)}`}
+                  >
+                    {delayLabel(departure.realtime)}
+                    {departure.realtime.status !== 'on_time' && (
+                      <span className="text-muted-foreground">
+                        {' · '}
+                        {utils.formatTime(departure.departure_time)} scheduled
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
               <div className="text-right text-sm tabular-nums text-ink-subtle">
                 {trainNumber(departure.trip_id) ?? '—'}

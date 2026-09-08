@@ -1,5 +1,7 @@
 import { Router, type Router as RouterType } from 'express';
 import { GTFSService } from '../services/gtfsService';
+import { RealtimeService } from '../services/realtimeService';
+import { enrichDepartures } from '../services/realtimeEnrichment';
 import type {
   SearchStopsRequest,
   SearchStopsResponse,
@@ -11,6 +13,7 @@ import { utils } from '@chicagorail/shared';
 
 const router: RouterType = Router();
 const gtfsService = GTFSService.getInstance();
+const realtimeService = RealtimeService.getInstance();
 
 // Search stops
 router.get('/search', async (req, res) => {
@@ -64,9 +67,11 @@ router.get('/:stopId/departures', async (req, res) => {
       routeId
     );
 
+    const snapshot = await realtimeService.getSnapshot();
+
     const response: GetDeparturesResponse = {
       stop: departures.stop,
-      departures: departures.departures,
+      departures: enrichDepartures(departures.departures, stopId, snapshot),
       timestamp: new Date().toISOString()
     };
     res.json(response);

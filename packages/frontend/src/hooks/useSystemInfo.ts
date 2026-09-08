@@ -6,10 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys, getErrorMessage } from '@/shared/lib';
 import { QUERY_CONFIG } from '@/config';
+import type { RealtimeStatusInfo } from '@chicagorail/shared';
 
 export interface UseSystemInfoResult {
   data: {
     lastUpdated: string | null;
+    /** Whether live Metra data is configured and flowing */
+    realtime: RealtimeStatusInfo;
   };
   isLoading: boolean;
   isError: boolean;
@@ -31,6 +34,7 @@ export function useSystemInfo(): UseSystemInfoResult {
   return {
     data: {
       lastUpdated: result.data?.lastUpdated ?? null,
+      realtime: result.data?.realtime ?? { enabled: false, lastUpdated: null },
     },
     isLoading: result.isLoading,
     isError: result.isError,
