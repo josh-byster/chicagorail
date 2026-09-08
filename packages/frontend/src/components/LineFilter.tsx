@@ -13,16 +13,29 @@ interface LineFilterProps {
   onFilterChange: (routeId: string | undefined) => void;
   stopId?: string;
   date?: string;
+  /** Trailing content, shown even before routes are known */
+  suffix?: React.ReactNode;
 }
 
-export function LineFilter({ selectedRoute, onFilterChange, stopId, date }: LineFilterProps) {
+export function LineFilter({
+  selectedRoute,
+  onFilterChange,
+  stopId,
+  date,
+  suffix,
+}: LineFilterProps) {
   const { data: routes, isLoading } = useRoutesFromDepartures(stopId ?? null, date);
 
   if (isLoading || routes.length === 0) {
-    return null;
+    return suffix ? <div className="flex flex-wrap gap-1.5">{suffix}</div> : null;
   }
 
   return (
-    <RouteFilterButtons routes={routes} selectedRoute={selectedRoute} onFilterChange={onFilterChange} />
+    <RouteFilterButtons
+      routes={routes}
+      selectedRoute={selectedRoute}
+      onFilterChange={onFilterChange}
+      suffix={suffix}
+    />
   );
 }

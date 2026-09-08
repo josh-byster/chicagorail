@@ -1,145 +1,71 @@
 /**
- * Home page - Main unified search interface
+ * Home page
  *
- * Uses URL as the source of truth for all state:
- * - from: Origin station ID
- * - to: Destination station ID
- * - date: Selected date (YYYY-MM-DD)
- * - route: Route filter
+ * One surface, three answers, all driven by the URL:
+ * - no origin      -> the planner (From / To / Date) and saved trips
+ * - origin only    -> the departures board for that station
+ * - origin + dest  -> the trip answer
  */
 
-import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { format, parse, isValid } from 'date-fns';
-import { StationCommand } from '@/components/StationCommand';
+import { useMemo } from 'react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { DepartureBoard } from '@/components/DepartureBoard';
 import { LineFilter } from '@/components/LineFilter';
-import { DateControls } from '@/components/DateControls';
-import { ChicagoSkyline } from '@/components/ChicagoSkyline';
+import { TripPlanner } from '@/components/TripPlanner';
 import { TripsResults } from '@/components/TripsResults';
-import { useRecentStops } from '@/hooks/useRecent';
+import { SavedTripCard } from '@/components/SavedTripCard';
+import { LiveStatus } from '@/components/LiveStatus';
+import { BackLink } from '@/components/BackLink';
+import { Chip } from '@/components/Chip';
+import { useStationPicker } from '@/hooks/useStationPicker';
 import { useStop } from '@/hooks/useStop';
+import { useDepartures } from '@/hooks/useDepartures';
 import { useDirectTrips } from '@/hooks/useTrips';
+import { useRoutesFromDepartures } from '@/hooks/useRoutes';
+import { useSavedTrips } from '@/hooks/useSavedTrips';
+import { useTripParams } from '@/hooks/useTripParams';
 import { useSEO } from '@/hooks/useSEO';
-import { APP_CONFIG } from '@/config';
-import type { Stop } from '@chicagorail/shared';
 
 export function Home() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { data: recentStops, addRecentStop } = useRecentStops();
+  const {
+    fromId,
+    toId,
+    routeId,
+    selectedDate,
+    dateString,
+    isToday,
+    isTomorrow,
+    dateLabel,
+    isPlanning,
+    planLink,
+    showResults,
+    showBoard,
+    setTo,
+    setDate,
+    setRoute,
+    swap,
+  } = useTripParams();
 
-  // URL is the source of truth
-  const fromId = searchParams.get('from');
-  const toId = searchParams.get('to');
-  const dateParam = searchParams.get('date');
-  const routeParam = searchParams.get('route');
-
-  // Derive date from URL
-  const selectedDate = useMemo(() => {
-    if (dateParam) {
-      const parsed = parse(dateParam, APP_CONFIG.dateFormats.url, new Date());
-      // parse() returns Invalid Date for malformed input rather than throwing
-      return isValid(parsed) ? parsed : new Date();
-    }
-    return new Date();
-  }, [dateParam]);
-
-  const dateString = format(selectedDate, APP_CONFIG.dateFormats.url);
-  const isToday = format(new Date(), APP_CONFIG.dateFormats.url) === dateString;
-
-  // Fetch stop data based on URL params
+  const openPicker = useStationPicker();
   const { data: fromStop } = useStop(fromId);
   const { data: toStop } = useStop(toId);
+  const { data: savedTrips } = useSavedTrips();
 
-  // Fetch trips when both from and to are selected
+  const { data: routesAtOrigin } = useRoutesFromDepartures(fromId, dateString);
+  const { dataUpdatedAt, refetch, isFetching } = useDepartures(fromId, {
+    routeId,
+    date: dateString,
+  });
+
   const {
     data: trips,
     isLoading: tripsLoading,
     error: tripsError,
   } = useDirectTrips(fromId, toId, dateString);
 
-  // URL update helper - uses functional update to avoid searchParams dependency
-  const updateUrl = useCallback(
-    (
-      updates: {
-        from?: string | null;
-        to?: string | null;
-        date?: string | null;
-        route?: string | null;
-      },
-      replace = false
-    ) => {
-      setSearchParams(
-        (prev) => {
-          const params = new URLSearchParams(prev);
+  const showTrips = !!fromId && !!toId && !isPlanning;
+  const showDepartures = !!fromId && !toId && !isPlanning;
 
-          Object.entries(updates).forEach(([key, value]) => {
-            if (value === null) {
-              params.delete(key);
-            } else if (value !== undefined) {
-              params.set(key, value);
-            }
-          });
-
-          // Remove date if it's today (cleaner URLs)
-          const dateVal = params.get('date');
-          if (dateVal === format(new Date(), APP_CONFIG.dateFormats.url)) {
-            params.delete('date');
-          }
-
-          return params;
-        },
-        { replace }
-      );
-    },
-    [setSearchParams]
-  );
-
-  const handleSelectFrom = useCallback(
-    (stop: Stop | null) => {
-      if (stop) {
-        addRecentStop(stop);
-        updateUrl({ from: stop.stop_id, route: null });
-      } else {
-        updateUrl({ from: null, route: null });
-      }
-    },
-    [updateUrl, addRecentStop]
-  );
-
-  const handleSelectTo = useCallback(
-    (stop: Stop | null) => {
-      if (stop) {
-        addRecentStop(stop);
-        updateUrl({ to: stop.stop_id, route: null });
-      } else {
-        updateUrl({ to: null, route: null });
-      }
-    },
-    [updateUrl, addRecentStop]
-  );
-
-  const handleRouteFilterChange = useCallback(
-    (route: string | undefined) => {
-      updateUrl({ route: route || null }, true);
-    },
-    [updateUrl]
-  );
-
-  const handleDateChange = useCallback(
-    (date: Date | undefined) => {
-      if (date) {
-        updateUrl({ date: format(date, APP_CONFIG.dateFormats.url) }, true);
-      }
-    },
-    [updateUrl]
-  );
-
-  const showTrips = !!fromId && !!toId;
-  const showDepartures = !!fromId && !toId;
-  const showEmpty = !fromId;
-
-  // Dynamic SEO based on current view
   useSEO(
     useMemo(() => {
       if (showTrips && fromStop && toStop) {
@@ -151,136 +77,182 @@ export function Home() {
       if (showDepartures && fromStop) {
         return {
           title: `${fromStop.stop_name} Departures - Metra Schedule`,
-          description: `Real-time Metra departures from ${fromStop.stop_name} station. View upcoming trains, schedules, and track your Chicago commuter rail connection.`,
+          description: `Metra departures from ${fromStop.stop_name} station. View upcoming trains, schedules, and plan your Chicago commuter rail connection.`,
         };
       }
       return {};
     }, [showTrips, showDepartures, fromStop, toStop])
   );
 
-  // Filter trips by route if selected
-  const filteredTrips = useMemo(() => {
-    if (!routeParam) return trips;
-    return trips.filter((t) => t.route.route_id === routeParam);
-  }, [trips, routeParam]);
+  const filteredTrips = useMemo(
+    () => (routeId ? trips.filter((t) => t.route.route_id === routeId) : trips),
+    [trips, routeId]
+  );
 
-  // Get unique routes from trips for the filter
-  const tripRoutes = useMemo(() => {
-    return Array.from(new Map(trips.map((t) => [t.route.route_id, t.route])).values());
-  }, [trips]);
+  const tripRoutes = useMemo(
+    () => Array.from(new Map(trips.map((t) => [t.route.route_id, t.route])).values()),
+    [trips]
+  );
+
+  if (showDepartures) {
+    return (
+      <Screen>
+        <div className="flex flex-col gap-3">
+          <BackLink to={planLink} />
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {isToday && <LiveStatus updatedAt={dataUpdatedAt} />}
+              <h1 className="text-[26px] font-bold tracking-[-0.03em]">
+                {fromStop?.stop_name ?? ' '}
+              </h1>
+              <p className="text-[13px] text-muted-foreground">
+                {dateLabel}&rsquo;s departures
+                {routesAtOrigin.length > 0
+                  ? ` · ${routesAtOrigin.length} ${routesAtOrigin.length === 1 ? 'line' : 'lines'}`
+                  : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              aria-label="Refresh departures"
+              className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-border transition-colors hover:bg-foreground/5"
+            >
+              <RefreshCw
+                className={`size-[15px] text-ink-subtle ${isFetching ? 'animate-spin' : ''}`}
+              />
+            </button>
+          </div>
+
+          <LineFilter
+            selectedRoute={routeId}
+            onFilterChange={setRoute}
+            stopId={fromId}
+            date={dateString}
+            suffix={
+              <Chip dashed onClick={() => openPicker('to')}>
+                <Plus className="size-3" />
+                Add destination
+              </Chip>
+            }
+          />
+        </div>
+
+        <DepartureBoard
+          stopId={fromId}
+          routeFilter={routeId}
+          date={dateString}
+          isToday={isToday}
+        />
+      </Screen>
+    );
+  }
+
+  if (showTrips) {
+    return (
+      <Screen>
+        <BackLink to={planLink} />
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[17px] font-semibold tracking-[-0.02em]">
+            {fromStop?.stop_name ?? ' '}
+          </span>
+          <span aria-hidden="true" className="text-muted-foreground">
+            &rarr;
+          </span>
+          <span className="text-[17px] font-semibold tracking-[-0.02em]">
+            {toStop?.stop_name ?? ' '}
+          </span>
+          <button
+            type="button"
+            onClick={swap}
+            className="ml-auto h-[30px] rounded-lg border border-border px-3 text-[12.5px] font-medium text-ink-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
+          >
+            Swap
+          </button>
+        </div>
+
+        <TripsResults
+          trips={trips}
+          filteredTrips={filteredTrips}
+          tripRoutes={tripRoutes}
+          isLoading={tripsLoading}
+          error={tripsError}
+          selectedRoute={routeId}
+          onRouteFilterChange={setRoute}
+          fromStop={fromStop}
+          toStop={toStop}
+          dateLabel={dateLabel}
+          isToday={isToday}
+        />
+      </Screen>
+    );
+  }
 
   return (
-    <div className="flex-1 relative overflow-x-hidden bg-gradient-to-b from-metra-blue/5 via-background to-background">
-      {/* Skyline - fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-        <ChicagoSkyline className={`w-full opacity-10 ${showEmpty ? 'animate-slide-up-only' : ''}`} />
+    <Screen>
+      <div className="flex flex-col gap-1.5">
+        <h1 className="text-[28px] font-bold tracking-[-0.03em]">Where are you going?</h1>
+        <p className="text-sm text-muted-foreground">
+          Leave the destination empty to see every train from your station.
+        </p>
       </div>
 
-      {/* Hero section */}
-      <div
-        className={`flex flex-col items-center pt-24 pb-8 px-4 transition-all duration-500 ${
-          fromId ? 'pt-12 pb-4' : ''
-        }`}
-      >
-        {/* Title */}
-        <div className={`text-center mb-8 max-w-2xl ${showEmpty ? 'animate-fade-in-up' : ''}`}>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {showEmpty ? 'Where are you traveling?' : fromStop?.stop_name || '\u00A0'}
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            {showEmpty
-              ? 'Search for any Metra station to see departures'
-              : showTrips
-                ? toStop?.stop_name
-                  ? `to ${toStop.stop_name}`
-                  : '\u00A0'
-                : `${isToday ? 'Today' : format(selectedDate, APP_CONFIG.dateFormats.display)}'s departures`}
-          </p>
-        </div>
+      <TripPlanner
+        fromStop={fromStop}
+        toStop={toStop}
+        fromRoutes={routesAtOrigin}
+        selectedDate={selectedDate}
+        isToday={isToday}
+        isTomorrow={isTomorrow}
+        onDateChange={setDate}
+        onClearTo={() => setTo(null)}
+        onSwap={swap}
+      />
 
-        {/* Search inputs */}
-        <div
-          className={`w-full max-w-xl space-y-3 relative z-20 ${showEmpty ? 'animate-fade-in-up animation-delay-150' : ''}`}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => (fromId ? showResults() : openPicker('from'))}
+          className="h-[38px] rounded-[10px] bg-foreground px-[18px] text-[13.5px] font-semibold text-background transition-opacity hover:opacity-85"
         >
-          <StationCommand
-            onSelectStation={handleSelectFrom}
-            selectedStation={fromStop}
-            placeholder={fromId ? 'Change station...' : 'From...'}
-            label="From"
-          />
-          <StationCommand
-            onSelectStation={handleSelectTo}
-            selectedStation={toStop}
-            placeholder="Add destination..."
-            label="To"
-            variant="secondary"
-          />
-        </div>
-
-        {/* Recent stations - only in empty state */}
-        {showEmpty && recentStops.length > 0 && (
-          <div className="w-full max-w-xl mt-8 relative z-10 animate-fade-in animation-delay-300">
-            <p className="text-sm font-medium text-muted-foreground mb-3">Recent</p>
-            <div className="flex flex-wrap gap-2">
-              {recentStops.map((stop) => (
-                <button
-                  key={stop.stop_id}
-                  onClick={() => handleSelectFrom(stop)}
-                  className="px-4 py-2 rounded-full border bg-background hover:bg-muted transition-colors text-sm"
-                >
-                  {stop.stop_name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+          See trains
+        </button>
+        <button
+          type="button"
+          onClick={() => (fromId ? showBoard() : openPicker('from'))}
+          className="h-[38px] rounded-[10px] border border-border px-4 text-[13.5px] font-medium text-ink-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          Departures board
+        </button>
       </div>
 
-      {/* Results panel - Departures mode */}
-      {showDepartures && fromId && (
-        <section className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]" aria-label={`Departures from ${fromStop?.stop_name || 'station'}`}>
-          <div className="max-w-4xl mx-auto px-4 py-6">
-            <div className="space-y-4">
-              <DateControls
-                selectedDate={selectedDate}
-                isToday={isToday}
-                onDateChange={handleDateChange}
-              />
-              <LineFilter
-                selectedRoute={routeParam || undefined}
-                onFilterChange={handleRouteFilterChange}
-                stopId={fromId}
-                date={dateString}
-              />
-              <DepartureBoard stopId={fromId} routeFilter={routeParam || undefined} date={dateString} />
-            </div>
-          </div>
-        </section>
-      )}
+      {savedTrips.length > 0 && (
+        <>
+          <SavedTripCard trip={savedTrips[0]} variant="hero" />
 
-      {/* Results panel - Trips mode */}
-      {showTrips && (
-        <section className="bg-background/80 backdrop-blur-sm border-t min-h-[50vh]" aria-label={`Trips from ${fromStop?.stop_name || 'origin'} to ${toStop?.stop_name || 'destination'}`}>
-          <div className="max-w-4xl mx-auto px-4 py-6">
-            <div className="space-y-4">
-              <DateControls
-                selectedDate={selectedDate}
-                isToday={isToday}
-                onDateChange={handleDateChange}
-              />
-              <TripsResults
-                trips={trips}
-                filteredTrips={filteredTrips}
-                tripRoutes={tripRoutes}
-                isLoading={tripsLoading}
-                error={tripsError}
-                selectedRoute={routeParam || undefined}
-                onRouteFilterChange={handleRouteFilterChange}
-              />
-            </div>
-          </div>
-        </section>
+          {savedTrips.length > 1 && (
+            <section className="flex flex-col gap-2.5 pt-2.5">
+              <h2 className="text-[10.5px] font-semibold uppercase tracking-[.1em] text-muted-foreground">
+                Saved trips
+              </h2>
+              {savedTrips.slice(1).map((trip) => (
+                <SavedTripCard
+                  key={`${trip.origin.stop_id}-${trip.destination.stop_id}`}
+                  trip={trip}
+                />
+              ))}
+            </section>
+          )}
+        </>
       )}
+    </Screen>
+  );
+}
+
+function Screen({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[22px] px-5 pb-16 pt-7">
+      {children}
     </div>
   );
 }

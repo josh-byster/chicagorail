@@ -8,6 +8,12 @@ export const APP_CONFIG = {
     /** Maximum recent stops to store in localStorage */
     maxRecentStops: 5,
 
+    /** Maximum saved trips to store in localStorage */
+    maxSavedTrips: 5,
+
+    /** Departures shown on the board before "Show more" */
+    departuresPageSize: 12,
+
     /** Default number of departures to fetch */
     defaultDeparturesLimit: 100,
 
@@ -24,6 +30,7 @@ export const APP_CONFIG = {
   /** LocalStorage keys */
   storage: {
     recentStops: 'chicagorail:recent-stops',
+    savedTrips: 'chicagorail:saved-trips',
   },
 
   /** Date format strings (date-fns compatible) */

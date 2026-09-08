@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { StationPickerProvider } from './components/StationPicker';
 import { Home } from './pages/Home';
+import { Saved } from './pages/Saved';
+import { TrainDetail } from './pages/TrainDetail';
 
 // Redirect from old /departures route to unified home
 function DeparturesRedirect() {
@@ -38,21 +41,25 @@ function TripPlannerRedirect() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        <main id="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            {/* Redirects from old routes for backwards compatibility */}
-            <Route path="/departures" element={<DeparturesRedirect />} />
-            <Route path="/trip-planner" element={<TripPlannerRedirect />} />
-            <Route path="/arrivals" element={<Navigate to="/" replace />} />
-            {/* Catch-all redirect to home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <StationPickerProvider>
+        <div className="flex min-h-screen flex-col bg-background">
+          <Header />
+          <main id="main-content" className="flex-1">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/saved" element={<Saved />} />
+              <Route path="/train/:tripId" element={<TrainDetail />} />
+              {/* Redirects from old routes for backwards compatibility */}
+              <Route path="/departures" element={<DeparturesRedirect />} />
+              <Route path="/trip-planner" element={<TripPlannerRedirect />} />
+              <Route path="/arrivals" element={<Navigate to="/" replace />} />
+              {/* Catch-all redirect to home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </StationPickerProvider>
     </BrowserRouter>
   );
 }

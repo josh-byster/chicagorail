@@ -24,8 +24,11 @@ export interface UseDeparturesResult {
     departures: Departure[];
   };
   isLoading: boolean;
+  isFetching: boolean;
   isError: boolean;
   error: string | null;
+  /** Epoch ms of the last successful fetch, for the "updated Ns ago" line */
+  dataUpdatedAt: number;
   refetch: () => void;
 }
 
@@ -64,6 +67,8 @@ export function useDepartures(
       departures: query.data?.departures ?? [],
     },
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    dataUpdatedAt: query.dataUpdatedAt,
     isError: query.isError,
     error: query.error ? getErrorMessage(query.error) : null,
     refetch: query.refetch,
