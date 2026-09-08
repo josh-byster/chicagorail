@@ -1,25 +1,27 @@
 /**
  * Home page
  *
- * One surface, three answers, all driven by the URL:
- * - no origin      -> the planner (From / To / Date) and saved trips
- * - origin only    -> the departures board for that station
- * - origin + dest  -> the trip answer
+ * One screen: the planner stays at the top and the answer appears under it
+ * as soon as you've said enough to have one. What you fill in decides which
+ * answer you get.
+ *
+ *   from only      -> everything leaving that station
+ *   to only        -> everything arriving into that station
+ *   from + to      -> the next train between them
  */
 
 import { useMemo } from 'react';
-import { Plus, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { DepartureBoard } from '@/components/DepartureBoard';
+import { ArrivalBoard } from '@/components/ArrivalBoard';
 import { LineFilter } from '@/components/LineFilter';
 import { TripPlanner } from '@/components/TripPlanner';
 import { TripsResults } from '@/components/TripsResults';
 import { SavedTripCard } from '@/components/SavedTripCard';
 import { LiveStatus } from '@/components/LiveStatus';
-import { BackLink } from '@/components/BackLink';
-import { Chip } from '@/components/Chip';
-import { useStationPicker } from '@/hooks/useStationPicker';
 import { useStop } from '@/hooks/useStop';
 import { useDepartures } from '@/hooks/useDepartures';
+import { useArrivals } from '@/hooks/useArrivals';
 import { useDirectTrips } from '@/hooks/useTrips';
 import { useRoutesFromDepartures } from '@/hooks/useRoutes';
 import { useSavedTrips } from '@/hooks/useSavedTrips';
@@ -36,35 +38,35 @@ export function Home() {
     isToday,
     isTomorrow,
     dateLabel,
-    isPlanning,
-    planLink,
-    showResults,
-    showBoard,
+    search,
     setTo,
     setDate,
     setRoute,
     swap,
   } = useTripParams();
 
-  const openPicker = useStationPicker();
   const { data: fromStop } = useStop(fromId);
   const { data: toStop } = useStop(toId);
   const { data: savedTrips } = useSavedTrips();
-
   const { data: routesAtOrigin } = useRoutesFromDepartures(fromId, dateString);
-  const { dataUpdatedAt, refetch, isFetching } = useDepartures(fromId, {
+
+  const showTrips = !!fromId && !!toId;
+  const showDepartures = !!fromId && !toId;
+  const showArrivals = !fromId && !!toId;
+  const isEmpty = !fromId && !toId;
+
+  const departures = useDepartures(showDepartures ? fromId : null, {
     routeId,
     date: dateString,
   });
+  const arrivals = useArrivals(showArrivals ? toId : null, { routeId, date: dateString });
+  const board = showArrivals ? arrivals : departures;
 
   const {
     data: trips,
     isLoading: tripsLoading,
     error: tripsError,
   } = useDirectTrips(fromId, toId, dateString);
-
-  const showTrips = !!fromId && !!toId && !isPlanning;
-  const showDepartures = !!fromId && !toId && !isPlanning;
 
   useSEO(
     useMemo(() => {
@@ -80,8 +82,14 @@ export function Home() {
           description: `Metra departures from ${fromStop.stop_name} station. View upcoming trains, schedules, and plan your Chicago commuter rail connection.`,
         };
       }
+      if (showArrivals && toStop) {
+        return {
+          title: `${toStop.stop_name} Arrivals - Metra Schedule`,
+          description: `Metra trains arriving into ${toStop.stop_name} station, with live delays where Metra reports them.`,
+        };
+      }
       return {};
-    }, [showTrips, showDepartures, fromStop, toStop])
+    }, [showTrips, showDepartures, showArrivals, fromStop, toStop])
   );
 
   const filteredTrips = useMemo(
@@ -94,106 +102,14 @@ export function Home() {
     [trips]
   );
 
-  if (showDepartures) {
-    return (
-      <Screen>
-        <div className="flex flex-col gap-3">
-          <BackLink to={planLink} />
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              {isToday && <LiveStatus updatedAt={dataUpdatedAt} />}
-              <h1 className="text-[26px] font-bold tracking-[-0.03em]">
-                {fromStop?.stop_name ?? ' '}
-              </h1>
-              <p className="text-[13px] text-muted-foreground">
-                {dateLabel}&rsquo;s departures
-                {routesAtOrigin.length > 0
-                  ? ` · ${routesAtOrigin.length} ${routesAtOrigin.length === 1 ? 'line' : 'lines'}`
-                  : ''}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              aria-label="Refresh departures"
-              className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-border transition-colors hover:bg-foreground/5"
-            >
-              <RefreshCw
-                className={`size-[15px] text-ink-subtle ${isFetching ? 'animate-spin' : ''}`}
-              />
-            </button>
-          </div>
-
-          <LineFilter
-            selectedRoute={routeId}
-            onFilterChange={setRoute}
-            stopId={fromId}
-            date={dateString}
-            suffix={
-              <Chip dashed onClick={() => openPicker('to')}>
-                <Plus className="size-3" />
-                Add destination
-              </Chip>
-            }
-          />
-        </div>
-
-        <DepartureBoard
-          stopId={fromId}
-          routeFilter={routeId}
-          date={dateString}
-          isToday={isToday}
-        />
-      </Screen>
-    );
-  }
-
-  if (showTrips) {
-    return (
-      <Screen>
-        <BackLink to={planLink} />
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[17px] font-semibold tracking-[-0.02em]">
-            {fromStop?.stop_name ?? ' '}
-          </span>
-          <span aria-hidden="true" className="text-muted-foreground">
-            &rarr;
-          </span>
-          <span className="text-[17px] font-semibold tracking-[-0.02em]">
-            {toStop?.stop_name ?? ' '}
-          </span>
-          <button
-            type="button"
-            onClick={swap}
-            className="ml-auto h-[30px] rounded-lg border border-border px-3 text-[12.5px] font-medium text-ink-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
-          >
-            Swap
-          </button>
-        </div>
-
-        <TripsResults
-          trips={trips}
-          filteredTrips={filteredTrips}
-          tripRoutes={tripRoutes}
-          isLoading={tripsLoading}
-          error={tripsError}
-          selectedRoute={routeId}
-          onRouteFilterChange={setRoute}
-          fromStop={fromStop}
-          toStop={toStop}
-          dateLabel={dateLabel}
-          isToday={isToday}
-        />
-      </Screen>
-    );
-  }
+  const boardStop = showArrivals ? toStop : fromStop;
 
   return (
-    <Screen>
+    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[22px] px-5 pb-16 pt-7">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-[28px] font-bold tracking-[-0.03em]">Where are you going?</h1>
         <p className="text-sm text-muted-foreground">
-          Leave the destination empty to see every train from your station.
+          Fill in either end on its own for a whole board, or both for a trip.
         </p>
       </div>
 
@@ -209,24 +125,91 @@ export function Home() {
         onSwap={swap}
       />
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => (fromId ? showResults() : openPicker('from'))}
-          className="h-[38px] rounded-[10px] bg-foreground px-[18px] text-[13.5px] font-semibold text-background transition-opacity hover:opacity-85"
+      {(showDepartures || showArrivals) && (
+        // Keyed so the results animate again when the question changes
+        <section
+          key={`board-${fromId ?? ''}-${toId ?? ''}-${dateString}`}
+          className="animate-results flex flex-col gap-3.5"
+          aria-label={showArrivals ? 'Arrivals' : 'Departures'}
         >
-          See trains
-        </button>
-        <button
-          type="button"
-          onClick={() => (fromId ? showBoard() : openPicker('from'))}
-          className="h-[38px] rounded-[10px] border border-border px-4 text-[13.5px] font-medium text-ink-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          Departures board
-        </button>
-      </div>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {isToday && <LiveStatus updatedAt={board.dataUpdatedAt} />}
+              <h2 className="text-[22px] font-bold tracking-[-0.03em]">
+                {showArrivals ? 'Arriving into ' : 'Leaving '}
+                {boardStop?.stop_name ?? '…'}
+              </h2>
+              <p className="text-[13px] text-muted-foreground">
+                {dateLabel}
+                {routesAtOrigin.length > 0 && showDepartures
+                  ? ` · ${routesAtOrigin.length} ${routesAtOrigin.length === 1 ? 'line' : 'lines'}`
+                  : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => board.refetch()}
+              aria-label="Refresh"
+              className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-border transition-colors hover:bg-foreground/5"
+            >
+              <RefreshCw
+                className={`size-[15px] text-ink-subtle ${board.isFetching ? 'animate-spin' : ''}`}
+              />
+            </button>
+          </div>
 
-      {savedTrips.length > 0 && (
+          <LineFilter
+            selectedRoute={routeId}
+            onFilterChange={setRoute}
+            stopId={showArrivals ? (toId ?? undefined) : (fromId ?? undefined)}
+            date={dateString}
+            mode={showArrivals ? 'arrivals' : 'departures'}
+          />
+
+          {showArrivals ? (
+            <ArrivalBoard
+              stopId={toId}
+              routeFilter={routeId}
+              date={dateString}
+              isToday={isToday}
+              contextSearch={search}
+            />
+          ) : (
+            <DepartureBoard
+              stopId={fromId}
+              routeFilter={routeId}
+              date={dateString}
+              isToday={isToday}
+              contextSearch={search}
+            />
+          )}
+        </section>
+      )}
+
+      {showTrips && (
+        <section
+          key={`trip-${fromId}-${toId}-${dateString}`}
+          className="animate-results"
+          aria-label={`Trains from ${fromStop?.stop_name ?? 'origin'} to ${toStop?.stop_name ?? 'destination'}`}
+        >
+          <TripsResults
+            trips={trips}
+            filteredTrips={filteredTrips}
+            tripRoutes={tripRoutes}
+            isLoading={tripsLoading}
+            error={tripsError}
+            selectedRoute={routeId}
+            onRouteFilterChange={setRoute}
+            fromStop={fromStop}
+            toStop={toStop}
+            dateLabel={dateLabel}
+            isToday={isToday}
+            contextSearch={search}
+          />
+        </section>
+      )}
+
+      {isEmpty && savedTrips.length > 0 && (
         <>
           <SavedTripCard trip={savedTrips[0]} variant="hero" />
 
@@ -245,14 +228,6 @@ export function Home() {
           )}
         </>
       )}
-    </Screen>
-  );
-}
-
-function Screen({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[22px] px-5 pb-16 pt-7">
-      {children}
     </div>
   );
 }

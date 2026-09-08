@@ -47,6 +47,19 @@ export interface Departure {
   realtime?: RealtimePrediction;
 }
 
+export interface Arrival {
+  route: Route;
+  trip_headsign: string;
+  arrival_time: string;
+  departure_time: string;
+  direction: 'inbound' | 'outbound';
+  trip_id: string;
+  /** Name of the stop this train started from */
+  origin_name: string;
+  /** Present only when the realtime feed has this trip */
+  realtime?: RealtimePrediction;
+}
+
 export interface TripStop {
   stop: Stop;
   arrival_time: string;

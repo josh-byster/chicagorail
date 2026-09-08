@@ -48,7 +48,7 @@ export function TripPlanner({
     <div className="overflow-hidden rounded-[14px] border border-hairline-strong bg-surface">
       <button
         type="button"
-        onClick={() => openPicker('from', { keepPlanning: true })}
+        onClick={() => openPicker('from')}
         className="grid w-full grid-cols-[52px_minmax(0,1fr)] items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-foreground/[.035]"
       >
         <span className={labelClass}>From</span>
@@ -90,7 +90,7 @@ export function TripPlanner({
         <span className={labelClass}>To</span>
         <button
           type="button"
-          onClick={() => openPicker('to', { keepPlanning: true })}
+          onClick={() => openPicker('to')}
           className="-my-2 flex min-w-0 items-center gap-2.5 py-2 text-left"
         >
           <Search className="size-[15px] flex-none text-muted-foreground" />

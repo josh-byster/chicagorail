@@ -22,6 +22,20 @@ function DeparturesRedirect() {
   return <Navigate to={queryString ? `/?${queryString}` : '/'} replace />;
 }
 
+// Redirect from the old /arrivals route, which the arrivals board now serves
+function ArrivalsRedirect() {
+  const [searchParams] = useSearchParams();
+  const stopId = searchParams.get('stop');
+  const date = searchParams.get('date');
+
+  const newParams = new URLSearchParams();
+  if (stopId) newParams.set('to', stopId);
+  if (date) newParams.set('date', date);
+
+  const queryString = newParams.toString();
+  return <Navigate to={queryString ? `/?${queryString}` : '/'} replace />;
+}
+
 // Redirect from old /trip-planner route to unified home
 function TripPlannerRedirect() {
   const [searchParams] = useSearchParams();
@@ -52,7 +66,7 @@ function App() {
               {/* Redirects from old routes for backwards compatibility */}
               <Route path="/departures" element={<DeparturesRedirect />} />
               <Route path="/trip-planner" element={<TripPlannerRedirect />} />
-              <Route path="/arrivals" element={<Navigate to="/" replace />} />
+              <Route path="/arrivals" element={<ArrivalsRedirect />} />
               {/* Catch-all redirect to home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

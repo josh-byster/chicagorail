@@ -11,7 +11,7 @@ import { useMemo } from 'react';
 import { api } from '@/lib/api';
 import { queryKeys, getErrorMessage } from '@/shared/lib';
 import { QUERY_CONFIG } from '@/config';
-import type { Route, GetDeparturesResponse } from '@chicagorail/shared';
+import type { Route, GetDeparturesResponse, GetArrivalsResponse } from '@chicagorail/shared';
 
 export interface UseRoutesResult {
   data: Route[];
@@ -76,6 +76,39 @@ export function useRoutesFromDepartures(
 
     return Array.from(uniqueRoutes.values());
   }, [departures]);
+
+  return {
+    data: routes,
+    isLoading: !cachedData && !!stopId,
+    isError: false,
+    error: null,
+  };
+}
+
+/**
+ * The same trick for the arrivals cache, so the line filter works on the
+ * arrivals board without a second request.
+ */
+export function useRoutesFromArrivals(stopId: string | null, date?: string): UseRoutesResult {
+  const queryClient = useQueryClient();
+
+  const cachedData = stopId
+    ? queryClient.getQueryData<GetArrivalsResponse>(queryKeys.arrivals.byStop(stopId, { date }))
+    : null;
+
+  const arrivals = cachedData?.arrivals;
+  const routes = useMemo(() => {
+    if (!arrivals) return [];
+
+    const uniqueRoutes = new Map<string, Route>();
+    arrivals.forEach((arrival) => {
+      if (!uniqueRoutes.has(arrival.route.route_id)) {
+        uniqueRoutes.set(arrival.route.route_id, arrival.route);
+      }
+    });
+
+    return Array.from(uniqueRoutes.values());
+  }, [arrivals]);
 
   return {
     data: routes,

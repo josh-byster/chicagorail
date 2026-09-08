@@ -14,11 +14,7 @@ type ParamUpdates = {
   to?: string | null;
   date?: string | null;
   route?: string | null;
-  view?: string | null;
 };
-
-/** `?view=plan` keeps the planner open over a from/to the user already picked */
-const PLAN_VIEW = 'plan';
 
 export interface UseTripParamsResult {
   fromId: string | null;
@@ -30,14 +26,8 @@ export interface UseTripParamsResult {
   isTomorrow: boolean;
   /** "Today" / "Tomorrow" / "Tuesday, September 8" */
   dateLabel: string;
-  /** True while the planner is open over an existing selection */
-  isPlanning: boolean;
-  /** Link back to the planner, keeping the current selection */
-  planLink: { pathname: string; search: string };
-  /** Leave the planner and show the results for the current selection */
-  showResults: () => void;
-  /** Drop the destination and show the origin's full departures board */
-  showBoard: () => void;
+  /** The current query as a query string, for links that come back to it */
+  search: string;
   setFrom: (stop: Stop | null) => void;
   setTo: (stop: Stop | null) => void;
   setDate: (date: Date | undefined) => void;
@@ -126,17 +116,9 @@ export function useTripParams(): UseTripParamsResult {
     updateUrl({ from: toId, to: fromId, route: null });
   }, [updateUrl, fromId, toId]);
 
-  const showResults = useCallback(() => updateUrl({ view: null }), [updateUrl]);
-
-  const showBoard = useCallback(
-    () => updateUrl({ to: null, route: null, view: null }),
-    [updateUrl]
-  );
-
-  const planLink = useMemo(() => {
-    const params = new URLSearchParams(searchParams);
-    params.set('view', PLAN_VIEW);
-    return { pathname: '/', search: params.toString() };
+  const search = useMemo(() => {
+    const query = searchParams.toString();
+    return query ? `?${query}` : '';
   }, [searchParams]);
 
   return {
@@ -148,10 +130,7 @@ export function useTripParams(): UseTripParamsResult {
     isToday,
     isTomorrow,
     dateLabel,
-    isPlanning: searchParams.get('view') === PLAN_VIEW,
-    planLink,
-    showResults,
-    showBoard,
+    search,
     setFrom,
     setTo,
     setDate,

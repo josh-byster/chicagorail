@@ -6,6 +6,7 @@ import type {
   Trip,
   StopTime,
   Departure,
+  Arrival,
   TripStop,
   DirectTrip,
   FindDirectTripsResponse,
@@ -56,6 +57,8 @@ export class GTFSService {
   private readonly GTFS_URL = 'https://schedules.metrarail.com/gtfs/schedule.zip';
   private readonly GTFS_DIR = path.join(__dirname, '..', '..', '..', '..', 'schedule');
   private stopsByIdMap: Map<string, Stop> = new Map();
+  /** trip_id -> the stop the trip starts from, for labelling arrivals */
+  private tripOriginMap: Map<string, { stopId: string; sequence: number }> = new Map();
   private routesByStopMap: Map<string, Set<string>> = new Map();
   private refreshInterval: NodeJS.Timeout | null = null;
 
@@ -205,6 +208,15 @@ export class GTFSService {
 
       // Create indexes
       this.stopsByIdMap = new Map(stops.map(stop => [stop.stop_id, stop]));
+
+      // First stop of each trip, in one pass over stop times
+      this.tripOriginMap = new Map();
+      stopTimes.forEach(st => {
+        const current = this.tripOriginMap.get(st.trip_id);
+        if (!current || st.stop_sequence < current.sequence) {
+          this.tripOriginMap.set(st.trip_id, { stopId: st.stop_id, sequence: st.stop_sequence });
+        }
+      });
 
       // Build routes by stop index
       this.routesByStopMap = new Map();
@@ -391,6 +403,75 @@ export class GTFSService {
       .slice(0, limit);
 
     return { stop, departures };
+  }
+
+  /**
+   * Trains arriving at a station.
+   *
+   * The mirror of getDeparturesForStop: a train counts as an arrival here
+   * when this stop is not where the trip began.
+   */
+  public async getArrivalsForStop(
+    stopId: string,
+    date: Date,
+    limit: number = 20,
+    routeIdFilter?: string
+  ): Promise<{ stop: Stop; arrivals: Arrival[] }> {
+    const data = await this.getData();
+    const stop = data.stops.find(s => s.stop_id === stopId);
+
+    if (!stop) {
+      throw new Error('Stop not found');
+    }
+
+    const stopTimes = data.stopTimes.filter(st => st.stop_id === stopId);
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const queryDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const isFutureDate = queryDay > today;
+
+    const arrivals = stopTimes
+      .map(st => {
+        const origin = this.tripOriginMap.get(st.trip_id);
+        // The trip starts here, so this is a departure rather than an arrival
+        if (!origin || origin.stopId === stopId) return null;
+
+        const trip = data.trips.find(t => t.trip_id === st.trip_id);
+        if (!trip) return null;
+
+        if (!this.isServiceActiveOnDate(trip.service_id, date)) {
+          return null;
+        }
+
+        const route = data.routes.find(r => r.route_id === trip.route_id);
+        if (!route) return null;
+
+        if (routeIdFilter && route.route_id !== routeIdFilter) {
+          return null;
+        }
+
+        const originStop = this.stopsByIdMap.get(origin.stopId);
+
+        return {
+          route,
+          trip_headsign: trip.trip_headsign,
+          arrival_time: this.gtfsTimeToISO(st.arrival_time, date),
+          departure_time: this.gtfsTimeToISO(st.departure_time, date),
+          direction: trip.direction_id === 0 ? 'outbound' : 'inbound',
+          trip_id: trip.trip_id,
+          origin_name: originStop?.stop_name ?? origin.stopId
+        } as Arrival;
+      })
+      .filter((a): a is Arrival => a !== null)
+      .filter(a => {
+        if (isFutureDate) return true;
+        return new Date(a.arrival_time) > now;
+      })
+      .sort((a, b) => new Date(a.arrival_time).getTime() - new Date(b.arrival_time).getTime())
+      .slice(0, limit);
+
+    return { stop, arrivals };
   }
 
   public getRoutesForStops(stops: Stop[]): Route[] {

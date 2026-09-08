@@ -9,6 +9,7 @@ export const API_CONFIG = {
     routes: '/routes',
     stopsSearch: '/stops/search',
     departures: (stopId: string) => `/stops/${stopId}/departures`,
+    arrivals: (stopId: string) => `/stops/${stopId}/arrivals`,
     directTrips: '/trips/direct',
     tripDetails: (tripId: string) => `/trips/${encodeURIComponent(tripId)}`,
     system: '/system',

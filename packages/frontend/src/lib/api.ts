@@ -12,6 +12,7 @@ import type {
   GetRoutesResponse,
   SearchStopsResponse,
   GetDeparturesResponse,
+  GetArrivalsResponse,
   FindDirectTripsResponse,
   GetSystemInfoResponse,
   GetTripDetailsResponse,
@@ -131,6 +132,32 @@ class ApiClient {
 
     const endpoint = `/stops/${encodeURIComponent(stopId)}/departures?${searchParams}`;
     return this.fetch<GetDeparturesResponse>(endpoint, options);
+  }
+
+  /**
+   * Get arrivals into a station
+   */
+  async getArrivals(
+    stopId: string,
+    params?: {
+      routeId?: string;
+      date?: string;
+      limit?: number;
+    },
+    options?: RequestOptions
+  ): Promise<GetArrivalsResponse> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.routeId) {
+      searchParams.set('routeId', params.routeId);
+    }
+    if (params?.date) {
+      searchParams.set('date', params.date);
+    }
+    searchParams.set('limit', String(params?.limit ?? API_CONFIG.defaults.departuresLimit));
+
+    const endpoint = `/stops/${encodeURIComponent(stopId)}/arrivals?${searchParams}`;
+    return this.fetch<GetArrivalsResponse>(endpoint, options);
   }
 
   /**

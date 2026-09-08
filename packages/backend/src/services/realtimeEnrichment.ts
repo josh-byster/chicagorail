@@ -6,6 +6,7 @@
  */
 
 import type {
+  Arrival,
   Departure,
   DirectTrip,
   GetTripDetailsResponse,
@@ -107,6 +108,25 @@ export function enrichDepartures(
       departure.departure_time
     );
     return realtime ? { ...departure, realtime } : departure;
+  });
+}
+
+/** Arrivals are predicted against the arrival time at this stop */
+export function enrichArrivals(
+  arrivals: Arrival[],
+  stopId: string,
+  snapshot: RealtimeSnapshot
+): Arrival[] {
+  if (snapshot.fetchedAt === null) return arrivals;
+
+  return arrivals.map((arrival) => {
+    const realtime = buildPrediction(
+      snapshot.trips.get(arrival.trip_id),
+      stopId,
+      UNKNOWN_SEQUENCE,
+      arrival.arrival_time
+    );
+    return realtime ? { ...arrival, realtime } : arrival;
   });
 }
 

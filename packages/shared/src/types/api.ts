@@ -1,5 +1,5 @@
 // API Request/Response Types
-import { Route, Stop, Departure, TripStop } from './gtfs';
+import { Route, Stop, Departure, Arrival, TripStop } from './gtfs';
 import { RealtimePrediction, RealtimeStatusInfo, VehiclePosition } from './realtime';
 
 // GET /api/routes
@@ -27,6 +27,20 @@ export interface GetDeparturesRequest {
 export interface GetDeparturesResponse {
   stop: Stop;
   departures: Departure[];
+  timestamp: string;
+}
+
+// GET /api/stops/:stopId/arrivals?date=&limit=&routeId=
+export interface GetArrivalsRequest {
+  stopId: string;
+  date?: string; // ISO date string
+  limit?: number;
+  routeId?: string; // Optional route filter
+}
+
+export interface GetArrivalsResponse {
+  stop: Stop;
+  arrivals: Arrival[];
   timestamp: string;
 }
 

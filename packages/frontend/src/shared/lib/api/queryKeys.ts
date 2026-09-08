@@ -39,6 +39,13 @@ export const queryKeys = {
       [...queryKeys.departures.all(), stopId, options ?? {}] as const,
   },
 
+  /** Arrival queries */
+  arrivals: {
+    all: () => [...queryKeys.all, 'arrivals'] as const,
+    byStop: (stopId: string, options?: { date?: string; routeId?: string }) =>
+      [...queryKeys.arrivals.all(), stopId, options ?? {}] as const,
+  },
+
   /** Trip-related queries */
   trips: {
     all: () => [...queryKeys.all, 'trips'] as const,

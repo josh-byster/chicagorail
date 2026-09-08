@@ -37,6 +37,8 @@ interface TripsResultsProps {
   toStop: Stop | null;
   dateLabel: string;
   isToday: boolean;
+  /** Carried into train links so the detail page can offer a way back */
+  contextSearch?: string;
 }
 
 export function TripsResults({
@@ -51,6 +53,7 @@ export function TripsResults({
   toStop,
   dateLabel,
   isToday,
+  contextSearch = '',
 }: TripsResultsProps) {
   const navigate = useNavigate();
   const [visibleBackups, setVisibleBackups] = useState(BACKUPS_SHOWN);
@@ -130,7 +133,7 @@ export function TripsResults({
               <li key={`${trip.trip_id}-${trip.origin_departure}`}>
                 <button
                   type="button"
-                  onClick={() => navigate(`/train/${encodeURIComponent(trip.trip_id)}`)}
+                  onClick={() => navigate(`/train/${encodeURIComponent(trip.trip_id)}${contextSearch}`)}
                   className="grid w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3.5 border-t border-foreground/[.06] py-2.5 text-left transition-opacity hover:opacity-70"
                 >
                   <span className="text-base font-semibold tabular-nums">

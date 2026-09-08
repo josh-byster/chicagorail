@@ -23,15 +23,13 @@ import type { Stop } from '@chicagorail/shared';
 
 export function StationPickerProvider({ children }: { children: React.ReactNode }) {
   const [field, setField] = useState<StationField | null>(null);
-  const [keepPlanning, setKeepPlanning] = useState(false);
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { addRecentStop } = useRecentStops();
 
-  const open = useCallback<OpenPicker>((next, options) => {
+  const open = useCallback<OpenPicker>((next) => {
     setQuery('');
-    setKeepPlanning(!!options?.keepPlanning);
     setField(next);
   }, []);
 
@@ -45,16 +43,11 @@ export function StationPickerProvider({ children }: { children: React.ReactNode 
       const params = new URLSearchParams(searchParams);
       params.set(field, stop.stop_id);
       params.delete('route');
-      if (keepPlanning) {
-        params.set('view', 'plan');
-      } else {
-        params.delete('view');
-      }
 
       close();
       navigate({ pathname: '/', search: params.toString() });
     },
-    [field, keepPlanning, addRecentStop, searchParams, navigate, close]
+    [field, addRecentStop, searchParams, navigate, close]
   );
 
   const label = field === 'to' ? 'Search for a destination' : 'Search for a station';

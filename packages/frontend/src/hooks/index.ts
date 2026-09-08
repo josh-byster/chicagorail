@@ -13,3 +13,4 @@ export { useSavedTrips, type SavedTrip, type UseSavedTripsResult } from './useSa
 export { useTripDetails, type UseTripDetailsResult } from './useTripDetails';
 export { useTripParams, type UseTripParamsResult } from './useTripParams';
 export { useStationPicker, type OpenPicker, type StationField } from './useStationPicker';
+export { useArrivals, type UseArrivalsOptions, type UseArrivalsResult } from './useArrivals';

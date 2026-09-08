@@ -1,12 +1,14 @@
 import { Router, type Router as RouterType } from 'express';
 import { GTFSService } from '../services/gtfsService';
 import { RealtimeService } from '../services/realtimeService';
-import { enrichDepartures } from '../services/realtimeEnrichment';
+import { enrichArrivals, enrichDepartures } from '../services/realtimeEnrichment';
 import type {
   SearchStopsRequest,
   SearchStopsResponse,
   GetDeparturesRequest,
   GetDeparturesResponse,
+  GetArrivalsRequest,
+  GetArrivalsResponse,
   ApiError
 } from '@chicagorail/shared';
 import { utils } from '@chicagorail/shared';
@@ -78,6 +80,43 @@ router.get('/:stopId/departures', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to fetch departures',
+      code: 'INTERNAL_ERROR'
+    } as ApiError);
+  }
+});
+
+// Get arrivals for a stop
+router.get('/:stopId/arrivals', async (req, res) => {
+  try {
+    const { stopId } = req.params;
+    const { date, limit = '20', routeId } = req.query as Partial<GetArrivalsRequest>;
+
+    // Parse date as local time, not UTC
+    // Date string format: YYYY-MM-DD
+    let queryDate = new Date();
+    if (date) {
+      const [year, month, day] = date.split('-').map(Number);
+      queryDate = new Date(year, month - 1, day); // month is 0-indexed
+    }
+
+    const arrivals = await gtfsService.getArrivalsForStop(
+      stopId,
+      queryDate,
+      Number(limit),
+      routeId
+    );
+
+    const snapshot = await realtimeService.getSnapshot();
+
+    const response: GetArrivalsResponse = {
+      stop: arrivals.stop,
+      arrivals: enrichArrivals(arrivals.arrivals, stopId, snapshot),
+      timestamp: new Date().toISOString()
+    };
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to fetch arrivals',
       code: 'INTERNAL_ERROR'
     } as ApiError);
   }

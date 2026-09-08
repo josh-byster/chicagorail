@@ -32,6 +32,10 @@ export function TrainDetail() {
   const [searchParams] = useSearchParams();
   const dateParam = searchParams.get('date') ?? undefined;
 
+  // The board that linked here passes its query along, so "Home" goes back to it
+  const backSearch = searchParams.toString();
+  const backTo = backSearch ? `/?${backSearch}` : '/';
+
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
@@ -65,7 +69,7 @@ export function TrainDetail() {
   if (isLoading) {
     return (
       <Screen>
-        <BackLink />
+        <BackLink to={backTo} />
         <p className="py-8 text-sm text-muted-foreground" role="status">
           Loading train&hellip;
         </p>
@@ -76,7 +80,7 @@ export function TrainDetail() {
   if (error || !trip) {
     return (
       <Screen>
-        <BackLink />
+        <BackLink to={backTo} />
         <div className="rounded-[14px] border border-destructive/40 p-4 text-sm text-destructive" role="alert">
           {error || 'That train is not in the current schedule.'}
         </div>
@@ -125,7 +129,7 @@ export function TrainDetail() {
 
   return (
     <Screen>
-      <BackLink />
+      <BackLink to={backTo} />
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2.5">
