@@ -48,11 +48,21 @@ app.use('/api/system', systemRouter);
 // Error handling
 app.use(errorHandler);
 
-app.listen(port, async () => {
+app.listen(port, () => {
   console.log(`Backend running on port ${port}`);
 
-  // Initialize GTFS service with fresh data and start background refresh
-  const gtfsService = GTFSService.getInstance();
-  await gtfsService.initialize();
-  gtfsService.startBackgroundRefresh();
+  // Load GTFS data after the server is already accepting connections. Parsing
+  // the feed blocks the event loop for a while on a small box, so holding the
+  // startup open for it means /api/health can't answer and a deploy's
+  // healthcheck fails before the app ever becomes useful.
+  setImmediate(async () => {
+    const gtfsService = GTFSService.getInstance();
+    try {
+      await gtfsService.initialize();
+      gtfsService.startBackgroundRefresh();
+    } catch (error) {
+      // Requests will retry the load themselves via getData()
+      console.error('GTFS initialization failed', error);
+    }
+  });
 });

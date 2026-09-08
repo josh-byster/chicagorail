@@ -57,6 +57,9 @@ export class GTFSService {
   private readonly GTFS_URL = 'https://schedules.metrarail.com/gtfs/schedule.zip';
   private readonly GTFS_DIR = path.join(__dirname, '..', '..', '..', '..', 'schedule');
   private stopsByIdMap: Map<string, Stop> = new Map();
+  private tripsByIdMap: Map<string, Trip> = new Map();
+  /** Shared by concurrent callers so the feed is only parsed once */
+  private loadPromise: Promise<void> | null = null;
   /** trip_id -> the stop the trip starts from, for labelling arrivals */
   private tripOriginMap: Map<string, { stopId: string; sequence: number }> = new Map();
   private routesByStopMap: Map<string, Set<string>> = new Map();
@@ -140,11 +143,26 @@ export class GTFSService {
   }
 
   public async loadData(): Promise<void> {
+    // Data is kept in memory and refreshed hourly by background job
+    if (this.data) {
+      return;
+    }
+
+    // Requests arriving while the feed is still parsing wait on that parse
+    // rather than starting another one
+    if (this.loadPromise) {
+      return this.loadPromise;
+    }
+
+    this.loadPromise = this.parseAndIndex().finally(() => {
+      this.loadPromise = null;
+    });
+
+    return this.loadPromise;
+  }
+
+  private async parseAndIndex(): Promise<void> {
     try {
-      // Data is kept in memory and refreshed hourly by background job
-      if (this.data) {
-        return;
-      }
 
       const tripsFile = path.join(this.GTFS_DIR, 'trips.txt');
       if (!fs.existsSync(tripsFile)) {
@@ -208,25 +226,32 @@ export class GTFSService {
 
       // Create indexes
       this.stopsByIdMap = new Map(stops.map(stop => [stop.stop_id, stop]));
+      this.tripsByIdMap = new Map(trips.map(trip => [trip.trip_id, trip]));
 
-      // First stop of each trip, in one pass over stop times
+      // Routes serving each stop, and where each trip begins.
+      //
+      // One pass over stop times, joined against trips by id. Scanning every
+      // stop time once per trip instead costs trips x stopTimes, which is
+      // hundreds of millions of iterations on the real feed and blocks
+      // startup long enough to fail a deploy healthcheck.
+      this.routesByStopMap = new Map();
       this.tripOriginMap = new Map();
+
       stopTimes.forEach(st => {
-        const current = this.tripOriginMap.get(st.trip_id);
-        if (!current || st.stop_sequence < current.sequence) {
+        const trip = this.tripsByIdMap.get(st.trip_id);
+        if (!trip) return;
+
+        let stopRoutes = this.routesByStopMap.get(st.stop_id);
+        if (!stopRoutes) {
+          stopRoutes = new Set();
+          this.routesByStopMap.set(st.stop_id, stopRoutes);
+        }
+        stopRoutes.add(trip.route_id);
+
+        const origin = this.tripOriginMap.get(st.trip_id);
+        if (!origin || st.stop_sequence < origin.sequence) {
           this.tripOriginMap.set(st.trip_id, { stopId: st.stop_id, sequence: st.stop_sequence });
         }
-      });
-
-      // Build routes by stop index
-      this.routesByStopMap = new Map();
-      trips.forEach(trip => {
-        const tripStopTimes = stopTimes.filter(st => st.trip_id === trip.trip_id);
-        tripStopTimes.forEach(st => {
-          const stopRoutes = this.routesByStopMap.get(st.stop_id) || new Set();
-          stopRoutes.add(trip.route_id);
-          this.routesByStopMap.set(st.stop_id, stopRoutes);
-        });
       });
 
       this.data = {
@@ -364,7 +389,7 @@ export class GTFSService {
     // Build departures with route info
     const departures = stopTimes
       .map(st => {
-        const trip = data.trips.find(t => t.trip_id === st.trip_id);
+        const trip = this.tripsByIdMap.get(st.trip_id);
         if (!trip) return null;
 
         // Check if this trip's service is active on the query date
@@ -437,7 +462,7 @@ export class GTFSService {
         // The trip starts here, so this is a departure rather than an arrival
         if (!origin || origin.stopId === stopId) return null;
 
-        const trip = data.trips.find(t => t.trip_id === st.trip_id);
+        const trip = this.tripsByIdMap.get(st.trip_id);
         if (!trip) return null;
 
         if (!this.isServiceActiveOnDate(trip.service_id, date)) {
@@ -590,7 +615,7 @@ export class GTFSService {
   ): Promise<GetTripDetailsResponse | null> {
     const data = await this.getData();
 
-    const trip = data.trips.find(t => t.trip_id === tripId);
+    const trip = this.tripsByIdMap.get(tripId);
     if (!trip) {
       return null;
     }
