@@ -120,6 +120,8 @@ successful `main` check, it pushes that exact commit to the existing Dokku app's
 `main` branch. Production deployments run one at a time and are not cancelled
 mid-deploy. Vercel deploys the frontend separately.
 
+CI and the Docker image use Node 22, which is required by the realtime feed dependency.
+
 The GitHub repository's Actions secrets must contain `DOKKU_HOST`,
 `DOKKU_APP_NAME`, and `DOKKU_SSH_PRIVATE_KEY`. The SSH key must already be
 authorized on the Dokku server. These names match the original deployment
