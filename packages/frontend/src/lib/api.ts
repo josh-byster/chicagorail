@@ -10,6 +10,7 @@
 
 import type {
   GetRoutesResponse,
+  GetStopConnectionsResponse,
   SearchStopsResponse,
   GetDeparturesResponse,
   GetArrivalsResponse,
@@ -106,6 +107,11 @@ class ApiClient {
   async searchStops(query: string, options?: RequestOptions): Promise<SearchStopsResponse> {
     const endpoint = `/stops/search?q=${encodeURIComponent(query)}`;
     return this.fetch<SearchStopsResponse>(endpoint, options);
+  }
+
+  async getStopConnections(stopId: string, field: 'from' | 'to', date: string, options?: RequestOptions): Promise<GetStopConnectionsResponse> {
+    const params = new URLSearchParams({ field, date });
+    return this.fetch(`/stops/${encodeURIComponent(stopId)}/connections?${params}`, options);
   }
 
   /**

@@ -23,6 +23,7 @@ interface TripPlannerProps {
   isToday: boolean;
   isTomorrow: boolean;
   onDateChange: (date: Date | undefined) => void;
+  onClearFrom: () => void;
   onClearTo: () => void;
   onSwap: () => void;
 }
@@ -38,6 +39,7 @@ export function TripPlanner({
   isToday,
   isTomorrow,
   onDateChange,
+  onClearFrom,
   onClearTo,
   onSwap,
 }: TripPlannerProps) {
@@ -46,10 +48,11 @@ export function TripPlanner({
 
   return (
     <div className="overflow-hidden rounded-[14px] border border-hairline-strong bg-surface">
+      <div className="flex items-center pr-4">
       <button
         type="button"
         onClick={() => openPicker('from')}
-        className="grid w-full grid-cols-[52px_minmax(0,1fr)] items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-foreground/[.035]"
+        className="grid min-h-[60px] min-w-0 flex-1 grid-cols-[52px_minmax(0,1fr)] items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-foreground/[.035]"
       >
         <span className={labelClass}>From</span>
         <span className="flex min-w-0 items-center gap-2.5">
@@ -73,6 +76,17 @@ export function TripPlanner({
           )}
         </span>
       </button>
+      {fromStop && (
+        <button
+          type="button"
+          onClick={onClearFrom}
+          aria-label="Clear origin"
+          className="flex size-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-foreground/[.07]"
+        >
+          <X className="size-[14px] text-ink-subtle" />
+        </button>
+      )}
+      </div>
 
       <div className="relative mx-4 h-px bg-hairline">
         <button
@@ -107,9 +121,9 @@ export function TripPlanner({
             type="button"
             onClick={onClearTo}
             aria-label="Clear destination"
-            className="flex size-[22px] items-center justify-center rounded-md bg-foreground/[.07] transition-colors hover:bg-foreground/[.14]"
+            className="flex size-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-foreground/[.07]"
           >
-            <X className="size-[11px] text-ink-subtle" strokeWidth={2.4} />
+            <X className="size-[14px] text-ink-subtle" />
           </button>
         )}
       </div>

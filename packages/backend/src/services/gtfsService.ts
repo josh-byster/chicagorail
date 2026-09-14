@@ -518,6 +518,39 @@ export class GTFSService {
       .filter((route): route is Route => route !== undefined);
   }
 
+  public async getStopConnections(stopId: string, field: 'from' | 'to', date: Date) {
+    const data = await this.getData();
+    const stop = this.stopsByIdMap.get(stopId);
+    if (!stop) return null;
+
+    // Build one index, then inspect only trips that call at the fixed station.
+    // Sharing a line alone is insufficient: branches and express trains differ.
+    const timesByTrip = new Map<string, StopTime[]>();
+    for (const time of data.stopTimes) {
+      const times = timesByTrip.get(time.trip_id) ?? [];
+      times.push(time);
+      timesByTrip.set(time.trip_id, times);
+    }
+    const eligible = new Set<string>();
+    for (const times of timesByTrip.values()) {
+      const fixed = times.find(time => time.stop_id === stopId);
+      if (!fixed) continue;
+      const trip = this.tripsByIdMap.get(fixed.trip_id);
+      if (!trip || !this.isServiceActiveOnDate(trip.service_id, date)) continue;
+      for (const candidate of times) {
+        const inDirection = field === 'to'
+          ? candidate.stop_sequence > fixed.stop_sequence
+          : candidate.stop_sequence < fixed.stop_sequence;
+        if (candidate.stop_id !== stopId && inDirection) eligible.add(candidate.stop_id);
+      }
+    }
+    return {
+      stop,
+      stops: [...data.stops].sort((a, b) => a.stop_name.localeCompare(b.stop_name)),
+      eligibleStopIds: [...eligible],
+    };
+  }
+
   public async findDirectTrips(
     originStopId: string,
     destinationStopId: string,

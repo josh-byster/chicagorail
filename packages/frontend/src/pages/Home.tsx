@@ -39,6 +39,7 @@ export function Home() {
     isTomorrow,
     dateLabel,
     search,
+    setFrom,
     setTo,
     setDate,
     setRoute,
@@ -121,6 +122,7 @@ export function Home() {
         isToday={isToday}
         isTomorrow={isTomorrow}
         onDateChange={setDate}
+        onClearFrom={() => setFrom(null)}
         onClearTo={() => setTo(null)}
         onSwap={swap}
       />

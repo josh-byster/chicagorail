@@ -98,3 +98,10 @@ export interface ApiError {
   code: string;
   details?: unknown;
 }
+
+/** Direct connections scheduled on the selected service date (the whole day). */
+export interface GetStopConnectionsResponse {
+  stop: Stop;
+  stops: Stop[];
+  eligibleStopIds: string[];
+}

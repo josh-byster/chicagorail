@@ -48,6 +48,25 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// All stations, with direct connections for the opposite endpoint of a trip.
+router.get('/:stopId/connections', async (req, res) => {
+  const { field, date } = req.query;
+  if ((field !== 'from' && field !== 'to') || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: 'A valid date and field are required', code: 'INVALID_QUERY' });
+  }
+  const queryDate = new Date(`${date}T12:00:00Z`);
+  if (!Number.isFinite(queryDate.getTime()) || queryDate.toISOString().slice(0, 10) !== date) {
+    return res.status(400).json({ error: 'Invalid date', code: 'INVALID_QUERY' });
+  }
+  try {
+    const result = await gtfsService.getStopConnections(req.params.stopId, field, queryDate);
+    if (!result) return res.status(404).json({ error: 'Station not found', code: 'NOT_FOUND' });
+    res.json(result);
+  } catch {
+    res.status(500).json({ error: 'Failed to check direct connections', code: 'INTERNAL_ERROR' });
+  }
+});
+
 // Get departures for a stop
 router.get('/:stopId/departures', async (req, res) => {
   try {
