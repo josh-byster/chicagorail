@@ -9,7 +9,6 @@ export { useStationSearch, type UseStationSearchResult } from './useStations';
 export { useDirectTrips, type UseDirectTripsResult } from './useTrips';
 export { useSystemInfo, type UseSystemInfoResult } from './useSystemInfo';
 export { useRecentStops, type UseRecentStopsResult } from './useRecent';
-export { useSavedTrips, type SavedTrip, type UseSavedTripsResult } from './useSavedTrips';
 export { useTripDetails, type UseTripDetailsResult } from './useTripDetails';
 export { useTripParams, type UseTripParamsResult } from './useTripParams';
 export { useStationPicker, type OpenPicker, type StationField } from './useStationPicker';
