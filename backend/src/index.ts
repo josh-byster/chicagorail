@@ -23,6 +23,16 @@ app.get('/api/routes', async (req, res) => {
   }
 });
 
+// Station index used to help riders discover which line serves their station.
+app.get('/api/route-stops', async (_req, res) => {
+  try {
+    res.json(await gtfsService.getRouteStops());
+  } catch (error) {
+    logger.error('Error serving route stops:', error);
+    res.status(500).json({ error: 'Failed to fetch route stops' });
+  }
+});
+
 // Trips endpoint
 app.get('/api/routes/:routeId/trips', async (req, res) => {
   try {

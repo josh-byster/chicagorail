@@ -1,167 +1,130 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { format } from 'date-fns';
-import { DayPicker } from 'react-day-picker';
-import { MetraService } from './services/metraService';
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { addDays, format, isToday, subDays } from 'date-fns';
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Map,
+} from 'lucide-react';
 import RouteList from './components/RouteList';
 import { ScheduleView } from './components/ScheduleView';
-import { Route } from './types/metra';
+import { Route, Stop } from './types/metra';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 
 function App() {
-  const today = format(new Date(), 'yyyy-MM-dd');
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedStation, setSelectedStation] = useState<Stop | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const datePickerRef = useRef<HTMLDivElement>(null);
-  const metraService = MetraService.getInstance();
-
-  // Handle click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
-        setIsDatePickerOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleRouteSelect = (route: Route) => {
-    setSelectedRoute(route);
-  };
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-      setIsDatePickerOpen(false);
-    }
+    if (!date) return;
+    setSelectedDate(date);
+    setIsDatePickerOpen(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <motion.h1 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-2xl font-bold text-gray-900"
-            >
-              Metra Schedule
-            </motion.h1>
-            <div className="relative" ref={datePickerRef}>
-              <button
-                onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                className="btn btn-primary flex items-center space-x-2"
-              >
-                <span>{format(selectedDate, 'MMM d, yyyy')}</span>
-                <svg
-                  className={`w-5 h-5 transform transition-transform ${isDatePickerOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <AnimatePresence>
-                {isDatePickerOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-100"
-                  >
-                    <DayPicker
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={handleDateSelect}
-                      className="border-none"
-                      classNames={{
-                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                        month: "space-y-4",
-                        caption: "flex justify-center pt-1 relative items-center",
-                        caption_label: "text-sm font-medium",
-                        nav: "space-x-1 flex items-center",
-                        nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                        nav_button_previous: "absolute left-1",
-                        nav_button_next: "absolute right-1",
-                        table: "w-full border-collapse space-y-1",
-                        head_row: "flex",
-                        head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
-                        row: "flex w-full mt-2",
-                        cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-gray-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                        day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-                        day_selected: "bg-primary-600 text-white hover:bg-primary-700 focus:bg-primary-700",
-                        day_today: "bg-gray-100 text-gray-900",
-                        day_outside: "text-gray-400 opacity-50",
-                        day_disabled: "text-gray-400 opacity-50",
-                        day_range_middle: "aria-selected:bg-gray-100 aria-selected:text-gray-900",
-                        day_hidden: "invisible",
-                      }}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+    <div className="app-shell">
+      <header className="site-header">
+        <div className="page-width header-inner">
+          <a className="brand" href="/" aria-label="Chicago Rail home">
+            <span className="brand-mark" aria-hidden="true"><span /><span /></span>
+            <span><strong>Chicago Rail</strong><small>Metra schedule explorer</small></span>
+          </a>
+          <div className="status-pill"><span /> Schedule data</div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Route List */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-3"
-          >
+      <main className="page-width main-content">
+        <section className="page-intro" aria-labelledby="page-title">
+          <div>
+            <p className="eyebrow">Plan your ride</p>
+            <h1 id="page-title">Find the train that fits your day.</h1>
+            <p>Search for the line—or just enter a station you know—and see every departure in one place.</p>
+          </div>
+
+          <div className="date-control">
+            <span className="control-label">Travel date</span>
+            <div className="date-control-row">
+              <Button variant="outline" size="icon-lg" type="button" aria-label="Previous day" onClick={() => setSelectedDate((date) => subDays(date, 1))}>
+                <ChevronLeft />
+              </Button>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="lg" className="min-h-[58px] flex-1 justify-start gap-3 px-3 text-left">
+                    <CalendarDays data-icon="inline-start" />
+                    <span className="grid flex-1">
+                      <strong>{isToday(selectedDate) ? 'Today' : format(selectedDate, 'EEEE')}</strong>
+                      <small>{format(selectedDate, 'MMM d, yyyy')}</small>
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-auto p-0">
+                  <Calendar mode="single" selected={selectedDate} onSelect={handleDateSelect} autoFocus />
+                  {!isToday(selectedDate) && (
+                    <>
+                      <Separator />
+                      <Button variant="ghost" className="w-full" onClick={() => handleDateSelect(new Date())}>Jump to today</Button>
+                    </>
+                  )}
+                </PopoverContent>
+              </Popover>
+              <Button variant="outline" size="icon-lg" type="button" aria-label="Next day" onClick={() => setSelectedDate((date) => addDays(date, 1))}>
+                <ChevronRight />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <div className="planner-layout">
+          <aside className="route-panel" aria-label="Choose a Metra line">
+            <div className="panel-heading">
+              <span className="step-number">1</span>
+              <div><p className="eyebrow">First</p><h2>Find your line</h2></div>
+            </div>
             <RouteList
-              onRouteSelect={handleRouteSelect}
+              onRouteSelect={(route, station) => {
+                setSelectedRoute(route);
+                setSelectedStation(station || null);
+              }}
               selectedRoute={selectedRoute}
             />
-          </motion.div>
+          </aside>
 
-          {/* Schedule View */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-9"
-          >
+          <section className="schedule-panel" aria-live="polite">
             <AnimatePresence mode="wait">
               {selectedRoute ? (
-                <motion.div
-                  key={selectedRoute.route_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                >
-                  <ScheduleView
-                    selectedRoute={selectedRoute.route_id}
-                    selectedDate={selectedDate}
-                  />
+                <motion.div key={selectedRoute.route_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <ScheduleView selectedRoute={selectedRoute} selectedDate={selectedDate} selectedStation={selectedStation} />
                 </motion.div>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="card text-center py-12"
-                >
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Select a Route</h2>
-                  <p className="text-gray-600">Choose a route from the list to view its schedule</p>
+                <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <Empty className="min-h-[536px]">
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <div className="welcome-illustration" aria-hidden="true">
+                          <Map /><span className="rail-line" /><span className="rail-stop rail-stop-one" /><span className="rail-stop rail-stop-two" /><span className="rail-stop rail-stop-three" />
+                        </div>
+                      </EmptyMedia>
+                      <p className="eyebrow">Your schedule will appear here</p>
+                      <EmptyTitle>Start with what you know.</EmptyTitle>
+                      <EmptyDescription>Search for a line or type a station name. We’ll show you which Metra line serves it and the departures for {format(selectedDate, 'EEEE, MMMM d')}.</EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent><div className="selection-hint"><ChevronLeft /> Search by line or station</div></EmptyContent>
+                  </Empty>
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </section>
         </div>
       </main>
+
+      <footer className="page-width site-footer">Schedule information is provided for planning. Check Metra for live service alerts.</footer>
     </div>
   );
 }

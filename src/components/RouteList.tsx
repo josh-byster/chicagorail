@@ -1,120 +1,112 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Route } from '../types/metra';
+import { useEffect, useMemo, useState } from 'react';
+import { Check, MapPin, Search } from 'lucide-react';
+import { Route, Stop } from '../types/metra';
 import { MetraService } from '../services/metraService';
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RouteListProps {
-  onRouteSelect: (route: Route) => void;
+  onRouteSelect: (route: Route, station?: Stop) => void;
   selectedRoute: Route | null;
 }
 
 const RouteList = ({ onRouteSelect, selectedRoute }: RouteListProps) => {
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [routeStops, setRouteStops] = useState<Record<string, Stop[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const loadRoutes = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const metraService = MetraService.getInstance();
-        const routes = await metraService.getRoutes();
-        setRoutes(routes);
-      } catch (error) {
-        console.error('Error loading routes:', error);
-        setError('Failed to load routes');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadRoutes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const service = MetraService.getInstance();
+      const [loadedRoutes, loadedStops] = await Promise.all([
+        service.getRoutes(),
+        service.getRouteStops(),
+      ]);
+      setRoutes(loadedRoutes);
+      setRouteStops(loadedStops);
+    } catch (loadError) {
+      console.error('Error loading routes:', loadError);
+      setError('We couldn’t load the Metra lines and stations.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadRoutes();
-  }, []);
+  useEffect(() => { loadRoutes(); }, []);
 
-  const filteredRoutes = routes.filter(route =>
-    route.route_long_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    route.route_short_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const query = searchQuery.trim().toLowerCase();
+  const matchingStations = (route: Route) => {
+    if (!query) return [];
+    return (routeStops[route.route_id] || []).filter((stop) => stop.stop_name.toLowerCase().includes(query));
+  };
+
+  const filteredRoutes = useMemo(() => {
+    if (!query) return routes;
+    return routes.filter((route) => {
+      const lineMatch = `${route.route_long_name} ${route.route_short_name}`.toLowerCase().includes(query);
+      return lineMatch || matchingStations(route).length > 0;
+    });
+  }, [query, routeStops, routes]);
 
   if (loading) {
-    return (
-      <div className="card">
-        <div className="flex justify-center items-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        </div>
-      </div>
-    );
+    return <div className="route-loading" aria-label="Loading Metra lines">{[0, 1, 2, 3, 4].map((item) => <Skeleton key={item} />)}</div>;
   }
 
   if (error) {
-    return (
-      <div className="card">
-        <div className="text-red-600 text-center">{error}</div>
-      </div>
-    );
+    return <div className="inline-error" role="alert"><p>{error}</p><Button variant="outline" size="sm" onClick={loadRoutes}>Try again</Button></div>;
   }
 
   return (
-    <div className="card">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Metra Routes</h2>
-      
-      {/* Search Input */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search routes..."
+    <div>
+      <InputGroup className="h-10">
+        <InputGroupAddon><Search /></InputGroupAddon>
+        <InputGroupInput
+          type="search"
+          aria-label="Search by line or station"
+          placeholder="Line or station"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input"
+          onChange={(event) => setSearchQuery(event.target.value)}
         />
-      </div>
+      </InputGroup>
+      <p className="search-help"><MapPin /> Don’t know your line? Enter a station.</p>
 
-      {/* Routes List */}
-      <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
-        <AnimatePresence>
-          {filteredRoutes.map((route) => (
-            <motion.div
+      <div className="route-list">
+        {filteredRoutes.map((route) => {
+          const selected = selectedRoute?.route_id === route.route_id;
+          const stationMatches = matchingStations(route);
+          return (
+            <Button
               key={route.route_id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
+              type="button"
+              variant={selected ? 'secondary' : 'ghost'}
+              onClick={() => onRouteSelect(route, stationMatches[0])}
+              className="route-row h-auto w-full justify-start"
+              aria-pressed={selected}
             >
-              <button
-                onClick={() => onRouteSelect(route)}
-                className={`w-full text-left p-4 rounded-lg transition-all duration-200 ${
-                  selectedRoute?.route_id === route.route_id
-                    ? 'bg-primary-50 border-l-4 border-primary-600'
-                    : 'hover:bg-gray-50 border-l-4 border-transparent'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 
-                      className={`font-medium ${
-                        selectedRoute?.route_id === route.route_id
-                          ? 'text-primary-900'
-                          : 'text-gray-900'
-                      }`}
-                    >
-                      {route.route_long_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">{route.route_short_name}</p>
-                  </div>
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: `#${route.route_color}` }}
-                  />
-                </div>
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <span className="route-swatch" style={{ backgroundColor: `#${route.route_color}` }} />
+              <span className="route-copy">
+                <strong>{route.route_long_name}</strong>
+                <small>{stationMatches.length > 0 ? `Stops at ${stationMatches.slice(0, 2).map((stop) => stop.stop_name).join(' & ')}` : `${route.route_short_name} line`}</small>
+              </span>
+              {selected ? <Check data-icon="inline-end" className="selected-check" /> : <span className="row-arrow">›</span>}
+            </Button>
+          );
+        })}
+
+        {filteredRoutes.length === 0 && (
+          <div className="no-results">
+            <p>No lines or stations match “{searchQuery}”.</p>
+            <Button variant="link" size="sm" onClick={() => setSearchQuery('')}>Clear search</Button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default RouteList; 
+export default RouteList;

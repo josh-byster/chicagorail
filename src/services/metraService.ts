@@ -188,6 +188,14 @@ export class MetraService {
     }
   }
 
+  public async getRouteStops(): Promise<Record<string, Stop[]>> {
+    const response = await fetch(`${this.API_BASE_URL}/route-stops`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch stations from backend');
+    }
+    return await response.json();
+  }
+
   public getStops(): Stop[] {
     return this.stops;
   }

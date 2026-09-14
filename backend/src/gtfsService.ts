@@ -310,6 +310,24 @@ export class GTFSService {
       }));
   }
 
+  public async getRouteStops(): Promise<Record<string, Stop[]>> {
+    const data = await this.getData();
+
+    return data.routes.reduce((routeStops, route) => {
+      const stopIds = new Set(
+        data.trips
+          .filter((trip) => trip.route_id === route.route_id)
+          .flatMap((trip) => trip.stopTimes.map((stopTime) => stopTime.stop_id))
+      );
+
+      routeStops[route.route_id] = data.stops
+        .filter((stop) => stopIds.has(stop.stop_id))
+        .sort((a, b) => a.stop_name.localeCompare(b.stop_name));
+
+      return routeStops;
+    }, {} as Record<string, Stop[]>);
+  }
+
   private getActiveServiceIds(date: Date): string[] {
     return Object.values(this.data?.servicePeriods || {})
       .filter(service => this.isServiceActiveOnDate(service.service_id, date))
