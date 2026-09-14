@@ -1,0 +1,87 @@
+name: Backend CI and Dokku deploy
+
+on:
+  pull_request:
+    branches: [main]
+    paths: &backend_paths
+      - 'packages/backend/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.npmrc'
+      - 'tsconfig.base.json'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'app.json'
+      - 'schedule/**'
+      - 'scripts/check-backend.mjs'
+      - '.github/workflows/deploy-dokku.yml'
+  push:
+    branches: [main]
+    paths: *backend_paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4; version from packageManager
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build shared types and backend
+        run: pnpm build
+      - name: Test connection eligibility and realtime behavior
+        run: pnpm --filter @chicagorail/backend run test --runInBand __tests__/unit/stopConnections.test.ts __tests__/unit/realtime.test.ts
+      - name: Build and test frontend against shared types
+        run: |
+          pnpm --filter @chicagorail/frontend build
+          pnpm --filter @chicagorail/frontend test:run
+      - name: Validate smoke-check script
+        run: node --check scripts/check-backend.mjs
+
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: dokku-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Check deployment configuration
+        env:
+          DOKKU_HOST: ${{ secrets.DOKKU_HOST }}
+          DOKKU_APP_NAME: ${{ secrets.DOKKU_APP_NAME }}
+          DOKKU_SSH_PRIVATE_KEY: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+        run: |
+          for name in DOKKU_HOST DOKKU_APP_NAME DOKKU_SSH_PRIVATE_KEY; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing repository secret: $name"
+              exit 1
+            fi
+          done
+      - name: Deploy tested commit to Dokku main
+        uses: dokku/github-action@a38b28b1f65617ee2b12e0ca96315fd5f889292f
+        with:
+          git_remote_url: ssh://dokku@${{ secrets.DOKKU_HOST }}:22/${{ secrets.DOKKU_APP_NAME }}
+          ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+          branch: main
+          ci_commit: ${{ github.sha }}
+      - name: Verify live health and connections endpoint
+        run: node scripts/check-backend.mjs https://api.chicagorail.app/api

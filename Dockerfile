@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Set timezone to Chicago (GTFS data is in Chicago local time)
 RUN apk add --no-cache tzdata
