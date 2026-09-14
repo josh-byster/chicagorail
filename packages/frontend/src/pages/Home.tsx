@@ -17,14 +17,12 @@ import { ArrivalBoard } from '@/components/ArrivalBoard';
 import { LineFilter } from '@/components/LineFilter';
 import { TripPlanner } from '@/components/TripPlanner';
 import { TripsResults } from '@/components/TripsResults';
-import { SavedTripCard } from '@/components/SavedTripCard';
 import { LiveStatus } from '@/components/LiveStatus';
 import { useStop } from '@/hooks/useStop';
 import { useDepartures } from '@/hooks/useDepartures';
 import { useArrivals } from '@/hooks/useArrivals';
 import { useDirectTrips } from '@/hooks/useTrips';
 import { useRoutesFromDepartures } from '@/hooks/useRoutes';
-import { useSavedTrips } from '@/hooks/useSavedTrips';
 import { useTripParams } from '@/hooks/useTripParams';
 import { useSEO } from '@/hooks/useSEO';
 
@@ -48,13 +46,11 @@ export function Home() {
 
   const { data: fromStop } = useStop(fromId);
   const { data: toStop } = useStop(toId);
-  const { data: savedTrips } = useSavedTrips();
   const { data: routesAtOrigin } = useRoutesFromDepartures(fromId, dateString);
 
   const showTrips = !!fromId && !!toId;
   const showDepartures = !!fromId && !toId;
   const showArrivals = !fromId && !!toId;
-  const isEmpty = !fromId && !toId;
 
   const departures = useDepartures(showDepartures ? fromId : null, {
     routeId,
@@ -202,7 +198,6 @@ export function Home() {
             error={tripsError}
             selectedRoute={routeId}
             onRouteFilterChange={setRoute}
-            fromStop={fromStop}
             toStop={toStop}
             dateLabel={dateLabel}
             isToday={isToday}
@@ -211,25 +206,7 @@ export function Home() {
         </section>
       )}
 
-      {isEmpty && savedTrips.length > 0 && (
-        <>
-          <SavedTripCard trip={savedTrips[0]} variant="hero" />
 
-          {savedTrips.length > 1 && (
-            <section className="flex flex-col gap-2.5 pt-2.5">
-              <h2 className="text-[10.5px] font-semibold uppercase tracking-[.1em] text-muted-foreground">
-                Saved trips
-              </h2>
-              {savedTrips.slice(1).map((trip) => (
-                <SavedTripCard
-                  key={`${trip.origin.stop_id}-${trip.destination.stop_id}`}
-                  trip={trip}
-                />
-              ))}
-            </section>
-          )}
-        </>
-      )}
     </div>
   );
 }

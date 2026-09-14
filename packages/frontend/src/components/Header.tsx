@@ -1,10 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Search, TrainFront } from 'lucide-react';
 import { useStationPicker } from '@/hooks/useStationPicker';
 
 export function Header() {
   const openPicker = useStationPicker();
-  const navigate = useNavigate();
 
   return (
     <header
@@ -27,13 +26,6 @@ export function Header() {
           <Search className="size-[13px]" />
           <span className="hidden sm:inline">Search stations</span>
           <span className="sr-only sm:hidden">Search stations</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/saved')}
-          className="h-[30px] rounded-full border border-border px-3 text-[12.5px] font-medium text-ink-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          Saved
         </button>
       </nav>
     </header>
