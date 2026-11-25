@@ -23,8 +23,10 @@ COPY packages/shared/ ./packages/shared/
 COPY packages/backend/ ./packages/backend/
 COPY schedule/ ./schedule/
 
-# Build shared package
-RUN pnpm --filter @chicagorail/shared build
+# Bundle the backend (with shared inlined) into one plain-JS file.
+# Output must stay two levels below packages/backend: gtfsService locates
+# /app/schedule relative to its own file location.
+RUN pnpm --filter @chicagorail/backend bundle
 
 # Expose port
 ENV PORT=5000
@@ -34,5 +36,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
 
-# Start the server using tsx (handles ESM properly)
-CMD ["pnpm", "--filter", "@chicagorail/backend", "start"]
+# Run node directly: one process, no pnpm/tsx wrappers or runtime compilation
+CMD ["node", "--enable-source-maps", "packages/backend/dist/server/index.js"]
