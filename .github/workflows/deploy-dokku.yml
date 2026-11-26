@@ -81,6 +81,8 @@ jobs:
         with:
           git_remote_url: ssh://dokku@${{ secrets.DOKKU_HOST }}:22/${{ secrets.DOKKU_APP_NAME }}
           ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+          # Pinned server host key (no ssh-keyscan: it can trip fail2ban, and pinning blocks impersonation)
+          ssh_host_key: ${{ secrets.SSH_HOST_KEY }}
           branch: main
           ci_commit: ${{ github.sha }}
       - name: Verify live health and connections endpoint
