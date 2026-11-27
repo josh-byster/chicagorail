@@ -3,7 +3,6 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { StationPickerProvider } from './components/StationPicker';
 import { Home } from './pages/Home';
-import { Saved } from './pages/Saved';
 import { TrainDetail } from './pages/TrainDetail';
 
 // Redirect from old /departures route to unified home
@@ -61,7 +60,7 @@ function App() {
           <main id="main-content" className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/saved" element={<Saved />} />
+              <Route path="/saved" element={<Navigate to="/" replace />} />
               <Route path="/train/:tripId" element={<TrainDetail />} />
               {/* Redirects from old routes for backwards compatibility */}
               <Route path="/departures" element={<DeparturesRedirect />} />

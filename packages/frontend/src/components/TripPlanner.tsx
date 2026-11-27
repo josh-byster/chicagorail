@@ -48,44 +48,44 @@ export function TripPlanner({
 
   return (
     <div className="overflow-hidden rounded-[14px] border border-hairline-strong bg-surface">
-      <div className="flex items-center pr-4">
-      <button
-        type="button"
-        onClick={() => openPicker('from')}
-        className="grid min-h-[60px] min-w-0 flex-1 grid-cols-[52px_minmax(0,1fr)] items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-foreground/[.035]"
-      >
-        <span className={labelClass}>From</span>
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span
-            className={`truncate text-base font-semibold tracking-[-0.02em] ${
-              fromStop ? '' : 'font-medium text-muted-foreground'
-            }`}
-          >
-            {fromStop?.stop_name ?? 'Choose a station'}
-          </span>
-          {fromRoutes.length > 0 && (
-            <span className="flex flex-none gap-[3px]" aria-hidden="true">
-              {fromRoutes.map((route) => (
-                <span
-                  key={route.route_id}
-                  className="h-4 w-[7px] rounded-[3px]"
-                  style={{ backgroundColor: `#${route.route_color}` }}
-                />
-              ))}
-            </span>
-          )}
-        </span>
-      </button>
-      {fromStop && (
+      <div className="relative">
         <button
           type="button"
-          onClick={onClearFrom}
-          aria-label="Clear origin"
-          className="flex size-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-foreground/[.07]"
+          onClick={() => openPicker('from')}
+          className="grid min-h-[60px] w-full min-w-0 grid-cols-[52px_minmax(0,1fr)] items-center gap-3 rounded-t-[13px] py-3.5 pl-4 pr-16 text-left transition-colors hover:bg-foreground/[.035] focus-visible:bg-foreground/[.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
-          <X className="size-[14px] text-ink-subtle" />
+          <span className={labelClass}>From</span>
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span
+              className={`truncate text-base font-semibold tracking-[-0.02em] ${
+                fromStop ? '' : 'font-medium text-muted-foreground'
+              }`}
+            >
+              {fromStop?.stop_name ?? 'Choose a station'}
+            </span>
+            {fromRoutes.length > 0 && (
+              <span className="flex flex-none gap-[3px]" aria-hidden="true">
+                {fromRoutes.map((route) => (
+                  <span
+                    key={route.route_id}
+                    className="h-4 w-[7px] rounded-[3px]"
+                    style={{ backgroundColor: `#${route.route_color}` }}
+                  />
+                ))}
+              </span>
+            )}
+          </span>
         </button>
-      )}
+        {fromStop && (
+          <button
+            type="button"
+            onClick={onClearFrom}
+            aria-label="Clear origin"
+            className="absolute right-4 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md transition-colors hover:bg-foreground/[.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          >
+            <X className="size-[14px] text-ink-subtle" />
+          </button>
+        )}
       </div>
 
       <div className="relative mx-4 h-px bg-hairline">
@@ -100,13 +100,14 @@ export function TripPlanner({
         </button>
       </div>
 
-      <div className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5">
-        <span className={labelClass}>To</span>
+      <div className="relative">
         <button
           type="button"
           onClick={() => openPicker('to')}
-          className="-my-2 flex min-w-0 items-center gap-2.5 py-2 text-left"
+          className="grid min-h-[60px] w-full min-w-0 grid-cols-[52px_minmax(0,1fr)] items-center gap-3 py-3.5 pl-4 pr-16 text-left transition-colors hover:bg-foreground/[.035] focus-visible:bg-foreground/[.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
+          <span className={labelClass}>To</span>
+          <span className="flex min-w-0 items-center gap-2.5">
           <Search className="size-[15px] flex-none text-muted-foreground" />
           <span
             className={`truncate text-base ${
@@ -115,13 +116,14 @@ export function TripPlanner({
           >
             {toStop?.stop_name ?? 'Anywhere'}
           </span>
+          </span>
         </button>
         {toStop && (
           <button
             type="button"
             onClick={onClearTo}
             aria-label="Clear destination"
-            className="flex size-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-foreground/[.07]"
+            className="absolute right-4 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md transition-colors hover:bg-foreground/[.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           >
             <X className="size-[14px] text-ink-subtle" />
           </button>

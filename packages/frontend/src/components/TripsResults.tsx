@@ -11,7 +11,6 @@ import type { DirectTrip, Route, Stop } from '@chicagorail/shared';
 import { utils } from '@chicagorail/shared';
 import { RouteFilterButtons } from './RouteFilterButtons';
 import { RouteBadge } from './RouteBadge';
-import { useSavedTrips } from '@/hooks/useSavedTrips';
 import {
   delayColor,
   delayLabel,
@@ -33,7 +32,6 @@ interface TripsResultsProps {
   error: string | null;
   selectedRoute: string | undefined;
   onRouteFilterChange: (routeId: string | undefined) => void;
-  fromStop: Stop | null;
   toStop: Stop | null;
   dateLabel: string;
   isToday: boolean;
@@ -49,7 +47,6 @@ export function TripsResults({
   error,
   selectedRoute,
   onRouteFilterChange,
-  fromStop,
   toStop,
   dateLabel,
   isToday,
@@ -110,8 +107,6 @@ export function TripsResults({
       {next && (
         <NextTrainCard
           trip={next}
-          fromStop={fromStop}
-          toStop={toStop}
           isToday={isToday}
           onTrack={() => navigate(`/train/${encodeURIComponent(next.trip_id)}`)}
         />
@@ -185,25 +180,12 @@ export function TripsResults({
 
 interface NextTrainCardProps {
   trip: DirectTrip;
-  fromStop: Stop | null;
-  toStop: Stop | null;
   isToday: boolean;
   onTrack: () => void;
 }
 
-function NextTrainCard({ trip, fromStop, toStop, isToday, onTrack }: NextTrainCardProps) {
-  const { saveTrip, removeTrip, isSaved } = useSavedTrips();
-  const saved = !!fromStop && !!toStop && isSaved(fromStop.stop_id, toStop.stop_id);
+function NextTrainCard({ trip, isToday, onTrack }: NextTrainCardProps) {
   const number = trainNumber(trip.trip_id);
-
-  const toggleSaved = () => {
-    if (!fromStop || !toStop) return;
-    if (saved) {
-      removeTrip(fromStop.stop_id, toStop.stop_id);
-    } else {
-      saveTrip({ origin: fromStop, destination: toStop });
-    }
-  };
 
   return (
     <div className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface-raised p-5">
@@ -260,14 +242,6 @@ function NextTrainCard({ trip, fromStop, toStop, isToday, onTrack }: NextTrainCa
           className="h-[34px] rounded-[9px] bg-foreground px-4 text-[13px] font-semibold text-background transition-opacity hover:opacity-85"
         >
           See every stop
-        </button>
-        <button
-          type="button"
-          onClick={toggleSaved}
-          disabled={!fromStop || !toStop}
-          className="h-[34px] rounded-[9px] border border-border px-4 text-[13px] font-medium text-ink-subtle transition-colors hover:bg-foreground/5 hover:text-foreground disabled:opacity-40"
-        >
-          {saved ? 'Saved' : 'Save trip'}
         </button>
       </div>
     </div>
