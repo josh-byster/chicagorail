@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
+  "extends": "../../tsconfig.effect.json",
+  "include": [
+    "src",
+    "test",
+    "vitest.config.ts"
+  ]
+}
