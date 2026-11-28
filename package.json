@@ -16,9 +16,13 @@
     "start": "node packages/backend/dist/src/index.js",
     "e2e": "pnpm --filter @chicagorail/e2e test",
     "e2e:headed": "pnpm --filter @chicagorail/e2e test:headed",
-    "e2e:ui": "pnpm --filter @chicagorail/e2e test:ui"
+    "e2e:ui": "pnpm --filter @chicagorail/e2e test:ui",
+    "check": "pnpm run lint:effect && pnpm --filter \"./packages/transit\" run typecheck && pnpm --filter \"./packages/transit\" run test",
+    "lint:effect": "eslint -c eslint.effect.config.mjs packages/transit"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "eslint": "9",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "8.74.0"
   }
 }

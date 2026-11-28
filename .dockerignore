@@ -1,0 +1,10 @@
+# Keep the build context small: Docker only needs the backend packages and the schedule
+.git
+repos
+**/node_modules
+**/dist
+**/coverage
+packages/ios
+packages/frontend
+e2e
+*.md
